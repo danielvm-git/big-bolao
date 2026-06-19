@@ -61,23 +61,12 @@ function handleRetry() {
         <button class="login-btn retry" @click="handleRetry">Tentar com usuário de teste</button>
       </div>
 
-      <!-- Default: dev login -->
+      <!-- Default: no uid in URL -->
       <div v-else class="login-card">
-        <p class="login-card-label">🔐 Modo desenvolvimento</p>
-        <p class="login-desc" style="margin-bottom: 16px; font-size: 13px;">
-          No celular, abra pelo link enviado no Telegram.<br/>
-          Aqui você pode testar com dados mockados.
+        <p class="login-card-label">📱 Acesso pelo Telegram</p>
+        <p class="login-desc">
+          Abra o link enviado pelo bot no Telegram para acessar o bolão.
         </p>
-        <div class="login-user-card">
-          <div class="login-avatar">M</div>
-          <div>
-            <p class="login-user-name">Mari Gallo</p>
-            <p class="login-user-info">Participante · #5 no ranking</p>
-          </div>
-        </div>
-        <button class="login-btn" @click="handleLogin">
-          Continuar com dados de teste →
-        </button>
       </div>
     </div>
   </div>
