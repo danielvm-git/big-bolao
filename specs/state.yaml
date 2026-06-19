@@ -1,9 +1,16 @@
 # Orchestrate state
-phase: verify
-active_flow: build-site
+phase: build
+active_flow: build_epic
 active_epic_id: e01-bolao-site
-last_step_completed: verify
-next_skill: release
+last_step_completed: change-request
+next_skill: survey-context
+
+epic_cycle:
+  epic: e01-bolao-site
+  step: 2
+  story: e01-s08
+  story_bcps: 1
+  next_story: e01-s11
 
 environment:
   node: v24.15.0

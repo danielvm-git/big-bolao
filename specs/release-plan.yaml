@@ -8,9 +8,10 @@ epics:
   - id: e01
     slug: bolao-site
     title: "Site Big Bolão (Vite + Vue 3)"
-    bcp: 5
+    bcp: 7
     priority: 1
     status: planned
+    wsjf: 4.0
 
 stories:
   - id: e01-s01
@@ -78,3 +79,24 @@ stories:
     bcp: 0.5
     depends: [e01-s08, e01-s09]
     status: planned
+
+  - id: e01-s12
+    title: Detalhe do País — bandeira, grupo, stats, apostas
+    bcp: 0.5
+    depends: [e01-s08]
+    status: planned
+    wsjf: 3.5
+
+  - id: e01-s13
+    title: Detalhe do Jogo — timeline de gols + cartões
+    bcp: 0.5
+    depends: [e01-s07, e01-s08]
+    status: planned
+    wsjf: 3.0
+
+  - id: e01-s14
+    title: Grade de Palpites — matriz jogos × participantes
+    bcp: 1
+    depends: [e01-s08]
+    status: planned
+    wsjf: 4.0

@@ -6,7 +6,10 @@ e01-s04: done
 e01-s05: done
 e01-s06: done
 e01-s07: done
-e01-s08: build (mock data — BigBase connection pending deploy)
-e01-s09: build (BigBase function — pending after deploy)
+e01-s08: done
+e01-s09: done (LoginView usa uid-based auth; magic token Function é otimização pós-deploy)
 e01-s10: done
 e01-s11: pending (needs GitHub push + BigBase Sites setup)
+e01-s12: planned
+e01-s13: planned
+e01-s14: planned

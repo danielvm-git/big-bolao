@@ -113,10 +113,11 @@ class BigBase:
     # ---------- participantes ----------
 
     async def get_participante(self, telegram_id: int) -> dict | None:
-        rows = await self.sql(
-            f"SELECT id, data FROM {PARTICIPANTES} "
-            f"WHERE json_extract(data,'$.telegram_id') = {int(telegram_id)} LIMIT 1")
-        return _hydrate(rows[0]) if rows else None
+        tid = int(telegram_id)
+        for p in await self.list_records(PARTICIPANTES):
+            if int(p.get("telegram_id", 0)) == tid:
+                return p
+        return None
 
     async def registrar_participante(self, telegram_id: int, nome: str) -> None:
         existente = await self.get_participante(telegram_id)
@@ -145,11 +146,10 @@ class BigBase:
         if antigo_id == int(novo_telegram_id):
             return True
         # migra palpites do id antigo -> novo
-        rows = await self.sql(
-            f"SELECT id, data FROM {PALPITES} "
-            f"WHERE json_extract(data,'$.telegram_id') = {antigo_id}")
-        for r in rows:
-            await self.patch(PALPITES, r["id"], {"telegram_id": int(novo_telegram_id)})
+        todos = await self.list_records(PALPITES)
+        for p in todos:
+            if int(p.get("telegram_id", 0)) == antigo_id:
+                await self.patch(PALPITES, p["id"], {"telegram_id": int(novo_telegram_id)})
         await self.patch(PARTICIPANTES, alvo["id"],
                          {"telegram_id": int(novo_telegram_id), "ativo": True})
         return True
@@ -161,10 +161,10 @@ class BigBase:
         return sorted(jogos, key=lambda j: j.get("kickoff", ""))
 
     async def get_jogo(self, match_id: str) -> dict | None:
-        rows = await self.sql(
-            f"SELECT id, data FROM {JOGOS} "
-            f"WHERE json_extract(data,'$.match_id') = '{match_id}' LIMIT 1")
-        return _hydrate(rows[0]) if rows else None
+        for j in await self.list_records(JOGOS):
+            if j.get("match_id") == match_id:
+                return j
+        return None
 
     async def set_resultado(self, match_id: str, gols_casa: int, gols_fora: int) -> bool:
         jogo = await self.get_jogo(match_id)
@@ -178,11 +178,11 @@ class BigBase:
     # ---------- palpites ----------
 
     async def get_palpite(self, match_id: str, telegram_id: int) -> dict | None:
-        rows = await self.sql(
-            f"SELECT id, data FROM {PALPITES} "
-            f"WHERE json_extract(data,'$.match_id') = '{match_id}' "
-            f"AND json_extract(data,'$.telegram_id') = {int(telegram_id)} LIMIT 1")
-        return _hydrate(rows[0]) if rows else None
+        tid = int(telegram_id)
+        for p in await self.list_records(PALPITES):
+            if p.get("match_id") == match_id and int(p.get("telegram_id", 0)) == tid:
+                return p
+        return None
 
     async def salvar_palpite(self, match_id: str, telegram_id: int, nome: str,
                              gols_casa: int, gols_fora: int, agora_iso: str) -> None:
@@ -197,13 +197,11 @@ class BigBase:
                 **payload})
 
     async def palpites_do_usuario(self, telegram_id: int) -> dict[str, tuple[int, int]]:
-        rows = await self.sql(
-            f"SELECT id, data FROM {PALPITES} "
-            f"WHERE json_extract(data,'$.telegram_id') = {int(telegram_id)}")
+        tid = int(telegram_id)
         out: dict[str, tuple[int, int]] = {}
-        for r in rows:
-            d = _hydrate(r)
-            out[d["match_id"]] = (int(d["gols_casa"]), int(d["gols_fora"]))
+        for p in await self.list_records(PALPITES):
+            if int(p.get("telegram_id", 0)) == tid:
+                out[p["match_id"]] = (int(p["gols_casa"]), int(p["gols_fora"]))
         return out
 
     async def get_palpites(self) -> list[dict]:

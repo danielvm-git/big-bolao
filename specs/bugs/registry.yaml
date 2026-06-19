@@ -20,3 +20,44 @@ bugs:
       - "Code comment in App.vue warning against v-slot on router-view"
       - "Route config unit test prevents route definition errors"
     commit_message: "fix(web): bottom nav buttons unresponsive — removed v-slot on router-view"
+
+  - bug_id: BUG-2026-06-19-180800
+    date: "2026-06-19"
+    severity: high
+    priority: critical
+    scope: bot-sync
+    summary: "/sync returns 0 results — wrong APIFOOTBALL_LEAGUE_ID=1, SQL 403, Markdown parse errors"
+    file: specs/bugs/BUG-2026-06-19-180800-sync-misconfiguration.md
+    status: fixed
+    fixed_date: "2026-06-19"
+    root_cause: "Three causes: APIFOOTBALL_LEAGUE_ID=1 in .env (was 28); BigBase /api/sql returns 403 for service account; Telegram Markdown v1 crashes on underscores in bot username"
+    approach: "Fixed league ID in .env; removed all sql() from bigbase.py (list_records+filter); switched all messages to HTML parse mode"
+    risk_level: low
+    files_changed:
+      - .env
+      - bolao/config.py
+      - bolao/bigbase.py
+      - bolao/handlers.py
+      - bolao/ranking.py
+      - bolao/results.py
+    tests_added:
+      - tests/test_config.py (5 tests)
+      - tests/test_fixtures.py (14 tests)
+      - tests/test_results.py (7 tests)
+    hardening:
+      - "validate_config() in config.py raises RuntimeError on missing/wrong API config at startup"
+      - "load_dotenv(override=True) prevents shell env vars from silently overriding .env"
+      - "26-test suite covering all fixed code paths"
+    commit_message: "fix(bot): wrong league_id, SQL 403, Markdown parse errors — add startup guard + test suite"
+
+  - bug_id: BUG-2026-06-19-190000
+    date: "2026-06-19"
+    severity: medium
+    priority: high
+    scope: deploy
+    summary: "Deploy falha — BigBase root_path não propagado ao DetectAppType; pip binário não portátil"
+    file: specs/bugs/BUG-2026-06-19-190000-deploy-fail.md
+    status: open
+    root_cause: "BigBase deploy/DetectAppType ignora o campo root_path da tabela sites — sempre escaneia a raiz do clone. O repo tem requirements.txt na raiz (bot) e package.json em web/ (site)."
+    approach: "Workaround: package.json na raiz delegando build para web/. Fix definitivo: PR no BigBase propagando root_path para DetectAppType + python3 -m pip"
+    risk_level: medium

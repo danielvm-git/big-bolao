@@ -47,14 +47,14 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     nome = user.full_name or user.username or str(user.id)
     await db(context).registrar_participante(user.id, nome)
     await update.message.reply_text(
-        f"⚽ *Bem-vindo ao Bolao, {nome}!*\n\n"
-        "Aqui você palpita no placar exato dos jogos — *só você vê seus palpites*.\n\n"
-        "*Comandos:*\n"
+        f"⚽ <b>Bem-vindo ao Bolao, {nome}!</b>\n\n"
+        "Aqui você palpita no placar exato dos jogos — <b>só você vê seus palpites</b>.\n\n"
+        "<b>Comandos:</b>\n"
         "/jogos — palpitar nos próximos jogos\n"
         "/meus — ver meus palpites\n"
         "/ranking — classificação geral\n\n"
-        "Pontuação: *3* placar exato · *1* acertar o vencedor/empate · *0* erro.",
-        parse_mode=ParseMode.MARKDOWN)
+        "Pontuação: <b>3</b> placar exato · <b>1</b> acertar o vencedor/empate · <b>0</b> erro.",
+        parse_mode=ParseMode.HTML)
 
 
 async def cmd_sou(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -67,22 +67,21 @@ async def cmd_sou(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         nomes = [p["nome"] for p in await db(context).listar_participantes()]
         await update.message.reply_text(
             "Diga quem você é pra herdar seus palpites da Rodada 1.\n"
-            "Ex: `/sou Ricardo`\n\nParticipantes: " + ", ".join(sorted(nomes)),
-            parse_mode=ParseMode.MARKDOWN)
+            "Ex: <code>/sou Ricardo</code>\n\nParticipantes: " + ", ".join(sorted(nomes)),
+            parse_mode=ParseMode.HTML)
         return
     ok = await db(context).reivindicar(nome, update.effective_user.id)
     if ok:
         await update.message.reply_text(
-            f"✅ Pronto! Você agora é *{nome}* e herdou os palpites da Rodada 1.\n"
+            f"✅ Pronto! Você agora é <b>{nome}</b> e herdou os palpites da Rodada 1.\n"
             "Veja /ranking ou palpite nos próximos com /jogos.",
-            parse_mode=ParseMode.MARKDOWN)
+            parse_mode=ParseMode.HTML)
     else:
         await update.message.reply_text(f"Não achei o participante “{nome}”.")
 
 
 async def cmd_chatid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f"chat_id: `{update.effective_chat.id}`",
-                                    parse_mode=ParseMode.MARKDOWN)
+    await update.message.reply_text(f"chat_id: {update.effective_chat.id}")
 
 
 async def cmd_web(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -91,10 +90,10 @@ async def cmd_web(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     web_url = os.environ.get("BOLAO_WEB_URL", "http://localhost:5173")
     link = f"{web_url}/?uid={uid}"
     await update.message.reply_text(
-        f"🌐 *Acesse o Bolao pelo navegador:*\n\n"
-        f"[👉 Clique aqui para abrir]({link})\n\n"
-        f"Ou cole este link no navegador:\n`{link}`",
-        parse_mode=ParseMode.MARKDOWN)
+        f"🌐 <b>Acesse o Bolao pelo navegador:</b>\n\n"
+        f"<a href=\"{link}\">👉 Clique aqui para abrir</a>\n\n"
+        f"Ou cole este link no navegador:\n<code>{link}</code>",
+        parse_mode=ParseMode.HTML)
 
 
 async def cmd_jogos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -126,18 +125,18 @@ async def cmd_meus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Você ainda não palpitou. Use /jogos 😉")
         return
     jogos = {j["match_id"]: j for j in await db(context).get_jogos()}
-    linhas = ["*Seus palpites:*", ""]
+    linhas = ["<b>Seus palpites:</b>", ""]
     for mid, (gc, gf) in sorted(meus.items()):
         j = jogos.get(mid)
         if not j:
             continue
-        linhas.append(f"• {j['casa']} *{gc} x {gf}* {j['fora']}")
-    await update.message.reply_text("\n".join(linhas), parse_mode=ParseMode.MARKDOWN)
+        linhas.append(f"• {j['casa']} <b>{gc} x {gf}</b> {j['fora']}")
+    await update.message.reply_text("\n".join(linhas), parse_mode=ParseMode.HTML)
 
 
 async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     texto = await _montar_ranking(context)
-    await update.effective_message.reply_text(texto, parse_mode=ParseMode.MARKDOWN)
+    await update.effective_message.reply_text(texto, parse_mode=ParseMode.HTML)
 
 
 async def _montar_ranking(context: ContextTypes.DEFAULT_TYPE) -> str:
@@ -165,8 +164,8 @@ async def cb_escolher_jogo(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.")
         return
     await q.edit_message_text(
-        f"*{jogo['casa']} x {jogo['fora']}*\nQuantos gols do *{jogo['casa']}*?",
-        parse_mode=ParseMode.MARKDOWN, reply_markup=_seletor(f"h|{mid}", jogo["casa"]))
+        f"<b>{jogo['casa']} x {jogo['fora']}</b>\nQuantos gols do <b>{jogo['casa']}</b>?",
+        parse_mode=ParseMode.HTML, reply_markup=_seletor(f"h|{mid}", jogo["casa"]))
 
 
 async def cb_gols_casa(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -178,8 +177,8 @@ async def cb_gols_casa(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.")
         return
     await q.edit_message_text(
-        f"*{jogo['casa']} {n} x ? {jogo['fora']}*\nQuantos gols do *{jogo['fora']}*?",
-        parse_mode=ParseMode.MARKDOWN, reply_markup=_seletor(f"f|{mid}|{n}", jogo["fora"]))
+        f"<b>{jogo['casa']} {n} x ? {jogo['fora']}</b>\nQuantos gols do <b>{jogo['fora']}</b>?",
+        parse_mode=ParseMode.HTML, reply_markup=_seletor(f"f|{mid}|{n}", jogo["fora"]))
 
 
 async def cb_gols_fora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -196,8 +195,8 @@ async def cb_gols_fora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                                      agora().isoformat())
     await q.answer("Palpite salvo! ✅")
     await q.edit_message_text(
-        f"✅ Palpite salvo:\n*{jogo['casa']} {gc} x {gf} {jogo['fora']}*\n\n"
-        "Use /jogos pra palpitar em outro.", parse_mode=ParseMode.MARKDOWN)
+        f"✅ Palpite salvo:\n<b>{jogo['casa']} {gc} x {gf} {jogo['fora']}</b>\n\n"
+        "Use /jogos pra palpitar em outro.", parse_mode=ParseMode.HTML)
 
 
 # ---------------- admin ----------------
@@ -211,8 +210,8 @@ async def cmd_resultado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         await update.message.reply_text("Uso: /resultado <match_id> <gols_casa> <gols_fora>")
         return
     if not await db(context).set_resultado(mid, gc, gf):
-        await update.message.reply_text(f"match_id `{mid}` não encontrado.",
-                                        parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(f"match_id <code>{mid}</code> não encontrado.",
+                                        parse_mode=ParseMode.HTML)
         return
     jogo = await db(context).get_jogo(mid)
     await update.message.reply_text(f"✅ Resultado salvo: {label_placar(jogo)}")
@@ -240,17 +239,22 @@ async def cmd_lembrete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def _sync_resultados(context: ContextTypes.DEFAULT_TYPE) -> int:
     d = db(context)
-    jogos = {j["match_id"]: j for j in await d.get_jogos()}
+    jogos_list = await d.get_jogos()
     novos = 0
-    for res in await results_mod.buscar_encerrados():
-        j = jogos.get(res.match.match_id)
-        if j and j.get("status") != "encerrado":
-            await d.set_resultado(res.match.match_id, res.gols_casa, res.gols_fora)
-            j2 = await d.get_jogo(res.match.match_id)
+    for res in await results_mod.buscar_encerrados(jogos_list):
+        await d.set_resultado(res.match_id, res.gols_casa, res.gols_fora)
+        j2 = await d.get_jogo(res.match_id)
+        try:
             await _publicar_resultado(context, j2)
-            novos += 1
+        except Exception:
+            logging.getLogger("bolao").warning(
+                "Falha ao publicar resultado %s no grupo", res.match_id, exc_info=True)
+        novos += 1
     if novos:
-        await _publicar_ranking(context)
+        try:
+            await _publicar_ranking(context)
+        except Exception:
+            logging.getLogger("bolao").warning("Falha ao publicar ranking no grupo", exc_info=True)
     return novos
 
 
@@ -263,17 +267,17 @@ async def _publicar_resultado(context: ContextTypes.DEFAULT_TYPE, jogo: dict) ->
     from bolao.scoring import pontos
     cravaram = [p["nome"] for p in palp
                 if pontos(int(p["gols_casa"]), int(p["gols_fora"]), rc, rf) == 3]
-    txt = f"⚽ *Fim de jogo:* {label_placar(jogo)}"
+    txt = f"⚽ <b>Fim de jogo:</b> {label_placar(jogo)}"
     if cravaram:
         txt += "\n🎯 Cravaram o placar: " + ", ".join(cravaram)
-    await context.bot.send_message(config.GRUPO_CHAT_ID, txt, parse_mode=ParseMode.MARKDOWN)
+    await context.bot.send_message(config.GRUPO_CHAT_ID, txt, parse_mode=ParseMode.HTML)
 
 
 async def _publicar_ranking(context: ContextTypes.DEFAULT_TYPE) -> None:
     if not config.GRUPO_CHAT_ID:
         return
     await context.bot.send_message(config.GRUPO_CHAT_ID, await _montar_ranking(context),
-                                   parse_mode=ParseMode.MARKDOWN)
+                                   parse_mode=ParseMode.HTML)
 
 
 async def _postar_lembrete(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -286,11 +290,11 @@ async def _postar_lembrete(context: ContextTypes.DEFAULT_TYPE) -> None:
     me = await context.bot.get_me()
     if not proximos:
         return
-    linhas = ["📣 *Jogos abertos pra palpite (próximas 24h):*", ""]
+    linhas = ["📣 <b>Jogos abertos pra palpite (próximas 24h):</b>", ""]
     linhas += [f"• {label_jogo(j)}" for j in proximos]
     linhas += ["", f"👉 Palpite no privado: t.me/{me.username} (comando /jogos)"]
     await context.bot.send_message(config.GRUPO_CHAT_ID, "\n".join(linhas),
-                                   parse_mode=ParseMode.MARKDOWN)
+                                   parse_mode=ParseMode.HTML)
 
 
 def kickoff_horas(jogo: dict, ref) -> float:

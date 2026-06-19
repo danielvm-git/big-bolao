@@ -1,0 +1,120 @@
+"""Tests for bolao/fixtures.py — phase parsing, time conversion, normalise()."""
+from bolao.fixtures import _parse_phase, _to_brt_iso, normalise
+
+
+# ── _parse_phase ────────────────────────────────────────────────────────────
+
+class TestParsePhase:
+    def test_numeric_group_rounds(self):
+        assert _parse_phase("1") == ("R1", 1)
+        assert _parse_phase("2") == ("R2", 2)
+        assert _parse_phase("3") == ("R3", 3)
+
+    def test_numeric_knockout_rounds(self):
+        assert _parse_phase("4") == ("R16", 4)
+        assert _parse_phase("5") == ("QF",  5)
+        assert _parse_phase("6") == ("SF",  6)
+        assert _parse_phase("7") == ("3P",  7)
+        assert _parse_phase("8") == ("FIN", 8)
+
+    def test_string_group_rounds(self):
+        assert _parse_phase("Group Stage - 1") == ("R1", 1)
+        assert _parse_phase("Group Stage - 2") == ("R2", 2)
+        assert _parse_phase("Group Stage - 3") == ("R3", 3)
+
+    def test_string_knockout_rounds(self):
+        assert _parse_phase("Round of 16")   == ("R16", 4)
+        assert _parse_phase("Quarter-finals") == ("QF",  5)
+        assert _parse_phase("Semi-finals")    == ("SF",  6)
+        assert _parse_phase("3rd Place Final") == ("3P", 7)
+        assert _parse_phase("Final")          == ("FIN", 8)
+
+    def test_unknown_returns_none(self):
+        assert _parse_phase("Friendly") is None
+        assert _parse_phase("") is None
+        assert _parse_phase("Qualifier") is None
+
+
+# ── _to_brt_iso ─────────────────────────────────────────────────────────────
+
+class TestToBrtIso:
+    def test_basic(self):
+        assert _to_brt_iso("2026-06-11", "16:00") == "2026-06-11T16:00:00"
+
+    def test_strips_extra_seconds(self):
+        assert _to_brt_iso("2026-06-11", "16:00:00") == "2026-06-11T16:00:00"
+
+    def test_midnight(self):
+        assert _to_brt_iso("2026-06-12", "00:00") == "2026-06-12T00:00:00"
+
+
+# ── normalise() ─────────────────────────────────────────────────────────────
+
+_MOCK = [
+    {
+        "match_id": "9001", "match_round": "1",
+        "match_date": "2026-06-11", "match_time": "16:00",
+        "match_hometeam_name": "Mexico", "match_awayteam_name": "South Africa",
+        "match_hometeam_score": "", "match_awayteam_score": "",
+        "match_hometeam_ft_score": "", "match_awayteam_ft_score": "",
+        "match_status": "Not Started",
+    },
+    {
+        "match_id": "9002", "match_round": "4",
+        "match_date": "2026-07-02", "match_time": "20:00",
+        "match_hometeam_name": "Brazil", "match_awayteam_name": "Germany",
+        "match_hometeam_score": "2", "match_awayteam_score": "1",
+        "match_hometeam_ft_score": "2", "match_awayteam_ft_score": "1",
+        "match_status": "Finished",
+    },
+    {
+        "match_id": "9003", "match_round": "Friendly",  # ignored
+        "match_date": "2026-05-01", "match_time": "19:00",
+        "match_hometeam_name": "X", "match_awayteam_name": "Y",
+        "match_hometeam_score": "", "match_awayteam_score": "",
+        "match_hometeam_ft_score": "", "match_awayteam_ft_score": "",
+        "match_status": "Not Started",
+    },
+]
+
+
+class TestNormalise:
+    def test_filters_unknown_phases(self):
+        result = normalise(_MOCK)
+        assert len(result) == 2
+
+    def test_pending_match(self):
+        result = normalise(_MOCK)
+        m = next(r for r in result if r["api_fixture_id"] == "9001")
+        assert m["match_id"] == "R1-01"
+        assert m["kickoff"] == "2026-06-11T16:00:00"
+        assert m["casa"] == "Mexico"
+        assert m["fora"] == "South Africa"
+        assert m["status"] == "agendado"
+        assert m["gols_casa"] is None
+        assert m["gols_fora"] is None
+
+    def test_finished_match_uses_ft_score(self):
+        result = normalise(_MOCK)
+        m = next(r for r in result if r["api_fixture_id"] == "9002")
+        assert m["match_id"] == "R16-01"
+        assert m["status"] == "encerrado"
+        assert m["gols_casa"] == 2
+        assert m["gols_fora"] == 1
+
+    def test_ft_score_fallback(self):
+        """When ft_score absent, falls back to match_*_score."""
+        fx = {**_MOCK[1], "match_hometeam_ft_score": "", "match_awayteam_ft_score": ""}
+        result = normalise([fx])
+        assert result[0]["gols_casa"] == 2
+
+    def test_no_internal_fields_leaked(self):
+        result = normalise(_MOCK)
+        for r in result:
+            assert "_phase_id" not in r
+            assert "_kickoff_sort" not in r
+
+    def test_sorted_by_kickoff(self):
+        result = normalise(_MOCK)
+        kickoffs = [r["kickoff"] for r in result]
+        assert kickoffs == sorted(kickoffs)

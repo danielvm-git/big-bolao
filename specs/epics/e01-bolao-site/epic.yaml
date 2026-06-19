@@ -2,7 +2,9 @@ id: e01
 slug: bolao-site
 title: "Site Big Bolão (Vite + Vue 3)"
 status: planned
-bcp: 5
+bcp: 7
+wsjf: 4.0
+wsjf_rationale: "BV=10 core product + TC=5 launch milestone + RR=5 data integration risk / JS=5 1week"
 
 description: >
   Criar o site do Big Bolão em Vite + Vue 3 seguindo o protótipo navegável.
@@ -117,3 +119,49 @@ stories:
     verify: >
       TODO: após deploy, curl -s https://bolao.bigbase.click | grep -q 'Big Bolão'
     bcp: 0.5
+
+  - id: e01-s12
+    title: Detalhe do País
+    description: >
+      Ao clicar na bandeira ou nome do país em GameCard ou em qualquer tela,
+      navegar para CountryView.vue mostrando: bandeira, nome, grupo,
+      estatísticas da seleção no bolão (jogos, vitórias, derrotas, saldo),
+      próximos jogos da seleção, lista de participantes que apostaram nela.
+    verify: |
+      grep -q 'CountryView' web/src/router/index.js 2>/dev/null && echo "✅ rota país existe"
+    bcp: 0.5
+    wsjf: 3.5
+    wsjf_rationale: "BV=3 nice-to-have + TC=3 flexible + RR=1 no risk / JS=2 1day"
+    depends: [e01-s08]
+
+  - id: e01-s13
+    title: "Detalhe do Jogo — gols + cartões"
+    description: >
+      Estender ResultadoView.vue (e01-s07) com timeline de eventos:
+      - Lista de gols: minuto, jogador, time, tipo (gol normal, pênalti, contra)
+      - Lista de cartões: minuto, jogador, time, cor (amarelo/vermelho)
+      - Exibir como timeline vertical com ícones de bola e cartão.
+      Dados vêm da collection jogos com campo eventos[].
+    verify: >
+      grep -q 'gol\|cartão\|evento\|timeline' web/src/views/ResultadoView.vue 2>/dev/null && echo "✅ timeline de eventos existe"
+    bcp: 0.5
+    wsjf: 3.0
+    wsjf_rationale: "BV=5 notable + TC=3 flexible + RR=1 no risk / JS=3 2-3days"
+    depends: [e01-s07, e01-s08]
+
+  - id: e01-s14
+    title: "Grade de Palpites (matriz jogos × participantes)"
+    description: >
+      Implementar GradeView.vue com a matriz clássica do bolão:
+      - Linhas = jogos (data, times, status)
+      - Colunas = participantes (avatar/nome no cabeçalho fixo)
+      - Células = palpite ("2x1") ou vazio
+      - Scroll horizontal com cabeçalho sticky de participantes
+      - Destaque "você" na coluna do usuário logado
+      - Dados reais via BigBase (palpites cruzados com jogos).
+    verify: |
+      grep -q 'GradeView\|MatrizView' web/src/router/index.js 2>/dev/null && echo "✅ rota grade existe"
+    bcp: 1
+    wsjf: 4.0
+    wsjf_rationale: "BV=8 iconic feature + TC=3 flexible + RR=1 no risk / JS=3 2-3days"
+    depends: [e01-s08]

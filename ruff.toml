@@ -1,0 +1,8 @@
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long — not enforced in this project
+    "E402",  # module-level import not at top — scripts use sys.path.insert patterns
+    "E401",  # multiple imports — pre-existing in scripts
+    "W293",  # whitespace in blank line — pre-existing in scripts
+]
