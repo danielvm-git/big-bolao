@@ -1,0 +1,22 @@
+bugs:
+  - bug_id: BUG-2026-06-19-183500
+    date: "2026-06-19"
+    severity: medium
+    priority: high
+    scope: app-shell
+    summary: "Bottom navigation buttons unresponsive — router-view conditionally mounted via v-if/v-else breaks router outlet"
+    file: specs/bugs/BUG-2026-06-19-183500-nav-buttons.md
+    status: fixed
+    fixed_date: "2026-06-19"
+    root_cause: "<router-view v-slot> with <transition> fails to resolve lazy-loaded route components in Vue Router 4; v-if/v-else conditional mounting broke outlet registration"
+    approach: "Replaced v-slot+transition router-view with plain <router-view />; LoginView overlays via position:absolute"
+    risk_level: low
+    files_changed:
+      - web/src/App.vue
+    tests_added:
+      - web/tests/router.test.js (4 unit tests)
+      - web/test-e2e.cjs (15 e2e tests)
+    hardening:
+      - "Code comment in App.vue warning against v-slot on router-view"
+      - "Route config unit test prevents route definition errors"
+    commit_message: "fix(web): bottom nav buttons unresponsive — removed v-slot on router-view"

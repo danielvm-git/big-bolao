@@ -1,0 +1,119 @@
+id: e01
+slug: bolao-site
+title: "Site Big Bolão (Vite + Vue 3)"
+status: planned
+bcp: 5
+
+description: >
+  Criar o site do Big Bolão em Vite + Vue 3 seguindo o protótipo navegável.
+  O site será um SPA mobile-first com 4 telas principais, consumindo dados 
+  do BigBase via REST API. Deploy via BigBase Sites.
+
+stories:
+  - id: e01-s01
+    title: Scaffold Vite + Vue 3 + vue-router + estrutura de views
+    description: >
+      Criar web/ com Vite + Vue 3. Configurar vue-router com 4 rotas. 
+      Copiar CSS globals do protótipo. Setup BottomNav.vue.
+    verify: |
+      cd web && npm run dev -- --host 2>/dev/null &
+      sleep 3 && curl -s http://localhost:5173 | grep -q 'root'
+      kill %1 2>/dev/null
+    bcp: 1
+
+  - id: e01-s02
+    title: Home / Dashboard
+    description: >
+      Implementar HomeView.vue: saudação, stats card (posição, pontos, exatos),
+      card de próximo jogo, mini ranking top 3, card de convite.
+      Dados mockados inicialmente.
+    verify: |
+      grep -q 'HomeView' web/src/router/index.js 2>/dev/null && echo "✅ rota home existe"
+    bcp: 1
+
+  - id: e01-s03
+    title: Jogos — lista com filtros + GameCard
+    description: >
+      Implementar JogosView.vue com filtros (abertos, meus, finalizados, todos).
+      GameCard.vue com bandeiras, status badge, resultado, botão palpitar.
+    verify: |
+      grep -q 'JogosView' web/src/router/index.js && echo "✅ rota jogos existe"
+    bcp: 1
+
+  - id: e01-s04
+    title: Fluxo de palpite — modal com placar
+    description: >
+      Implementar PalpiteModal.vue: seletor de gols +/-, placares comuns, salvar.
+      Estado de sucesso com animação. Feedback visual.
+    verify: |
+      grep -q 'PalpiteModal' web/src/components/PalpiteModal.vue 2>/dev/null && echo "✅ modal existe"
+    bcp: 1
+
+  - id: e01-s05
+    title: Ranking completo
+    description: >
+      Implementar RankingView.vue: pódio top 3, tabela completa, destaque "você",
+      legenda da regra de pontuação.
+    verify: |
+      grep -q 'RankingView' web/src/router/index.js && echo "✅ rota ranking existe"
+    bcp: 0.5
+
+  - id: e01-s06
+    title: Meus Palpites
+    description: >
+      Implementar MeusPalpitesView.vue: agrupado por "abertos para editar",
+      "aguardando resultado", "finalizados". Empty state.
+    verify: |
+      grep -q 'MeusPalpitesView' web/src/router/index.js && echo "✅ rota meus existe"
+    bcp: 0.5
+
+  - id: e01-s07
+    title: Detalhe do resultado
+    description: >
+      Implementar ResultadoView.vue: placar final, meu palpite, pontos, 
+      lista de quem cravou, lista de quem acertou vencedor.
+    verify: |
+      grep -q 'ResultadoView' web/src/router/index.js 2>/dev/null || grep -q 'showResultado' web/src/views/JogosView.vue
+    bcp: 0.5
+
+  - id: e01-s08
+    title: Conectar dados reais do BigBase
+    description: >
+      Substituir mock data por chamadas reais:
+      - GET /api/collections/participantes
+      - GET /api/collections/jogos  
+      - GET /api/collections/palpites
+      - POST /api/sql para ranking
+      Criar api.js com fetch wrapper + JWT header.
+    verify: |
+      grep -q 'fetch\|axios' web/src/api.js 2>/dev/null && echo "✅ api.js existe"
+    bcp: 1
+
+  - id: e01-s09
+    title: Magic token auth via BigBase Functions
+    description: >
+      Criar Function JS no BigBase (bolao-magic-login) que valida token 
+      salvo pelo bot. Frontend: LoginView.vue que pega token da URL (?token=xxx),
+      chama Function, obtém JWT, redireciona pra home.
+    verify: |
+      grep -q 'magic\|token' web/src/views/LoginView.vue 2>/dev/null && echo "✅ login existe"
+    bcp: 0.5
+
+  - id: e01-s10
+    title: PWA manifest + ícones
+    description: >
+      Adicionar manifest.webmanifest, ícones 192/512, meta tags, 
+      service worker básico (offline shell). 
+    verify: |
+      test -f web/public/manifest.webmanifest && echo "✅ manifest existe"
+    bcp: 0.5
+
+  - id: e01-s11
+    title: Deploy no BigBase
+    description: >
+      Push para GitHub. Entrar no BigBase admin → Sites → conectar repo 
+      big-bolao → branch main → root path web/. BigBase builda e serve.
+      Adicionar subdomínio bolao.bigbase.click no Caddy.
+    verify: >
+      TODO: após deploy, curl -s https://bolao.bigbase.click | grep -q 'Big Bolão'
+    bcp: 0.5

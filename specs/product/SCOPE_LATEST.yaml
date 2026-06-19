@@ -1,0 +1,33 @@
+# Big Bolão — Escopo v1
+
+## Incluso
+
+- [x] Tela de entrada simplificada (link mágico)
+- [x] Dashboard com posição, pontos, próximos jogos
+- [x] Lista de jogos com filtros (abertos, meus palpites, finalizados, todos)
+- [x] Fluxo de palpite com placar (gols A × gols B)
+- [x] Ranking completo com pódio e pontuação
+- [x] Tela "Meus Palpites" agrupados por status
+- [x] Detalhe do resultado (quem cravou, quem acertou vencedor)
+- [x] Navegação inferior com 4 abas
+- [x] Dados mockados → depois reais via BigBase
+- [x] Design mobile-first, fundo escuro, tons dourados
+- [x] Deploy no BigBase Sites (via GitHub + Caddy)
+
+## Excluso
+
+- Login com email/senha (só link mágico do bot)
+- Admin de resultados no frontend (admin via bot)
+- Múltiplos torneios/bolões
+- Notificações push
+- Compartilhamento de link (além do bot)
+- Modo escuro/claro (só escuro)
+
+## Prior Art (pesquisado)
+
+| Candidato | Veredito | Razão |
+|-----------|----------|-------|
+| world-cup-pool (GPL-3) | build | Stack Go/SvelteKit, não encaixa no BigBase |
+| FriendlyBet (MIT) | referência UX | Inspiração visual, mobile-first, PWA |
+| Palpiteiros (CC BY-NC) | referência | Ideias de fluxo de palpite |
+| Picks4All | descartado | Licença proprietária |

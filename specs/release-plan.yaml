@@ -1,0 +1,80 @@
+# Big Bolão Site — Release Plan
+
+release: v0.1.0
+product: Big Bolão Site
+status: planned
+
+epics:
+  - id: e01
+    slug: bolao-site
+    title: "Site Big Bolão (Vite + Vue 3)"
+    bcp: 5
+    priority: 1
+    status: planned
+
+stories:
+  - id: e01-s01
+    title: Scaffold Vite + Vue 3 + vue-router + estrutura de views
+    bcp: 1
+    depends: []
+    status: planned
+
+  - id: e01-s02
+    title: Home / Dashboard com stats e mini ranking
+    bcp: 1
+    depends: [e01-s01]
+    status: planned
+
+  - id: e01-s03
+    title: Jogos — lista com filtros + GameCard
+    bcp: 1
+    depends: [e01-s02]
+    status: planned
+
+  - id: e01-s04
+    title: Fluxo de palpite — modal com placar + salvar
+    bcp: 1
+    depends: [e01-s03]
+    status: planned
+
+  - id: e01-s05
+    title: Ranking completo com pódio
+    bcp: 0.5
+    depends: [e01-s02]
+    status: planned
+
+  - id: e01-s06
+    title: Meus Palpites com agrupamento por status
+    bcp: 0.5
+    depends: [e01-s04]
+    status: planned
+
+  - id: e01-s07
+    title: Detalhe do resultado (quem cravou)
+    bcp: 0.5
+    depends: [e01-s06]
+    status: planned
+
+  - id: e01-s08
+    title: Conectar dados reais do BigBase (collections)
+    bcp: 1
+    depends: [e01-s04, e01-s06]
+    status: planned
+
+  - id: e01-s09
+    title: Magic token auth via BigBase Functions
+    bcp: 0.5
+    depends: [e01-s08]
+    status: planned
+
+  - id: e01-s10
+    title: PWA manifest + service worker + icons
+    bcp: 0.5
+    depends: []
+    status: planned
+
+  - id: e01-s11
+    title: Deploy — BigBase Sites (GitHub → build → Caddy)
+    bcp: 0.5
+    depends: [e01-s08, e01-s09]
+    status: planned

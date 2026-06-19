@@ -1,0 +1,34 @@
+# Big Bolão — Site Web
+## Visão do Produto
+
+Criar o "place to go" para o bolão privado da Copa 2026 entre amigos.
+Hoje os palpites são feitos no Telegram (bot Python). Queremos um site mobile-first 
+onde os participantes possam:
+
+1. Ver o ranking atualizado
+2. Fazer palpites de placar exato
+3. Ver próximos jogos
+4. Ver quem cravou cada resultado
+5. Acompanhar seus próprios palpites
+
+O site complementa o bot — o bot continua mandando lembretes no grupo,
+o link do bot aponta pro site.
+
+## Público
+
+~7 amigos, todos brasileiros, mobile-first (acesso via Telegram/WhatsApp).
+
+## Diferenciais
+
+- Sem cadastro complicado — link mágico enviado pelo bot
+- Experiência mobile nativa (PWA)
+- Velocidade: dados servidos pelo BigBase, sem backend extra
+- Código aberto no GitHub do autor
+
+## Não-escopo v1
+
+- Login por email/senha
+- Múltiplos bolões
+- Pagamentos
+- Admin de resultados no site (continua no bot)
+- Chat/feed
