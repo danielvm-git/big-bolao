@@ -82,15 +82,10 @@ export async function fetchParticipantes() {
 }
 
 export async function fetchPalpites(telegramId) {
-  const rows = await BB.sql(
-    `SELECT id, data FROM palpites ` +
-    `WHERE json_extract(data,'$.telegram_id') = ${Number(telegramId)}`
-  )
-  return rows.map(r => {
-    const d = typeof r.data === 'string' ? JSON.parse(r.data) : (r.data || {})
-    d._rowid = r.id
-    return d
-  })
+  const all = await BB.list('palpites')
+  return all
+    .filter(p => Number(p.telegram_id) === Number(telegramId))
+    .map(p => ({ ...p, _rowid: p.id }))
 }
 
 export async function fetchAllPalpites() {
@@ -98,11 +93,11 @@ export async function fetchAllPalpites() {
 }
 
 export async function savePalpite(matchId, telegramId, nome, golsCasa, golsFora) {
-  // Check if prediction already exists
-  const existing = await BB.sql(
-    `SELECT id, data FROM palpites ` +
-    `WHERE json_extract(data,'$.match_id') = '${matchId}' ` +
-    `AND json_extract(data,'$.telegram_id') = ${Number(telegramId)} LIMIT 1`
+  // Check if prediction already exists (fetch all, filter client-side)
+  const all = await BB.list('palpites')
+  const existing = all.find(
+    p => String(p.match_id) === String(matchId) &&
+         Number(p.telegram_id) === Number(telegramId)
   )
 
   const payload = {
@@ -114,10 +109,8 @@ export async function savePalpite(matchId, telegramId, nome, golsCasa, golsFora)
     atualizado_em: new Date().toISOString(),
   }
 
-  if (existing.length > 0) {
-    const row = existing[0]
-    const id = row.id
-    await BB.patch('palpites', id, payload)
+  if (existing) {
+    await BB.patch('palpites', existing.id, payload)
   } else {
     await BB.create('palpites', payload)
   }
