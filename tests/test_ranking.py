@@ -81,3 +81,50 @@ def test_negative_telegram_id_without_ativo_field_still_excluded():
     rank = calcular(jogos, palpites, participantes)
     assert len(rank) == 1
     assert rank[0]["telegram_id"] == 555
+
+
+# ── formatar() tests ──────────────────────────────────────────────
+
+def test_formatar_empty_ranking():
+    """Ranking vazio retorna mensagem apropriada."""
+    result = formatar([])
+    assert "Ainda nao" in result
+    assert "<pre>" not in result  # sem tags de formatacao quando vazio
+
+
+def test_formatar_has_monospace_tags():
+    """Ranking com dados usa <pre><code> para alinhamento monospace."""
+    rank = [
+        {"nome": "Ricardo", "telegram_id": 1, "pontos": 5, "exatos": 1, "acertos": 3, "jogos": 10},
+    ]
+    result = formatar(rank)
+    assert result.startswith("<pre><code>") or "<pre><code>" in result
+    assert result.endswith("</code></pre>") or "</code></pre>" in result
+
+
+def test_formatar_top3_get_medals():
+    """Top 3 recebem medalhas; demais recebem numero."""
+    rank = [
+        {"nome": "A", "telegram_id": 1, "pontos": 9, "exatos": 2, "acertos": 5, "jogos": 10},
+        {"nome": "B", "telegram_id": 2, "pontos": 6, "exatos": 1, "acertos": 3, "jogos": 10},
+        {"nome": "C", "telegram_id": 3, "pontos": 3, "exatos": 0, "acertos": 2, "jogos": 10},
+        {"nome": "D", "telegram_id": 4, "pontos": 1, "exatos": 0, "acertos": 1, "jogos": 10},
+    ]
+    result = formatar(rank)
+    assert "🥇" in result
+    assert "🥈" in result
+    assert "🥉" in result
+    assert "4º" in result
+
+
+def test_formatar_column_widths():
+    """Nomes sao truncados em 13 chars e colunas alinhadas."""
+    rank = [
+        {"nome": "Nome Muito Longo Demais", "telegram_id": 1, "pontos": 5, "exatos": 1, "acertos": 3, "jogos": 10},
+    ]
+    result = formatar(rank)
+    # Nome truncado em 13 chars justificado a esquerda
+    assert "Nome Muito Lo" in result
+    assert "Nome Muito Longo Demais" not in result
+    # Separador horizontal presente
+    assert "━" in result

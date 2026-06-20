@@ -3,6 +3,9 @@ from __future__ import annotations
 
 from bolao.scoring import pontos
 
+# Telegram user IDs are always positive. Negative IDs are seed placeholders.
+_VALID_TG_MIN = 0
+
 
 def calcular(jogos: list[dict], palpites: list[dict],
              participantes: list[dict]) -> list[dict]:
@@ -11,7 +14,7 @@ def calcular(jogos: list[dict], palpites: list[dict],
     # Placeholders criados pelo seed tem telegram_id < 0 (nunca sao usuarios reais).
     # Dupla checagem: ativo=False OU telegram_id negativo = placeholder removido.
     ativos = [p for p in participantes
-              if p.get("ativo", True) and int(p.get("telegram_id", 0)) >= 0]
+              if p.get("ativo", True) and int(p.get("telegram_id", 0)) >= _VALID_TG_MIN]
     nomes = {int(p["telegram_id"]): p.get("nome", "?") for p in ativos}
 
     encerrados = {
@@ -45,8 +48,8 @@ def calcular(jogos: list[dict], palpites: list[dict],
     for tid, e in acc.items():
         e["nome"] = nomes.get(tid, p_nome_fallback(palpites, tid))
 
-    # Descarta linhas de placeholders (telegram_id < 0)
-    acc = {tid: e for tid, e in acc.items() if tid >= 0}
+    # Descarta linhas de placeholders (telegram_id < _VALID_TG_MIN)
+    acc = {tid: e for tid, e in acc.items() if tid >= _VALID_TG_MIN}
 
     return sorted(acc.values(),
                   key=lambda e: (-e["pontos"], -e["exatos"], -e["acertos"], e["jogos"]))
