@@ -19,32 +19,130 @@ const totalPlayers = computed(() => rankingList.value.length)
 const leader = computed(() => rankingList.value[0] || null)
 
 const COLORS = ['#F7C948', '#94A3B8', '#CD7F32', '#60A5FA', '#A78BFA', '#4ADE80', '#F87171']
+const PLAYER_NAMES = ['Ricardo', 'Pajé', 'Big', 'Flávia', 'Mari Gallo', 'Mari Som', 'Lere']
 
-// Generate mock guesses for each game (replace with real cross-participant data later)
+// ── Mock: all participants' guesses for each game ──
+// Format: [playerIdx][gameId] = { a, b } or null
+function buildAllGuesses() {
+  const map = {}
+  const games = jogos.value
+  for (let pi = 0; pi < 7; pi++) {
+    map[pi] = {}
+    for (const g of games) {
+      if (g.isFinalizado) {
+        // For finalized games, determine based on quemCravou/quemVencedor
+        const name = PLAYER_NAMES[pi]
+        if ((g.quemCravou || []).includes(name)) {
+          map[pi][g.id] = g.resultado ? { a: g.resultado.goalsA, b: g.resultado.goalsB } : null
+        } else if ((g.quemVencedor || []).includes(name)) {
+          const r = g.resultado
+          if (r) {
+            // Give a non-exact result that still gets winner right
+            const shift = r.goalsA === r.goalsB ? 1 : 0
+            map[pi][g.id] = { a: r.goalsA + (shift && pi % 2 ? 1 : 0), b: r.goalsB + (shift && pi % 2 === 0 ? 1 : 0) }
+          }
+        } else {
+          map[pi][g.id] = { a: Math.floor(Math.random() * 4), b: Math.floor(Math.random() * 4) }
+        }
+      } else if (g.isBloqueado) {
+        map[pi][g.id] = { a: Math.floor(Math.random() * 3), b: Math.floor(Math.random() * 3) }
+      } else {
+        // Aberto — random guesses
+        map[pi][g.id] = Math.random() > 0.15 ? { a: Math.floor(Math.random() * 3), b: Math.floor(Math.random() * 3) } : null
+      }
+    }
+  }
+  return map
+}
+
+// ── Cross-table ──
+function scoreType(palpite, resultado) {
+  if (!palpite || !resultado) return { tipo: 'sem', pts: 0 }
+  const { goalsA: rA, goalsB: rB } = resultado
+  if (palpite.a === rA && palpite.b === rB) return { tipo: 'exato', pts: 3 }
+  const rW = rA > rB ? 'A' : rB > rA ? 'B' : 'E'
+  const pW = palpite.a > palpite.b ? 'A' : palpite.b > palpite.a ? 'B' : 'E'
+  return rW === pW ? { tipo: 'vencedor', pts: 1 } : { tipo: 'errou', pts: 0 }
+}
+function cellStyle(scored) {
+  const M = {
+    exato:    ['rgba(0,220,130,0.15)',   '#00DC82', 'rgba(0,220,130,0.3)'],
+    vencedor: ['rgba(96,165,250,0.12)',  '#60A5FA', 'rgba(96,165,250,0.22)'],
+    errou:    ['rgba(248,113,113,0.1)',  '#F87171', 'rgba(248,113,113,0.22)'],
+    bloqueado:['rgba(251,146,60,0.1)',   '#FB923C', 'rgba(251,146,60,0.22)'],
+    aberto:   ['rgba(255,255,255,0.04)', '#7A8FA0', 'rgba(255,255,255,0.1)'],
+    sem:      ['transparent',            '#2A3D52', 'rgba(255,255,255,0.05)'],
+  }
+  const [bg, color, bc] = M[scored.tipo] || M.sem
+  return { bg, color, border: '1px solid ' + bc }
+}
+
+const allGuesses = ref(null)
+const crossTableReady = ref(false)
+
+// Build guesses on first load
+import { watch } from 'vue'
+watch(() => jogos.value.length, () => {
+  if (jogos.value.length > 0 && !crossTableReady.value) {
+    allGuesses.value = buildAllGuesses()
+    crossTableReady.value = true
+  }
+}, { immediate: true })
+
+const tableHeaderPlayers = computed(() =>
+  rankingList.value.slice(0, 7).map((p, i) => ({
+    ...p,
+    initial: p.name[0],
+    avatarBg: COLORS[i % COLORS.length],
+    ptColor: i === 0 ? '#F7C948' : i === 1 ? '#94A3B8' : i === 2 ? '#CD7F32' : p.pontos >= 9 ? '#60A5FA' : '#7A8FA0',
+    onClick: () => goToPlayer(p),
+  }))
+)
+
+const activeTableRows = computed(() => {
+  if (!crossTableReady.value || !allGuesses.value) return []
+  return jogos.value.map(g => {
+    const cells = PLAYER_NAMES.map((name, pi) => {
+      const pal = (allGuesses.value[pi] || {})[g.id] || null
+      const scored = g.isFinalizado && g.resultado
+        ? scoreType(pal, g.resultado)
+        : { tipo: g.isBloqueado ? 'bloqueado' : pal ? 'aberto' : 'sem', pts: 0 }
+      const s = cellStyle(scored)
+      return { ...s, label: pal ? (pal.a + '-' + pal.b) : '—' }
+    })
+    const statusBorderColor = g.isFinalizado ? '#1E3A5F' : g.isBloqueado ? 'var(--accent-orange)' : 'var(--accent-green)'
+    return {
+      ...g,
+      cells,
+      rowBg: g.isFinalizado ? '#0A1628' : g.isBloqueado ? 'rgba(251,146,60,0.025)' : 'rgba(0,220,130,0.015)',
+      borderLeft: '3px solid ' + statusBorderColor,
+      resultText: g.resultado ? (g.resultado.goalsA + '-' + g.resultado.goalsB) : g.isBloqueado ? '⏱' : '—',
+      resultColor: g.isFinalizado ? '#EBF0F5' : g.isBloqueado ? 'var(--accent-orange)' : '#2A3D52',
+    }
+  })
+})
+
+// Generate mock guesses for each game (for two-column layout)
 function generateGuesses(game) {
-  const names = ['Ricardo', 'Pajé', 'Big', 'Flávia', 'Mari Gallo', 'Mari Som', 'Lere']
   if (game.isFinalizado) {
-    // Only show participants who had a palpite — use quemCravou + quemVencedor
     const all = [...(game.quemCravou || []), ...(game.quemVencedor || [])]
     if (all.length === 0) {
-      // Fallback: show all with mock scores
-      return names.map((n, i) => {
-        const a = Math.floor(Math.random() * 4)
-        const b = Math.floor(Math.random() * 4)
-        return { name: n, initial: n[0], avatarBg: COLORS[i % COLORS.length], label: a + '-' + b, labelColor: '#2A3D52' }
-      })
+      return PLAYER_NAMES.map((n, i) => ({
+        name: n, initial: n[0], avatarBg: COLORS[i % COLORS.length],
+        label: (Math.floor(Math.random() * 4)) + '-' + (Math.floor(Math.random() * 4)),
+        labelColor: '#2A3D52',
+      }))
     }
     return all.map((n, i) => {
-      const pIdx = names.indexOf(n)
+      const pIdx = PLAYER_NAMES.indexOf(n)
       return { name: n, initial: n[0], avatarBg: COLORS[pIdx >= 0 ? pIdx % COLORS.length : i % COLORS.length], label: '✓', labelColor: '#EBF0F5' }
     })
   }
-  // Non-finalized: show all participants
-  return names.map((n, i) => {
-    const a = Math.floor(Math.random() * 3)
-    const b = Math.floor(Math.random() * 3)
-    return { name: n, initial: n[0], avatarBg: COLORS[i % COLORS.length], label: a + '-' + b, labelColor: '#EBF0F5' }
-  })
+  return PLAYER_NAMES.map((n, i) => ({
+    name: n, initial: n[0], avatarBg: COLORS[i % COLORS.length],
+    label: (Math.floor(Math.random() * 3)) + '-' + (Math.floor(Math.random() * 3)),
+    labelColor: '#EBF0F5',
+  }))
 }
 
 const proximosJogos = computed(() =>
@@ -198,6 +296,74 @@ function goToPlayer(player) {
                 <div class="dash-scoring-row">
                   <span class="dash-scoring-icon">✗</span>
                   <span class="dash-scoring-text"><strong class="red">0</strong> erro</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cross-table header + legend -->
+        <div class="dash-table-section">
+          <div class="dash-table-header-row">
+            <p class="dash-col-label">TODOS OS PALPITES</p>
+            <div class="dash-legend">
+              <div class="dash-legend-item"><span class="dash-legend-dot" style="background:rgba(0,220,130,0.35)"></span> Exato +3</div>
+              <div class="dash-legend-item"><span class="dash-legend-dot" style="background:rgba(96,165,250,0.35)"></span> Vencedor +1</div>
+              <div class="dash-legend-item"><span class="dash-legend-dot" style="background:rgba(248,113,113,0.3)"></span> Errou</div>
+              <div class="dash-legend-item"><span class="dash-legend-dot" style="background:rgba(251,146,60,0.3)"></span> Em andamento</div>
+            </div>
+          </div>
+
+          <div class="dash-table-wrapper">
+            <div class="dash-table-inner">
+              <!-- Header row -->
+              <div class="dash-tr dash-tr-header">
+                <div class="dash-th dash-th-game">Jogo</div>
+                <div class="dash-th dash-th-group">Grupo</div>
+                <div class="dash-th dash-th-score">Placar</div>
+                <div
+                  v-for="ph in tableHeaderPlayers"
+                  :key="ph.id"
+                  class="dash-th dash-th-player"
+                  @click="ph.onClick"
+                >
+                  <div class="dash-th-avatar" :style="{ background: ph.avatarBg }">{{ ph.initial }}</div>
+                  <span class="dash-th-name">{{ ph.name }}</span>
+                  <span class="dash-th-pts" :style="{ color: ph.ptColor }">{{ ph.pontos }}<span class="dash-th-pts-label"> pts</span></span>
+                </div>
+              </div>
+              <!-- Data rows -->
+              <div
+                v-for="row in activeTableRows"
+                :key="row.id"
+                class="dash-tr dash-tr-data"
+                :style="{ background: row.rowBg }"
+              >
+                <div class="dash-td dash-td-game" :style="{ borderLeft: row.borderLeft }">
+                  <div class="dash-td-teams">
+                    <span class="dash-td-flag">{{ row.flagA }}</span>
+                    <span class="dash-td-team-name">{{ row.teamA }}</span>
+                    <span class="dash-td-vs">×</span>
+                    <span class="dash-td-team-name">{{ row.teamB }}</span>
+                    <span class="dash-td-flag">{{ row.flagB }}</span>
+                  </div>
+                  <span class="dash-td-date">{{ row.date }} · {{ row.time }}</span>
+                </div>
+                <div class="dash-td dash-td-group">
+                  <span class="dash-td-grupo-btn">{{ row.grupo }}</span>
+                </div>
+                <div class="dash-td dash-td-score">
+                  <span class="dash-td-score-text" :style="{ color: row.resultColor }">{{ row.resultText }}</span>
+                </div>
+                <div
+                  v-for="(cell, ci) in row.cells"
+                  :key="ci"
+                  class="dash-td dash-td-cell"
+                >
+                  <div
+                    class="dash-cell-palpite"
+                    :style="{ background: cell.bg, color: cell.color, border: cell.border }"
+                  >{{ cell.label }}</div>
                 </div>
               </div>
             </div>
@@ -625,4 +791,204 @@ function goToPlayer(player) {
 .dash-scoring-text .green { color: var(--accent-green); }
 .dash-scoring-text .blue { color: var(--accent-blue); }
 .dash-scoring-text .red { color: var(--accent-red); }
+
+/* ─── Cross-table ─── */
+.dash-table-section {
+  margin-top: 36px;
+}
+.dash-table-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.dash-table-header-row .dash-col-label {
+  margin-bottom: 0;
+}
+.dash-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.dash-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.dash-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dash-table-wrapper {
+  overflow-x: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+}
+.dash-table-inner {
+  min-width: 900px;
+}
+.dash-tr {
+  display: grid;
+  grid-template-columns: 210px 72px 72px repeat(7, minmax(78px, 1fr));
+}
+.dash-tr-header {
+  background: #0A1628;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+}
+.dash-tr-data {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.dash-tr-data:last-child {
+  border-bottom: none;
+}
+
+.dash-th {
+  padding: 12px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #2A3D52;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+.dash-th-game {
+  padding: 12px 14px;
+}
+.dash-th-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px 4px;
+  transition: background 0.1s;
+}
+.dash-th-player:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.dash-th-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #030B16;
+  flex-shrink: 0;
+}
+.dash-th-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-th-pts {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.dash-th-pts-label {
+  font-size: 9px;
+  color: #2A3D52;
+  font-weight: 500;
+}
+
+.dash-td {
+  padding: 12px 8px;
+  display: flex;
+  align-items: center;
+}
+.dash-td-game {
+  padding: 12px 14px 12px 11px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+}
+.dash-td-teams {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dash-td-flag {
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.dash-td-team-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.dash-td-vs {
+  font-size: 11px;
+  color: #1E3A5F;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.dash-td-date {
+  font-size: 10px;
+  color: #2A3D52;
+}
+.dash-td-group {
+  justify-content: center;
+}
+.dash-td-grupo-btn {
+  font-size: 10px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.3;
+  text-align: center;
+  cursor: pointer;
+}
+.dash-td-score {
+  justify-content: center;
+}
+.dash-td-score-text {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.dash-td-cell {
+  justify-content: center;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+.dash-cell-palpite {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  letter-spacing: 1px;
+  line-height: 1.3;
+  padding: 5px 7px;
+  border-radius: 7px;
+  min-width: 44px;
+  text-align: center;
+}
 </style>
