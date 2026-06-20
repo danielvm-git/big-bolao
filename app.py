@@ -68,6 +68,23 @@ DIST = Path(__file__).resolve().parent / 'web' / 'dist'
 VERSION = get_version()
 log.info("Serving %s on :%d (version %s)", DIST, PORT, VERSION)
 
+# Simple sliding-window rate limiter for /api/version (max 30req/min)
+_rate_limits: dict[str, list[float]] = {}
+_RATE_LIMIT_MAX = 30
+_RATE_LIMIT_WINDOW = 60.0
+
+
+def _check_rate_limit(client_ip: str) -> bool:
+    import time as _time
+    now = _time.time()
+    window_start = now - _RATE_LIMIT_WINDOW
+    timestamps = [t for t in _rate_limits.get(client_ip, []) if t > window_start]
+    _rate_limits[client_ip] = timestamps
+    if len(timestamps) >= _RATE_LIMIT_MAX:
+        return False
+    timestamps.append(now)
+    return True
+
 
 class SPAHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -76,8 +93,15 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0].lstrip('/')
 
-        # API: return version
+        # API: return version (rate-limited)
         if path == 'api/version':
+            client_ip = self.client_address[0]
+            if not _check_rate_limit(client_ip):
+                self.send_response(429)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': 'rate limit exceeded'}).encode())
+                return
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')

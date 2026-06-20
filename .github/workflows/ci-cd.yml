@@ -8,7 +8,7 @@
 # Pipeline:
 #   1. Semantic Release (commit-analyzer → version bump → GitHub Release)
 #   2. Web build (npm ci + vite build in web/)
-#   3. Python tests (pytest, 31 tests)
+#   3. Python tests (pytest, 35 tests)
 #   4. BigBase login (email/password → JWT)
 #   5. Deploy trigger (POST /api/sites/{id}/deploy → BigBase auto-deploys)
 #   6. Health check (curl site, 5 retries, 10s interval)
@@ -119,6 +119,20 @@ jobs:
           npm ci --prefer-offline
           npm run build
           echo "Web dist: $(ls dist/ 2>/dev/null | wc -l) files"
+
+      - name: Auto-commit rebuilt web/dist
+        if: steps.detect-release.outputs.new_release == 'true'
+        run: |
+          if [ -n "$(git status --porcelain web/dist/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add web/dist/
+            git commit -m "build(web): auto-commit rebuilt dist [skip ci]"
+            git push
+            echo "Committed rebuilt web/dist/"
+          else
+            echo "web/dist/ already up to date"
+          fi
 
       # -----------------------------------------------------------------------
       # Step 3: Python tests
