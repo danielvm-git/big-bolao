@@ -166,3 +166,32 @@ bugs:
     fails if either falls to white flag
   commit_message: 'fix(web): bosnia & herzegovina flag not showing — add ampersand-normalized
     form to FLAGS'
+- bug_id: BUG-2026-06-20-200000
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: bot-architecture
+  type: tech-debt
+  summary: handlers.py é god-module raso (Depth 1) — callback_data espalhado por 3
+    handlers + _montar_ranking só testável com ContextTypes vivo
+  file: specs/bugs/BUG-2026-06-20-200000-handlers-god-module.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: callback_data serializado em 3 lugares com split() sem validação;
+    _montar_ranking acoplado a ContextTypes; formatação de grupo misturada com envio
+  approach: Extrair BettingFlow (Step enum + serialize/deserialize + transition validation),
+    GroupPublisher (pure formatting), inline _montar_ranking
+  risk_level: low
+  files_changed:
+  - bolao/betting_flow.py (new)
+  - bolao/group_publisher.py (new)
+  - bolao/handlers.py
+  - bolao/bot.py
+  tests_added:
+  - tests/test_betting_flow.py (24 tests)
+  - tests/test_group_publisher.py (11 tests)
+  hardening:
+  - callback_data centralizado em BettingFlow — erro de formato retorna None
+  - Transições inválidas rejeitadas com ValueError
+  - Formatação de mensagens testável sem mock do Telegram
+  commit_message: 'refactor(bot): extract BettingFlow + GroupPublisher from handlers.py god-module'

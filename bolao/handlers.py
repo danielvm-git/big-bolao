@@ -14,7 +14,9 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from bolao import config, ranking as ranking_mod, results as results_mod
+from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
+from bolao.group_publisher import format_lembrete, format_ranking, format_resultado
 from bolao.util import (aberto_para_palpite, agora, label_jogo, label_placar)
 
 MAX_GOLS = 7  # 0..7 no seletor
@@ -110,7 +112,7 @@ async def cmd_jogos(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     for j in jogos[:30]:
         marca = "✅ " if j["match_id"] in meus else "▫️ "
         botoes.append([InlineKeyboardButton(
-            marca + label_jogo(j), callback_data=f"g|{j['match_id']}")])
+            marca + label_jogo(j), callback_data=BettingFlow.serialize(Step.ESCOLHER_JOGO, match_id=j['match_id']))])
     await update.message.reply_text(
         "Escolha um jogo pra palpitar (✅ = já palpitado):",
         reply_markup=InlineKeyboardMarkup(botoes))
@@ -135,22 +137,28 @@ async def cmd_meus(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def cmd_ranking(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    texto = await _montar_ranking(context)
-    await update.effective_message.reply_text(texto, parse_mode=ParseMode.HTML)
-
-
-async def _montar_ranking(context: ContextTypes.DEFAULT_TYPE) -> str:
     d = db(context)
-    rank = ranking_mod.calcular(await d.get_jogos(), await d.get_palpites(),
-                                await d.listar_participantes())
-    return ranking_mod.formatar(rank)
+    texto = format_ranking(await d.get_jogos(), await d.get_palpites(),
+                           await d.listar_participantes())
+    await update.effective_message.reply_text(texto, parse_mode=ParseMode.HTML)
 
 
 # ---------------- fluxo de palpite (inline) ----------------
 
-def _seletor(prefixo: str, titulo: str) -> InlineKeyboardMarkup:
-    nums = [InlineKeyboardButton(str(n), callback_data=f"{prefixo}|{n}")
-            for n in range(MAX_GOLS + 1)]
+def _seletor_gols_casa(match_id: str) -> InlineKeyboardMarkup:
+    """Seletor de 0..MAX_GOLS gols para o time da casa."""
+    nums = [InlineKeyboardButton(
+        str(n), callback_data=BettingFlow.serialize(Step.GOLS_CASA, match_id=match_id, gols=n))
+        for n in range(MAX_GOLS + 1)]
+    linhas = [nums[i:i + 4] for i in range(0, len(nums), 4)]
+    return InlineKeyboardMarkup(linhas)
+
+
+def _seletor_gols_fora(match_id: str, gc: int) -> InlineKeyboardMarkup:
+    """Seletor de 0..MAX_GOLS gols para o time visitante."""
+    nums = [InlineKeyboardButton(
+        str(n), callback_data=BettingFlow.serialize(Step.GOLS_FORA, match_id=match_id, gc=gc, gf=n))
+        for n in range(MAX_GOLS + 1)]
     linhas = [nums[i:i + 4] for i in range(0, len(nums), 4)]
     return InlineKeyboardMarkup(linhas)
 
@@ -158,40 +166,55 @@ def _seletor(prefixo: str, titulo: str) -> InlineKeyboardMarkup:
 async def cb_escolher_jogo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
     await q.answer()
-    mid = q.data.split("|", 1)[1]
+    parsed = BettingFlow.deserialize(q.data)
+    if parsed is None:
+        await q.edit_message_text("⛔ Erro no callback.", parse_mode=ParseMode.HTML)
+        return
+    mid = parsed[1]["match_id"]
     jogo = await db(context).get_jogo(mid)
     if not jogo or not aberto_para_palpite(jogo):
-        await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.")
+        await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.", parse_mode=ParseMode.HTML)
         return
     await q.edit_message_text(
         f"<b>{jogo['casa']} x {jogo['fora']}</b>\nQuantos gols do <b>{jogo['casa']}</b>?",
-        parse_mode=ParseMode.HTML, reply_markup=_seletor(f"h|{mid}", jogo["casa"]))
+        parse_mode=ParseMode.HTML, reply_markup=_seletor_gols_casa(mid))
 
 
 async def cb_gols_casa(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
     await q.answer()
-    _, mid, n = q.data.split("|")
+    parsed = BettingFlow.deserialize(q.data)
+    if parsed is None:
+        await q.edit_message_text("⛔ Erro no callback.", parse_mode=ParseMode.HTML)
+        return
+    mid = parsed[1]["match_id"]
+    gols = parsed[1]["gols"]
     jogo = await db(context).get_jogo(mid)
     if not jogo or not aberto_para_palpite(jogo):
-        await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.")
+        await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.", parse_mode=ParseMode.HTML)
         return
     await q.edit_message_text(
-        f"<b>{jogo['casa']} {n} x ? {jogo['fora']}</b>\nQuantos gols do <b>{jogo['fora']}</b>?",
-        parse_mode=ParseMode.HTML, reply_markup=_seletor(f"f|{mid}|{n}", jogo["fora"]))
+        f"<b>{jogo['casa']} {gols} x ? {jogo['fora']}</b>\nQuantos gols do <b>{jogo['fora']}</b>?",
+        parse_mode=ParseMode.HTML, reply_markup=_seletor_gols_fora(mid, gols))
 
 
 async def cb_gols_fora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     q = update.callback_query
-    _, mid, gc, gf = q.data.split("|")
+    parsed = BettingFlow.deserialize(q.data)
+    if parsed is None:
+        await q.edit_message_text("⛔ Erro no callback.", parse_mode=ParseMode.HTML)
+        return
+    mid = parsed[1]["match_id"]
+    gc = parsed[1]["gc"]
+    gf = parsed[1]["gf"]
     jogo = await db(context).get_jogo(mid)
     if not jogo or not aberto_para_palpite(jogo):
         await q.answer()
-        await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.")
+        await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.", parse_mode=ParseMode.HTML)
         return
     user = update.effective_user
     nome = user.full_name or user.username or str(user.id)
-    await db(context).salvar_palpite(mid, user.id, nome, int(gc), int(gf),
+    await db(context).salvar_palpite(mid, user.id, nome, gc, gf,
                                      agora().isoformat())
     await q.answer("Palpite salvo! ✅")
     await q.edit_message_text(
@@ -263,20 +286,17 @@ async def _publicar_resultado(context: ContextTypes.DEFAULT_TYPE, jogo: dict) ->
         return
     d = db(context)
     palp = [p for p in await d.get_palpites() if p["match_id"] == jogo["match_id"]]
-    rc, rf = int(jogo["gols_casa"]), int(jogo["gols_fora"])
-    from bolao.scoring import pontos
-    cravaram = [p["nome"] for p in palp
-                if pontos(int(p["gols_casa"]), int(p["gols_fora"]), rc, rf) == 3]
-    txt = f"⚽ <b>Fim de jogo:</b> {label_placar(jogo)}"
-    if cravaram:
-        txt += "\n🎯 Cravaram o placar: " + ", ".join(cravaram)
-    await context.bot.send_message(config.GRUPO_CHAT_ID, txt, parse_mode=ParseMode.HTML)
+    texto = format_resultado(jogo, palp)
+    await context.bot.send_message(config.GRUPO_CHAT_ID, texto, parse_mode=ParseMode.HTML)
 
 
 async def _publicar_ranking(context: ContextTypes.DEFAULT_TYPE) -> None:
     if not config.GRUPO_CHAT_ID:
         return
-    await context.bot.send_message(config.GRUPO_CHAT_ID, await _montar_ranking(context),
+    d = db(context)
+    texto = format_ranking(await d.get_jogos(), await d.get_palpites(),
+                           await d.listar_participantes())
+    await context.bot.send_message(config.GRUPO_CHAT_ID, texto,
                                    parse_mode=ParseMode.HTML)
 
 
@@ -290,10 +310,8 @@ async def _postar_lembrete(context: ContextTypes.DEFAULT_TYPE) -> None:
     me = await context.bot.get_me()
     if not proximos:
         return
-    linhas = ["📣 <b>Jogos abertos pra palpite (próximas 24h):</b>", ""]
-    linhas += [f"• {label_jogo(j)}" for j in proximos]
-    linhas += ["", f"👉 Palpite no privado: t.me/{me.username} (comando /jogos)"]
-    await context.bot.send_message(config.GRUPO_CHAT_ID, "\n".join(linhas),
+    texto = format_lembrete(proximos, me.username)
+    await context.bot.send_message(config.GRUPO_CHAT_ID, texto,
                                    parse_mode=ParseMode.HTML)
 
 

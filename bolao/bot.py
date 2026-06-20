@@ -8,6 +8,7 @@ from telegram import BotCommand
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler)
 
 from bolao import config, handlers
+from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
 
 logging.basicConfig(
@@ -59,10 +60,13 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("resultado", handlers.cmd_resultado))
     app.add_handler(CommandHandler("sync", handlers.cmd_sync))
     app.add_handler(CommandHandler("lembrete", handlers.cmd_lembrete))
-    # fluxo de palpite (callbacks)
-    app.add_handler(CallbackQueryHandler(handlers.cb_escolher_jogo, pattern=r"^g\|"))
-    app.add_handler(CallbackQueryHandler(handlers.cb_gols_casa, pattern=r"^h\|"))
-    app.add_handler(CallbackQueryHandler(handlers.cb_gols_fora, pattern=r"^f\|"))
+    # fluxo de palpite (callbacks) — patterns via BettingFlow
+    app.add_handler(CallbackQueryHandler(
+        handlers.cb_escolher_jogo, pattern=BettingFlow.pattern_for(Step.ESCOLHER_JOGO)))
+    app.add_handler(CallbackQueryHandler(
+        handlers.cb_gols_casa, pattern=BettingFlow.pattern_for(Step.GOLS_CASA)))
+    app.add_handler(CallbackQueryHandler(
+        handlers.cb_gols_fora, pattern=BettingFlow.pattern_for(Step.GOLS_FORA)))
 
     # jobs periodicos
     jq = app.job_queue
