@@ -82,4 +82,18 @@ sem bandeira), eliminando a divergência entre a cópia do frontend e a do bot.
 
 ## Resolution
 
-<!-- filled in by validate-fix -->
+**Fixed:** 2026-06-20
+**Root cause confirmed:** (1) dicionário de bandeiras do frontend não tinha chaves
+para vários países do torneio (iraq, uzbekistan, jordan, bosnia, south africa, czech
+republic, tunisia); (2) a normalização do lookup não removia pontuação, então
+"D.R. Congo" → "d.r. congo" não casava com a chave "dr congo".
+**Fix applied:** completei o dicionário `FLAGS` (EN + variantes PT) cobrindo todos os
+48 times, e tornei `_normTeam()` resiliente — agora remove pontuação e colapsa
+espaços além de tirar acentos/caixa.
+**Hardening added:** teste-guardião `coverage` que percorre toda a escalação do
+torneio e falha se QUALQUER país cair no fallback de bandeira branca — pega futuros
+times sem bandeira automaticamente. Mais testes de regressão e de robustez de
+normalização.
+**Evidence:** `cd web && node --test tests/flags.test.js` → 4/4 passam; suíte
+completa web 4/4 + python 35/35 sem regressões.
+**Commit:** `fix(web): add missing country flags + punctuation-robust lookup`
