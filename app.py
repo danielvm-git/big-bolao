@@ -50,12 +50,23 @@ def run_bot():
 
 threading.Thread(target=run_bot, daemon=True).start()
 
+# Get version from git
+def get_version():
+    try:
+        short_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'],
+                                            cwd=Path(__file__).resolve().parent,
+                                            text=True).strip()
+        return short_hash
+    except Exception:
+        return 'unknown'
+
 # Serve web/dist/ as SPA on $PORT (BigBase health-checks this)
 import http.server, socketserver
 
 PORT = int(os.environ.get('PORT', 3000))
 DIST = Path(__file__).resolve().parent / 'web' / 'dist'
-log.info("Serving %s on :%d", DIST, PORT)
+VERSION = get_version()
+log.info("Serving %s on :%d (version %s)", DIST, PORT, VERSION)
 
 
 class SPAHandler(http.server.SimpleHTTPRequestHandler):
@@ -64,6 +75,17 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split('?')[0].lstrip('/')
+
+        # API: return version
+        if path == 'api/version':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'version': VERSION}).encode())
+            return
+
+        # SPA: serve files or fallback to index.html
         full = DIST / path
         if not full.exists() or full.is_dir():
             self.path = '/index.html'

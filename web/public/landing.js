@@ -37,3 +37,17 @@ function alignInk(){
     if(isFinite(abl)) el.style.marginLeft=abl.toFixed(2)+'px';
   });
 }
+
+
+// Fetch and display version in footer
+fetch('/api/version')
+  .then(r => r.json())
+  .then(data => {
+    const el = document.getElementById('version-text');
+    if (el) el.textContent = `v${data.version} · bolao.bigbase.click`;
+  })
+  .catch(() => {
+    // Fallback if API fails
+    const el = document.getElementById('version-text');
+    if (el) el.textContent = 'bolao.bigbase.click';
+  });
