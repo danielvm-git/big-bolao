@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/danielvm-git/big-bolao/compare/v1.3.2...v1.3.3) (2026-06-20)
+
+
+### Bug Fixes
+
+* **version:** inject app version into HTML to bypass BigBase SPA interception ([b5e749e](https://github.com/danielvm-git/big-bolao/commit/b5e749e220eb1fb8db4a1327c922901650c9d289))
+
 ## [1.3.2](https://github.com/danielvm-git/big-bolao/compare/v1.3.1...v1.3.2) (2026-06-20)
 
 
