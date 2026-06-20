@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/danielvm-git/big-bolao/compare/v1.7.0...v1.7.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **web:** Bosnia & Herzegovina flag not showing — add ampersand-normalized FLAGS key ([c647317](https://github.com/danielvm-git/big-bolao/commit/c6473171aa4b6e1c438a9ee12140d070dc72f5cf))
+
 # [1.7.0](https://github.com/danielvm-git/big-bolao/compare/v1.6.0...v1.7.0) (2026-06-20)
 
 
