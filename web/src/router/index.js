@@ -5,4 +5,5 @@ export default [
   { path: '/ranking', name: 'Ranking', component: () => import('../views/RankingView.vue') },
   { path: '/meus', name: 'MeusPalpites', component: () => import('../views/MeusPalpitesView.vue') },
   { path: '/resultado/:id', name: 'Resultado', component: () => import('../views/ResultadoView.vue') },
+  { path: '/dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
 ]
