@@ -10,12 +10,37 @@ Telegram bot + Vue SPA bolão (football pool) for Copa do Mundo 2026.
 ## Deploy to BigBase
 
 ### Preferred: MCP tools (fastest)
-If the agent has access to BigBase MCP (bigbase.click/.well-known/mcp.json):
+Uses `pi-mcp-adapter` extension + `.mcp.json` config to talk to BigBase MCP server.
+
+**Setup (one-time):**
+```bash
+pi install npm:pi-mcp-adapter
 ```
-deploy_site(repo_id="04c58b9df51405ee33378c2539f9ea68", branch="main")
-get_deploy_status(deployment_id="<id>")
-get_deploy_logs(deployment_id="<id>")
+Place a valid JWT in env var `BIGBASE_MCP_TOKEN` (get via `POST /api/auth/login` with service account credentials).
+
+**Available MCP tools (mcp.bigbase.click):**
+| Tool | Description |
+|------|-------------|
+| `ping` | Health check |
+| `list_services` | Browse service catalog |
+| `get_service_docs` | Get docs for a service |
+| `list_frameworks` | List supported frameworks |
+| `get_code_example` | Get framework-specific code snippet |
+| `list_repos` | List repos |
+| `deploy_site` | Deploy a site (`repo_id`, `branch`) |
+| `get_deploy_status` | Check deploy status (`deployment_id`) |
+| `get_deploy_logs` | Get deploy logs (`deployment_id`) |
+| `deploy_guide` | Full deploy guide |
+
+**Usage via MCP proxy:**
 ```
+mcp({ search: "deploy" })              # discover
+mcp({ tool: "deploy_site", args: '{"repo_id":"04c58b9df51405ee33378c2539f9ea68","branch":"main"}' })
+mcp({ tool: "get_deploy_status", args: '{"deployment_id":"<id>"}' })
+mcp({ tool: "get_deploy_logs", args: '{"deployment_id":"<id>"}' })
+```
+
+**Config:** `.mcp.json` at project root connects to `mcp.bigbase.click/mcp` with bearer auth.
 
 ### Alternative: redeploy script
 ```bash
