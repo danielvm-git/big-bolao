@@ -7,21 +7,30 @@
  */
 
 const BB = {
-  // Em dev o Vite proxy encaminha /api → bigbase.click
-  // Em producao (BigBase deploy) o site ja esta na mesma origem
-  url: import.meta.env.PROD ? '' : '',
-  token: import.meta.env.VITE_BIGBASE_TOKEN || '',
+  url: '',
+  _token: null,
 
-  _headers() {
+  async _ensureToken() {
+    if (BB._token) return
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'bolao-bot@bigbase.local', password: 'bolao-bot-secure-password-2026' }),
+    })
+    if (r.ok) BB._token = (await r.json()).token
+  },
+
+  async _headers() {
+    await BB._ensureToken()
     return {
       'Content-Type': 'application/json',
-      ...(BB.token ? { Authorization: `Bearer ${BB.token}` } : {}),
+      ...(BB._token ? { Authorization: `Bearer ${BB._token}` } : {}),
     }
   },
 
   async _fetch(path, opts = {}) {
     const res = await fetch(`${BB.url}${path}`, {
-      headers: BB._headers(),
+      headers: await BB._headers(),
       ...opts,
     })
     if (!res.ok) {
