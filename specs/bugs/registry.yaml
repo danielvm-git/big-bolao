@@ -109,3 +109,18 @@ bugs:
   approach: Adicionar varredura de placeholders (telegram_id < 0) antes de criar,
     vinculando por substring do nome
   risk_level: low
+- bug_id: BUG-2026-06-20-143237
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: web-dashboard
+  summary: Bandeiras de alguns países não aparecem (Iraq, Uzbekistan, Jordan, D.R.
+    Congo) — fallback de bandeira branca renderiza como documento em branco
+  file: specs/bugs/BUG-2026-06-20-143237-missing-country-flags.md
+  status: open
+  root_cause: 'Duas causas: (1) dicionário de bandeiras do frontend é cópia incompleta
+    do mapa do bot — faltam chaves (iraq, uzbekistan, jordan, etc.); (2) normalização
+    do lookup não remove pontuação, então "D.R. Congo" não casa com a chave "dr congo"'
+  approach: Completar dicionário com todos os países do torneio + normalização
+    resiliente a pontuação/espaços; teste-guardião cobrindo todo o calendário
+  risk_level: low
