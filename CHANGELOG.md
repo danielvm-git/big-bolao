@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/danielvm-git/big-bolao/compare/v1.3.3...v1.3.4) (2026-06-20)
+
+
+### Bug Fixes
+
+* **bot:** retry with backoff on Conflict during deploy ([faf2d92](https://github.com/danielvm-git/big-bolao/commit/faf2d9215142cdd47481b5044b804513b1b61b37))
+
 ## [1.3.3](https://github.com/danielvm-git/big-bolao/compare/v1.3.2...v1.3.3) (2026-06-20)
 
 
