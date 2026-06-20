@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/danielvm-git/big-bolao/compare/v1.1.1...v1.2.0) (2026-06-20)
+
+
+### Features
+
+* **footer:** add 'Built with' and Changelog link ([51d7f87](https://github.com/danielvm-git/big-bolao/commit/51d7f87df6f815c17cf2e5b170b224a268f5df63))
+
 ## [1.1.1](https://github.com/danielvm-git/big-bolao/compare/v1.1.0...v1.1.1) (2026-06-20)
 
 
