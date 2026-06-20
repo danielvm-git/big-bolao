@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/danielvm-git/big-bolao/compare/v1.6.0...v1.7.0) (2026-06-20)
+
+
+### Features
+
+* **web:** generate PWA icons with the football + maskable support ([ccdf316](https://github.com/danielvm-git/big-bolao/commit/ccdf31635fcbf85568c4ee4cc10f0a7205172232))
+
 # [1.6.0](https://github.com/danielvm-git/big-bolao/compare/v1.5.0...v1.6.0) (2026-06-20)
 
 
