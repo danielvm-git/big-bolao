@@ -25,6 +25,11 @@ function goHome() {
 function goBack() {
   page.value = 'landing'
 }
+
+function goToPlayer(player) {
+  // Will navigate to player detail view in e03-s05
+  console.log('Player:', player)
+}
 </script>
 
 <template>
@@ -57,12 +62,21 @@ function goBack() {
     <main class="dash-main">
       <!-- LANDING -->
       <div v-if="page === 'landing'" class="dash-landing">
-        <p class="dash-placeholder">Dashboard vazio — conteúdo virá nas próximas stories</p>
-        <p class="dash-stats-line">
-          {{ totalPlayers }} participantes · {{ finalizadoCount }} jogos finalizados · {{ abertoCount }} abertos para palpitar
-        </p>
-        <div v-if="leader" class="dash-leader-card">
-          🏆 Líder: <strong>{{ leader.name }}</strong> · {{ leader.pontos }} pts
+        <!-- Hero -->
+        <div class="dash-hero">
+          <div>
+            <h1 class="dash-hero-title">Bolão da Copa 2026</h1>
+            <p class="dash-hero-subtitle">
+              {{ totalPlayers }} participantes · {{ finalizadoCount }} jogos finalizados · {{ abertoCount }} abertos para palpitar
+            </p>
+          </div>
+          <div v-if="leader" class="dash-leader-card" @click="goToPlayer(leader)">
+            <span class="dash-leader-icon">🏆</span>
+            <div>
+              <p class="dash-leader-label">Líder atual</p>
+              <p class="dash-leader-name">{{ leader.name }} · {{ leader.pontos }} pts</p>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -178,26 +192,56 @@ function goBack() {
 .dash-landing {
   animation: fadeInUp 0.3s ease;
 }
-.dash-placeholder {
-  font-size: 18px;
-  color: var(--text-secondary);
-  text-align: center;
-  padding: 60px 0 20px;
+
+/* ─── Hero ─── */
+.dash-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
 }
-.dash-stats-line {
+.dash-hero-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.7px;
+}
+.dash-hero-subtitle {
   font-size: 14px;
   color: var(--text-secondary);
-  text-align: center;
-  margin-bottom: 16px;
+  margin-top: 5px;
 }
 .dash-leader-card {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   background: rgba(247, 201, 72, 0.08);
   border: 1px solid rgba(247, 201, 72, 0.18);
   border-radius: 12px;
   padding: 10px 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.dash-leader-card:hover {
+  background: rgba(247, 201, 72, 0.14);
+}
+.dash-leader-icon {
+  font-size: 20px;
+}
+.dash-leader-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 3px;
+}
+.dash-leader-name {
   font-size: 14px;
+  font-weight: 700;
   color: var(--text-primary);
-  text-align: center;
 }
 </style>
