@@ -1,16 +1,8 @@
-/**
- * BigBase API client for the Bolão web app.
- *
- * Calls BigBase REST API directly using a JWT token.
- * For production, this will use magic-link auth + BigBase Functions.
- * For dev/testing, uses a service-account JWT from env vars.
- */
-
+// BigBase API client — auto-authenticates with service account
 const BB = {
-  url: '',
   _token: null,
 
-  async _ensureToken() {
+  async _auth() {
     if (BB._token) return
     const r = await fetch('/api/auth/login', {
       method: 'POST',
@@ -20,163 +12,136 @@ const BB = {
     if (r.ok) BB._token = (await r.json()).token
   },
 
-  async _headers() {
-    await BB._ensureToken()
-    return {
-      'Content-Type': 'application/json',
-      ...(BB._token ? { Authorization: `Bearer ${BB._token}` } : {}),
-    }
+  async get(path) {
+    await BB._auth()
+    const r = await fetch(path, { headers: { Authorization: `Bearer ${BB._token}` } })
+    if (!r.ok) throw new Error(`${r.status} ${path}`)
+    return r.json()
   },
 
-  async _fetch(path, opts = {}) {
-    const res = await fetch(`${BB.url}${path}`, {
-      headers: await BB._headers(),
-      ...opts,
-    })
-    if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      throw new Error(`BigBase ${res.status}: ${body.slice(0, 200)}`)
-    }
-    return res.json()
-  },
-
-  /** List all records in a collection */
-  async list(collection) {
-    const res = await BB._fetch(`/api/collections/${collection}?limit=500`)
-    return res.data || []
-  },
-
-  /** Run a read-only SQL query */
-  async sql(query) {
-    const res = await BB._fetch('/api/sql', {
+  async post(path, body) {
+    await BB._auth()
+    const r = await fetch(path, {
       method: 'POST',
-      body: JSON.stringify({ query }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BB._token}` },
+      body: JSON.stringify(body),
     })
-    // /api/sql returns { columns: [...], rows: [...] }
-    const cols = res.columns || []
-    const rows = res.rows || []
-    // If rows are objects, use as-is; otherwise zip with columns
-    return rows.length && typeof rows[0] === 'object'
-      ? rows
-      : rows.map(row => Object.fromEntries(cols.map((c, i) => [c, row[i]])))
+    if (!r.ok) throw new Error(`${r.status} ${path}`)
+    return r.json()
   },
 
-  /** Create a record in a collection */
-  async create(collection, data) {
-    const res = await BB._fetch(`/api/collections/${collection}`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    })
-    return res.id
-  },
-
-  /** Patch a record */
-  async patch(collection, id, data) {
-    await BB._fetch(`/api/collections/${collection}/${id}`, {
+  async patch(path, body) {
+    await BB._auth()
+    const r = await fetch(path, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BB._token}` },
+      body: JSON.stringify(body),
     })
+    if (!r.ok) throw new Error(`${r.status} ${path}`)
   },
 }
 
-// ─── High-level API ───────────────────────────────────────────
+async function list(col) {
+  const d = await BB.get(`/api/collections/${col}?limit=1000`)
+  return d.data || []
+}
 
 export async function fetchJogos() {
-  const rows = await BB.list('jogos')
+  const rows = await list('jogos')
   return rows.sort((a, b) => (a.kickoff || '').localeCompare(b.kickoff || ''))
 }
 
 export async function fetchParticipantes() {
-  return BB.list('participantes')
-}
-
-export async function fetchPalpites(telegramId) {
-  const all = await BB.list('palpites')
-  return all
-    .filter(p => Number(p.telegram_id) === Number(telegramId))
-    .map(p => ({ ...p, _rowid: p.id }))
+  return list('participantes')
 }
 
 export async function fetchAllPalpites() {
-  return BB.list('palpites')
+  return list('palpites')
+}
+
+export async function fetchPalpitesDoUsuario(telegramId) {
+  const all = await list('palpites')
+  return all.filter(p => Number(p.telegram_id) === Number(telegramId))
 }
 
 export async function savePalpite(matchId, telegramId, nome, golsCasa, golsFora) {
-  // Check if prediction already exists (fetch all, filter client-side)
-  const all = await BB.list('palpites')
-  const existing = all.find(
-    p => String(p.match_id) === String(matchId) &&
-         Number(p.telegram_id) === Number(telegramId)
-  )
-
-  const payload = {
-    match_id: matchId,
-    telegram_id: Number(telegramId),
-    nome,
-    gols_casa: golsCasa,
-    gols_fora: golsFora,
-    atualizado_em: new Date().toISOString(),
-  }
-
-  if (existing) {
-    await BB.patch('palpites', existing.id, payload)
-  } else {
-    await BB.create('palpites', payload)
-  }
+  const all = await list('palpites')
+  const ex = all.find(p => String(p.match_id) === String(matchId) && Number(p.telegram_id) === Number(telegramId))
+  const payload = { match_id: matchId, telegram_id: Number(telegramId), nome, gols_casa: golsCasa, gols_fora: golsFora, atualizado_em: new Date().toISOString() }
+  if (ex) await BB.patch(`/api/collections/palpites/${ex.id}`, payload)
+  else await BB.post('/api/collections/palpites', payload)
 }
 
-// ─── Pontuação (client-side mirror of bolao/scoring.py) ──────
-
-export function calcPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
-  if (palpiteCasa === realCasa && palpiteFora === realFora) return 3
-  const sinal = (a, b) => (a > b ? 1 : a < b ? -1 : 0)
-  if (sinal(palpiteCasa, palpiteFora) === sinal(realCasa, realFora)) return 1
-  return 0
+export async function findUser(telegramId) {
+  const parts = await list('participantes')
+  return parts.find(p => Number(p.telegram_id) === Number(telegramId)) || null
 }
 
-// ─── Ranking (client-side mirror of bolao/ranking.py) ─────────
+// Scoring
+export function calcPontos(pa, pb, ra, rb) {
+  if (pa === ra && pb === rb) return 3
+  const s = (x, y) => x > y ? 1 : x < y ? -1 : 0
+  return s(pa, pb) === s(ra, rb) ? 1 : 0
+}
 
 export function calcRanking(jogos, palpites, participantes) {
-  // Only active participants with real telegram_ids
   const ativos = participantes.filter(p => p.ativo !== false && Number(p.telegram_id) > 0)
-  const nomes = {}
-  for (const p of ativos) {
-    nomes[Number(p.telegram_id)] = p.nome || '?'
-  }
-
-  const encerrados = {}
+  const nomes = Object.fromEntries(ativos.map(p => [Number(p.telegram_id), p.nome || '?']))
+  const enc = {}
   for (const j of jogos) {
-    if (j.status === 'encerrado' && j.gols_casa != null) {
-      encerrados[j.match_id] = [Number(j.gols_casa), Number(j.gols_fora)]
-    }
+    if (j.status === 'encerrado' && j.gols_casa != null)
+      enc[j.match_id] = [Number(j.gols_casa), Number(j.gols_fora)]
   }
-
   const acc = {}
   for (const p of palpites) {
-    if (!encerrados[p.match_id]) continue
     const tid = Number(p.telegram_id)
-    if (!nomes[tid]) continue  // skip palpites from inactive/unknown participants
-    const [rc, rf] = encerrados[p.match_id]
-    const pts = calcPontos(Number(p.gols_casa), Number(p.gols_fora), rc, rf)
-    const e = acc[tid] || (acc[tid] = { telegram_id: tid, pontos: 0, exatos: 0, acertos: 0, jogos: 0 })
+    if (!nomes[tid] || !enc[p.match_id]) continue
+    const [ra, rb] = enc[p.match_id]
+    const pts = calcPontos(Number(p.gols_casa), Number(p.gols_fora), ra, rb)
+    const e = acc[tid] || (acc[tid] = { telegram_id: tid, nome: nomes[tid], pontos: 0, exatos: 0, acertos: 0 })
     e.pontos += pts
-    e.jogos += 1
     if (pts === 3) e.exatos++
     if (pts >= 1) e.acertos++
   }
-
-  // Ensure all active participants appear
-  for (const [tid] of Object.entries(nomes)) {
-    if (!acc[tid]) acc[tid] = { telegram_id: Number(tid), pontos: 0, exatos: 0, acertos: 0, jogos: 0 }
+  for (const tid of Object.keys(nomes)) {
+    if (!acc[tid]) acc[Number(tid)] = { telegram_id: Number(tid), nome: nomes[tid], pontos: 0, exatos: 0, acertos: 0 }
   }
-
-  for (const [tid, e] of Object.entries(acc)) {
-    e.nome = nomes[Number(tid)] || String(tid)
-  }
-
-  return Object.values(acc).sort((a, b) =>
-    b.pontos - a.pontos || b.exatos - a.exatos || a.nome.localeCompare(b.nome)
-  )
+  return Object.values(acc).sort((a, b) => b.pontos - a.pontos || b.exatos - a.exatos || a.nome.localeCompare(b.nome))
 }
 
-export { BB }
+// Flags
+const FLAGS = {
+  brazil:'🇧🇷',brasil:'🇧🇷',argentina:'🇦🇷',mexico:'🇲🇽','estados unidos':'🇺🇸',usa:'🇺🇸',canada:'🇨🇦',
+  germany:'🇩🇪',alemanha:'🇩🇪',spain:'🇪🇸',espanha:'🇪🇸',france:'🇫🇷',franca:'🇫🇷',england:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  portugal:'🇵🇹',netherlands:'🇳🇱','paises baixos':'🇳🇱',belgium:'🇧🇪',belgica:'🇧🇪',
+  italy:'🇮🇹',italia:'🇮🇹',croatia:'🇭🇷',croacia:'🇭🇷',uruguay:'🇺🇾',uruguai:'🇺🇾',
+  colombia:'🇨🇴',ecuador:'🇪🇨',equador:'🇪🇨',paraguay:'🇵🇾',paraguai:'🇵🇾',chile:'🇨🇱',
+  morocco:'🇲🇦',marrocos:'🇲🇦',senegal:'🇸🇳',algeria:'🇩🇿',argelia:'🇩🇿',
+  'ivory coast':'🇨🇮','costa do marfim':'🇨🇮',ghana:'🇬🇭',gana:'🇬🇭',
+  japan:'🇯🇵',japao:'🇯🇵','south korea':'🇰🇷','coreia do sul':'🇰🇷',
+  'saudi arabia':'🇸🇦','arabia saudita':'🇸🇦',australia:'🇦🇺',iran:'🇮🇷',
+  sweden:'🇸🇪',suecia:'🇸🇪',norway:'🇳🇴',noruega:'🇳🇴',switzerland:'🇨🇭',suica:'🇨🇭',
+  turkey:'🇹🇷',turquia:'🇹🇷',austria:'🇦🇹',scotland:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',escocia:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  haiti:'🇭🇹',curacao:'🇨🇼','cape verde':'🇨🇻','cabo verde':'🇨🇻',panama:'🇵🇦',
+  qatar:'🇶🇦',catar:'🇶🇦','new zealand':'🇳🇿','nova zelandia':'🇳🇿',
+  'dr congo':'🇨🇩','republica democratica do congo':'🇨🇩',egypt:'🇪🇬',egito:'🇪🇬',
+}
+
+export function flag(team) {
+  if (!team) return '🏳️'
+  const k = team.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return FLAGS[k] || '🏳️'
+}
+
+export function fmtDate(iso) {
+  if (!iso) return ''
+  const [,m,d] = iso.split('T')[0].split('-')
+  return `${d}/${m}`
+}
+export function fmtTime(iso) {
+  if (!iso) return ''
+  return iso.split('T')[1]?.slice(0,5) || ''
+}
+
+const COLORS = ['#F7C948','#94A3B8','#CD7F32','#60A5FA','#A78BFA','#4ADE80','#F87171','#FB923C']
+export function avatarColor(i) { return COLORS[i % COLORS.length] }

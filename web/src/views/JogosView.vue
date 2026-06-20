@@ -1,138 +1,131 @@
 <script setup>
-import { ref } from 'vue'
-import { useJogos } from '../composables/useJogos.js'
-import GameCard from '../components/GameCard.vue'
-import PalpiteModal from '../components/PalpiteModal.vue'
+import { ref, computed } from 'vue'
+import { jogosRich, palpitesIdx, loaded, user, reloadPalpites } from '../store.js'
+import { savePalpite } from '../api.js'
 
-const { jogosFiltrados, filtro, setFiltro } = useJogos()
-const palpiteTarget = ref(null)
-const showModal = ref(false)
+const modal = ref(null) // { jogo, goalsA, goalsB }
+const saving = ref(false)
 
-const filtros = [
-  { key: 'abertos', label: 'Abertos' },
-  { key: 'meus', label: 'Meus palpites' },
-  { key: 'finalizados', label: 'Finalizados' },
-  { key: 'todos', label: 'Todos' },
-]
+const jogosAbertos = computed(() => jogosRich.value.filter(g => g.isAberto))
 
-function openPalpite(game) {
-  palpiteTarget.value = game
-  showModal.value = true
+function myPalpite(matchId) {
+  if (!user.value) return null
+  return palpitesIdx.value[matchId]?.[Number(user.value.telegram_id)] || null
 }
-function closeModal() {
-  showModal.value = false
-  palpiteTarget.value = null
+
+function openModal(jogo) {
+  const pal = myPalpite(jogo.match_id)
+  modal.value = { jogo, goalsA: pal?.a ?? 0, goalsB: pal?.b ?? 0 }
 }
-function onSaved() {
-  closeModal()
+
+function closeModal() { modal.value = null }
+
+async function saveCurrent() {
+  if (!modal.value || !user.value) return
+  saving.value = true
+  const { jogo, goalsA, goalsB } = modal.value
+  await savePalpite(jogo.match_id, user.value.telegram_id, user.value.nome, goalsA, goalsB)
+  await reloadPalpites()
+  saving.value = false
+  modal.value = null
 }
 </script>
 
 <template>
-  <div class="scroll-content">
-    <div class="page-header">
-      <h2 class="page-title">⚽ Jogos</h2>
-      <p class="page-subtitle">Copa do Mundo 2026</p>
+  <div class="page page-narrow fade-in">
+    <div v-if="!loaded" class="text-center mt-6" style="padding-top:60px">
+      <div class="spinner"></div>
+      <p class="text-2 mt-3">Carregando...</p>
     </div>
 
-    <!-- Filter tabs -->
-    <div class="filter-bar">
-      <button
-        v-for="f in filtros"
-        :key="f.key"
-        class="filter-btn"
-        :class="{ active: filtro === f.key }"
-        @click="setFiltro(f.key)"
-      >{{ f.label }}</button>
-    </div>
+    <template v-else>
+      <!-- Auth banner if not logged in -->
+      <div v-if="!user" class="auth-banner mt-4">
+        <p>📱 Para palpitar, abra o link enviado pelo bot no Telegram.<br>
+          <span style="font-size:12px;margin-top:4px;display:block">
+            O link tem o formato: bolao.bigbase.click?uid=SEU_ID
+          </span>
+        </p>
+      </div>
 
-    <!-- Games list -->
-    <div class="games-list">
-      <GameCard
-        v-for="game in jogosFiltrados"
-        :key="game.id"
-        :game="game"
-        @palpitar="openPalpite"
-      />
-    </div>
+      <!-- User badge -->
+      <div v-else class="flex items-center gap-2 mt-4 mb-2"
+        style="background:rgba(0,220,130,.06);border:1px solid rgba(0,220,130,.15);
+          border-radius:10px;padding:10px 14px">
+        <span style="font-size:20px">👋</span>
+        <span class="font-bold">{{ user.nome }}</span>
+        <span class="text-2 text-sm">— seus palpites</span>
+      </div>
 
-    <!-- Empty state -->
-    <div v-if="jogosFiltrados.length === 0" class="empty-state">
-      <p class="empty-icon">🏟️</p>
-      <p class="empty-title">Nenhum jogo aqui</p>
-      <p class="empty-desc">Tente outro filtro.</p>
-    </div>
+      <p class="section-title mt-4">{{ jogosAbertos.length }} jogos abertos</p>
 
-    <div class="spacer" />
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+        <div v-for="g in jogosAbertos" :key="g.match_id" class="game-card">
+          <div class="game-head">
+            <span class="game-status status-aberto">Aberto</span>
+            <span class="text-2" style="font-size:12px">{{ g.date }} · {{ g.time }} · {{ g.grupo }}</span>
+          </div>
+          <div class="game-teams">
+            <div class="game-team">
+              <span class="game-flag">{{ g.flagA }}</span>
+              <span class="game-name">{{ g.casa }}</span>
+            </div>
+            <span class="game-score" style="color:var(--text-3)">×</span>
+            <div class="game-team right">
+              <span class="game-name">{{ g.fora }}</span>
+              <span class="game-flag">{{ g.flagB }}</span>
+            </div>
+          </div>
+          <!-- My palpite -->
+          <button
+            v-if="user"
+            class="palpite-btn"
+            :class="{ saved: !!myPalpite(g.match_id) }"
+            @click="openModal(g)"
+          >
+            <span v-if="myPalpite(g.match_id)">
+              ✓ {{ myPalpite(g.match_id).a }}–{{ myPalpite(g.match_id).b }} · Editar
+            </span>
+            <span v-else>Palpitar →</span>
+          </button>
+        </div>
+      </div>
+    </template>
+
+    <!-- Modal -->
+    <teleport to="body">
+      <div v-if="modal" class="modal-bg" @click.self="closeModal">
+        <div class="modal" style="position:relative">
+          <button class="modal-close" @click="closeModal">✕</button>
+          <p class="modal-title">Seu palpite</p>
+          <div class="modal-teams">
+            <div class="modal-team">
+              <div class="modal-flag">{{ modal.jogo.flagA }}</div>
+              <div class="modal-name">{{ modal.jogo.casa }}</div>
+            </div>
+            <div class="modal-score">
+              <div class="score-col">
+                <button class="score-btn" @click="modal.goalsA = Math.min(20, modal.goalsA + 1)">+</button>
+                <div class="score-val">{{ modal.goalsA }}</div>
+                <button class="score-btn" @click="modal.goalsA = Math.max(0, modal.goalsA - 1)">−</button>
+              </div>
+              <div class="score-sep">×</div>
+              <div class="score-col">
+                <button class="score-btn" @click="modal.goalsB = Math.min(20, modal.goalsB + 1)">+</button>
+                <div class="score-val">{{ modal.goalsB }}</div>
+                <button class="score-btn" @click="modal.goalsB = Math.max(0, modal.goalsB - 1)">−</button>
+              </div>
+            </div>
+            <div class="modal-team">
+              <div class="modal-flag">{{ modal.jogo.flagB }}</div>
+              <div class="modal-name">{{ modal.jogo.fora }}</div>
+            </div>
+          </div>
+          <button class="modal-save" :disabled="saving" @click="saveCurrent">
+            {{ saving ? 'Salvando...' : 'Salvar palpite' }}
+          </button>
+        </div>
+      </div>
+    </teleport>
   </div>
-
-  <PalpiteModal
-    v-if="showModal && palpiteTarget"
-    :game="palpiteTarget"
-    @close="closeModal"
-    @saved="onSaved"
-  />
 </template>
-
-<style scoped>
-.scroll-content {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.page-header {
-  padding: 22px 20px 0;
-}
-.page-title {
-  font-size: 26px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5px;
-}
-.page-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  padding: 14px 20px 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.filter-btn {
-  flex-shrink: 0;
-  padding: 9px 18px;
-  border-radius: 22px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
-  background: rgba(255,255,255,0.07);
-  color: var(--text-secondary);
-  transition: all 0.15s;
-}
-.filter-btn.active {
-  background: var(--accent-green);
-  color: #060E1C;
-}
-.games-list {
-  padding: 8px 20px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.empty-state {
-  text-align: center;
-  padding: 52px 24px;
-}
-.empty-icon { font-size: 52px; margin-bottom: 16px; }
-.empty-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #B0B8C4;
-  margin-bottom: 8px;
-}
-.empty-desc { font-size: 14px; color: var(--text-secondary); }
-.spacer { height: 20px; }
-</style>
