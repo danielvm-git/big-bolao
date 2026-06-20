@@ -2,6 +2,6 @@
   "name": "big-bolao-web",
   "private": true,
   "scripts": {
-    "build": "cd web && npm install && npm run build && cp -r dist/ ../dist/"
+    "build": "npm --prefix web install && npm --prefix web run build"
   }
 }
