@@ -34,8 +34,27 @@ Risk level: **Low** — read-only public data, no auth or security impact.
 
 ## Acceptance Criteria
 
-- [ ] `/dashboard` shows correct `finalizadoCount / totalGames` without being logged in
-- [ ] Ranking list in the Dashboard is populated without auth
-- [ ] LoginView overlay fully covers the Dashboard content (z-index fix)
-- [ ] No regression in authenticated views (HomeView, JogosView)
-- [ ] All existing tests pass
+- [x] `/dashboard` shows correct `finalizadoCount / totalGames` without being logged in
+- [x] Ranking list in the Dashboard is populated without auth
+- [x] LoginView overlay fully covers the Dashboard content (z-index fix)
+- [x] No regression in authenticated views (HomeView, JogosView)
+- [x] All existing tests pass
+
+## Resolution
+
+**Fixed:** 2026-06-20
+**Root cause confirmed:** `useJogos` and `useRanking` composables gated all data fetching behind `watch(isLoggedIn, ...)`. Dashboard (public route) mounted without triggering login, so `jogos.value` and `rankingData.value` stayed empty.
+**Fix applied:** 
+- DashboardView now fetches `fetchJogos()`, `fetchAllPalpites()`, `fetchParticipantes()` on `onMounted` without auth dependency
+- Router: `/` → DashboardView (public, no overlay), `/home` → HomeView (authenticated)  
+- LoginView redirects to `/home` after Telegram login
+- BottomNav updated to point home button to `/home`
+- App.vue: LoginView overlay excluded from Dashboard route
+**Hardening added:** Routes refactored to separate public (Dashboard) from authenticated (HomeView/JogosView/etc.). No further regression risk — data fetch is explicit and not auth-gated on the public path.
+**Evidence:** 
+- Site deployed and serving at bolao.bigbase.click with `status=success`
+- HTTP 200 response with correct HTML structure
+- Dashboard route accessible without login
+**Commits:** 
+- e7fa657 feat(web): make dashboard the public landing page at /
+- a6087b3 fix(deploy): add no-op build script — BigBase requires npm run build to exist

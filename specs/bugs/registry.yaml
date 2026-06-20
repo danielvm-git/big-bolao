@@ -57,10 +57,18 @@ bugs:
     scope: web-dashboard
     summary: "Dashboard shows 0/0 jogos finalizados — useJogos/useRanking gate on isLoggedIn, never fetch for public view"
     file: specs/bugs/BUG-2026-06-19-215300-dashboard-zero-jogos.md
-    status: open
+    status: fixed
+    fixed_date: "2026-06-20"
     root_cause: "useJogos and useRanking only fetch when isLoggedIn fires; DashboardView is public but data never loads without auth"
-    approach: "DashboardView fetches jogos + ranking directly on onMounted, bypassing auth gate; raise LoginView z-index to 110"
+    approach: "DashboardView fetches jogos + ranking directly on onMounted, bypassing auth gate; / → Dashboard (public), /home → HomeView (auth)"
     risk_level: low
+    files_changed:
+      - web/src/router/index.js
+      - web/src/App.vue
+      - web/src/views/DashboardView.vue
+      - web/src/views/LoginView.vue
+      - web/src/components/BottomNav.vue
+    commit_message: "feat(web): make dashboard the public landing page at /"
 
   - bug_id: BUG-2026-06-19-190000
     date: "2026-06-19"
