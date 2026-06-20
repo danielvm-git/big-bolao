@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/danielvm-git/big-bolao/compare/v1.2.0...v1.3.0) (2026-06-20)
+
+
+### Features
+
+* **footer:** add clickable links and BigPowers branding ([cf47d51](https://github.com/danielvm-git/big-bolao/commit/cf47d514caa7a4169a8ea98509f76f4183702ff5))
+
 # [1.2.0](https://github.com/danielvm-git/big-bolao/compare/v1.1.1...v1.2.0) (2026-06-20)
 
 
