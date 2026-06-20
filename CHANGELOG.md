@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/danielvm-git/big-bolao/compare/v1.3.0...v1.3.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **footer:** use app-version.json endpoint ([ab19234](https://github.com/danielvm-git/big-bolao/commit/ab19234b57cc0832600b26a2107af3c1ee051456))
+
 # [1.3.0](https://github.com/danielvm-git/big-bolao/compare/v1.2.0...v1.3.0) (2026-06-20)
 
 
