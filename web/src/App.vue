@@ -68,7 +68,10 @@ const TABS = [
       <span class="footer-left">© 2026 Big Bolão · Copa do Mundo 2026</span>
       <div class="footer-right">
         <span class="footer-version">v{{ version }}</span>
-        <span class="footer-built">Built with ⚡ by danielvm-git</span>
+        <span class="footer-built">Built with
+          <a href="https://github.com/danielvm-git/BigPowers" target="_blank" class="footer-bigpowers">BigPowers</a>
+          by <a href="https://github.com/danielvm-git" target="_blank">danielvm-git</a>
+        </span>
         <a href="https://github.com/danielvm-git/big-bolao" target="_blank">GitHub</a>
         <a href="https://github.com/danielvm-git/big-bolao/blob/main/CHANGELOG.md" target="_blank">Changelog</a>
       </div>
