@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/danielvm-git/big-bolao/compare/v1.3.4...v1.4.0) (2026-06-20)
+
+
+### Features
+
+* **deploy:** add passthrough_paths for /api/version endpoint ([98ef581](https://github.com/danielvm-git/big-bolao/commit/98ef5815bdfb1b93860f625e7acad20a0451e739))
+
 ## [1.3.4](https://github.com/danielvm-git/big-bolao/compare/v1.3.3...v1.3.4) (2026-06-20)
 
 
