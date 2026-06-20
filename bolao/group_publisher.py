@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from bolao import ranking as ranking_mod
 from bolao.scoring import pontos
+from bolao.util import label_jogo
 
 
 def format_resultado(jogo: dict, palpites: list[dict]) -> str:
@@ -59,12 +60,6 @@ def format_lembrete(jogos: list[dict], bot_username: str) -> str:
     if not jogos:
         return ""
     linhas = ["📣 <b>Jogos abertos pra palpite (próximas 24h):</b>", ""]
-    linhas += [f"• {_label_jogo_lembrete(j)}" for j in jogos]
+    linhas += [f"• {label_jogo(j)}" for j in jogos]
     linhas += ["", f"👉 Palpite no privado: t.me/{bot_username} (comando /jogos)"]
     return "\n".join(linhas)
-
-
-def _label_jogo_lembrete(jogo: dict) -> str:
-    """Formata 'Brasil x Argentina · qui 21/06 16:00'."""
-    from bolao.util import label_jogo
-    return label_jogo(jogo)

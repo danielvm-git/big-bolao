@@ -1,5 +1,4 @@
 """Tests for bolao/ranking.py — duplicate participant handling."""
-import pytest
 from bolao.ranking import calcular, formatar
 
 

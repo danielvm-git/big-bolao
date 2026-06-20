@@ -103,7 +103,8 @@ bugs:
   summary: Participantes duplicados via /start quando nome do Telegram difere do nome
     histórico
   file: specs/bugs/BUG-2026-06-20-100000-duplicate-participants.md
-  status: open
+  status: fixed
+  fixed_date: '2026-06-20'
   root_cause: registrar_participante só verifica nome exato antes de criar — não varre
     placeholders com telegram_id negativo cujo nome esteja contido no novo nome
   approach: Adicionar varredura de placeholders (telegram_id < 0) antes de criar,

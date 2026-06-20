@@ -202,20 +202,35 @@ async def cb_gols_fora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     q = update.callback_query
     parsed = BettingFlow.deserialize(q.data)
     if parsed is None:
+        await q.answer()
         await q.edit_message_text("⛔ Erro no callback.", parse_mode=ParseMode.HTML)
         return
     mid = parsed[1]["match_id"]
     gc = parsed[1]["gc"]
     gf = parsed[1]["gf"]
-    jogo = await db(context).get_jogo(mid)
+    try:
+        jogo = await db(context).get_jogo(mid)
+    except Exception:
+        await q.answer("Erro de conexão. ⛔")
+        await q.edit_message_text("⛔ Erro de conexão com o banco de dados.", parse_mode=ParseMode.HTML)
+        logging.getLogger("bolao").error("Erro ao obter jogo %s", mid, exc_info=True)
+        return
+
     if not jogo or not aberto_para_palpite(jogo):
         await q.answer()
         await q.edit_message_text("⛔ Esse jogo já começou — palpite encerrado.", parse_mode=ParseMode.HTML)
         return
     user = update.effective_user
     nome = user.full_name or user.username or str(user.id)
-    await db(context).salvar_palpite(mid, user.id, nome, gc, gf,
-                                     agora().isoformat())
+    try:
+        await db(context).salvar_palpite(mid, user.id, nome, gc, gf,
+                                         agora().isoformat())
+    except Exception:
+        await q.answer("Erro ao salvar palpite. ⛔")
+        await q.edit_message_text("⛔ Erro de conexão com o banco de dados.", parse_mode=ParseMode.HTML)
+        logging.getLogger("bolao").error("Erro ao salvar palpite para %s", user.id, exc_info=True)
+        return
+
     await q.answer("Palpite salvo! ✅")
     await q.edit_message_text(
         f"✅ Palpite salvo:\n<b>{jogo['casa']} {gc} x {gf} {jogo['fora']}</b>\n\n"

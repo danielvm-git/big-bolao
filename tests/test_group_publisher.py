@@ -1,7 +1,6 @@
 """Tests for bolao.group_publisher — pure message formatting without Telegram I/O."""
 from __future__ import annotations
 
-import pytest
 from bolao.group_publisher import format_resultado, format_ranking, format_lembrete
 
 

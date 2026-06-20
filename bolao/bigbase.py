@@ -15,6 +15,8 @@ Escritas (POST/PATCH/DELETE) usam o id do registro retornado pela leitura.
 """
 from __future__ import annotations
 
+import unicodedata
+
 import httpx
 
 from bolao import config
@@ -118,18 +120,66 @@ class BigBase:
             return
         # Evita duplicata de nome: se outro registro tem o mesmo nome (caso
         # de /sou ter "roubado" o registro original), reassina o telegram_id.
-        mesmo_nome = await self.participante_por_nome(nome)
+        mesmo_nome = await self._participante_por_nome_exato(nome)
         if mesmo_nome:
             await self.patch(PARTICIPANTES, mesmo_nome["id"], {
                 "telegram_id": int(telegram_id), "nome": nome, "ativo": True})
             return
+        # Varredura de placeholders: se um participante historico (telegram_id < 0)
+        # tem nome contido no novo nome (ou vice-versa), vincula o placeholder
+        # em vez de criar duplicata. Ex: placeholder "Flavia" + "Ana Flavia Cernic".
+        placeholder = await self._placeholder_por_nome_parcial(nome)
+        if placeholder:
+            await self._vincular_placeholder(placeholder, telegram_id, nome)
+            return
         await self.create(PARTICIPANTES, {
             "telegram_id": int(telegram_id), "nome": nome, "ativo": True})
+
+    @staticmethod
+    def _normalizar(texto: str) -> str:
+        """Remove acentos e lowercases para comparacao fuzzy."""
+        nfkd = unicodedata.normalize("NFKD", texto.strip())
+        return nfkd.encode("ascii", "ignore").decode("ascii").lower()
+
+    async def _placeholder_por_nome_parcial(self, nome: str) -> dict | None:
+        """Busca placeholder (telegram_id < 0) cujo nome tenha substring match.
+
+        Comparacao ignora acentos e case. Ex: "Flávia" casa com
+        "Ana Flavia Cernic Ramos" porque "flavia" e substring de "ana flavia cernic".
+        """
+        alvo = self._normalizar(nome)
+        for p in await self.listar_participantes():
+            pid = int(p.get("telegram_id", 0))
+            if pid >= 0:
+                continue
+            pnome = self._normalizar(p.get("nome", ""))
+            if not pnome:
+                continue
+            # Match: nome do placeholder contido no novo nome OU vice-versa
+            if pnome in alvo or alvo in pnome:
+                return p
+        return None
+
+    async def _vincular_placeholder(
+        self, placeholder: dict, telegram_id: int, nome: str,
+    ) -> None:
+        """Vincula um placeholder a uma conta real, migrando palpites."""
+        antigo_id = int(placeholder["telegram_id"])
+        novo_tid = int(telegram_id)
+        # Migra palpites do id antigo -> novo
+        todos = await self.list_records(PALPITES)
+        for p in todos:
+            if int(p.get("telegram_id", 0)) == antigo_id:
+                await self.patch(PALPITES, p["id"], {"telegram_id": novo_tid})
+        # Atualiza placeholder
+        await self.patch(PARTICIPANTES, placeholder["id"], {
+            "telegram_id": novo_tid, "nome": nome, "ativo": True})
 
     async def listar_participantes(self) -> list[dict]:
         return await self.list_records(PARTICIPANTES)
 
-    async def participante_por_nome(self, nome: str) -> dict | None:
+    async def _participante_por_nome_exato(self, nome: str) -> dict | None:
+        """Busca participante por nome exato (case-insensitive)."""
         for p in await self.listar_participantes():
             if p.get("nome", "").strip().lower() == nome.strip().lower():
                 return p
@@ -138,7 +188,7 @@ class BigBase:
     async def reivindicar(self, nome: str, novo_telegram_id: int) -> bool:
         """Vincula um participante historico (sem dono) a uma conta real,
         migrando os palpites antigos para o novo telegram_id. Usado por /sou."""
-        alvo = await self.participante_por_nome(nome)
+        alvo = await self._participante_por_nome_exato(nome)
         if not alvo:
             return False
         antigo_id = int(alvo["telegram_id"])

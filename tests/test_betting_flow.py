@@ -124,6 +124,19 @@ class TestInvalidInputs:
     def test_none_value(self):
         assert BettingFlow.deserialize(None) is None
 
+    def test_match_id_with_pipe_is_rejected(self):
+        # callback_data is attacker-controllable; a match_id containing the "|"
+        # delimiter must not mis-parse. match_ids are generated as R1-01/SF-02
+        # (never contain "|"), so this locks in the boundary.
+        assert BettingFlow.deserialize("g|R1|01") is None
+
+    def test_gols_casa_with_pipe_is_rejected(self):
+        assert BettingFlow.deserialize("h|R1|01|2") is None
+
+    def test_gols_fora_with_pipe_is_rejected(self):
+        assert BettingFlow.deserialize("f|R1|01|2|1") is None
+
+
 
 class TestValidateTransition:
     """BettingFlow.validate_transition enforces correct step order."""

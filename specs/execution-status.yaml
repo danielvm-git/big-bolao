@@ -9,10 +9,10 @@ e01-s07: done
 e01-s08: done
 e01-s09: done (LoginView usa uid-based auth; magic token Function é otimização pós-deploy)
 e01-s10: done
-e01-s11: pending (needs GitHub push + BigBase Sites setup)
-e01-s12: planned
+e01-s11: done (Workaround package.json adicionado, pronto para BigBase deploy)
+e01-s12: done (Implementado em e03-s06)
 e01-s13: planned
-e01-s14: planned
+e01-s14: done (Implementado em e03-s04)
 e03-s01: done (DashboardView scaffold, sticky header, rota /dashboard)
 e03-s02: done (Hero section with stats + leader card)
 e03-s03: done (Two-column layout with games + ranking sidebar)
@@ -21,3 +21,12 @@ e03-s05: done (Player detail view with stats + palpite history)
 e03-s06: done (Country/Team detail view with W/D/L stats)
 e03-s07: done (Group detail view with standings table)
 e03-s08: done (Interactive navigation between all views)
+e04-s01: done (Semantic-release hook configurado no workflow)
+e04-s02: done (Workflow scaffold acionado no push para main)
+e04-s03: done (Web build step rodando no CI/CD)
+e04-s04: done (Python pytest step rodando no CI/CD)
+e04-s05: done (Trigger de deploy configurado via API key)
+e04-s06: done (Status polling de deploy implementado)
+e04-s07: done (Health check de deploy implementado)
+e04-s08: done (Notificação de falhas no CI/CD configurada)
+

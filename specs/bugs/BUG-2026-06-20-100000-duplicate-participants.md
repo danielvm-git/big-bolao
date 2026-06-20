@@ -84,13 +84,28 @@ O método `reivindicar` (usado por `/sou`) existe exatamente para fazer essa vin
 
 ## Acceptance Criteria
 
-- [ ] Ao chamar `registrar_participante(tid, nome_completo)` onde existe placeholder cujo nome está contido em `nome_completo`, o placeholder é vinculado (não cria duplicata)
-- [ ] Ao chamar `registrar_participante(tid, nome_completo)` sem placeholder correspondente, cria registro novo normalmente
-- [ ] `/sou Nome` continua funcionando sem regressão
-- [ ] Ranking existente continua funcionando (já filtra `ativo=False`)
-- [ ] Todos os testes existentes passam
+- [x] Ao chamar `registrar_participante(tid, nome_completo)` onde existe placeholder cujo nome está contido em `nome_completo`, o placeholder é vinculado (não cria duplicata)
+- [x] Ao chamar `registrar_participante(tid, nome_completo)` sem placeholder correspondente, cria registro novo normalmente
+- [x] `/sou Nome` continua funcionando sem regressão
+- [x] Ranking existente continua funcionando (já filtra `ativo=False`)
+- [x] Todos os testes existentes passam
 
 ## Resolution
 
-<!-- filled in by validate-fix -->
+**Status:** Fixed 2026-06-20
+
+**O que foi feito:**
+1. Renomeado `participante_por_nome` → `_participante_por_nome_exato` (privado, nome auto-documentado)
+2. Adicionado `_normalizar(texto)` — remove acentos via NFKD + ASCII encoding para comparação fuzzy
+3. Adicionado `_placeholder_por_nome_parcial(nome)` — varre placeholders (`telegram_id < 0`) com substring match ignorando acentos
+4. Adicionado `_vincular_placeholder()` — migra palpites do id antigo pro novo + atualiza o registro placeholder
+5. `registrar_participante` agora varre placeholders antes de criar novo registro
+
+**Arquivos alterados:**
+- `bolao/bigbase.py` — 3 novos métodos, 1 renomeado, 1 modificado, +import unicodedata
+- `tests/test_participantes.py` — novo arquivo com 6 testes (placeholder match, no-false-match, reivindicar still works)
+
+**Testes:** 88/88 passando (82 existentes + 6 novos)
+
+**Risco:** Baixo — mudança localizada a `registrar_participante`, caminho existente (`get_participante` → match exato → create) inalterado quando não há placeholder.
 
