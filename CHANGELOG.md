@@ -1,3 +1,13 @@
+# [1.8.0](https://github.com/danielvm-git/big-bolao/compare/v1.7.1...v1.8.0) (2026-06-20)
+
+
+### Features
+
+* **web:** extract calcRanking, fmtDate, fmtTime, avatarColor into scoring.js + 13 new tests ([8b4d349](https://github.com/danielvm-git/big-bolao/commit/8b4d349e437dc4a0521841de2734248481ada08e))
+* **web:** extract FLAGS + flag into scoring.js, update test import ([8512e80](https://github.com/danielvm-git/big-bolao/commit/8512e80da3118d2d556d93ce36fbcbcfac1de435))
+* **web:** extract queries.js (domain functions) from api.js + 8 query tests ([c4349fd](https://github.com/danielvm-git/big-bolao/commit/c4349fd73e15a5e8582e7d4bef0bbb57608a0676))
+* **web:** extract transport.js (BB singleton) from api.js + 7 transport tests ([43a856d](https://github.com/danielvm-git/big-bolao/commit/43a856d5d6106c219ca4fc693ec6cca8f02c7f46))
+
 ## [1.7.1](https://github.com/danielvm-git/big-bolao/compare/v1.7.0...v1.7.1) (2026-06-20)
 
 
