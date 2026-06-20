@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/danielvm-git/big-bolao/compare/v1.0.1...v1.0.2) (2026-06-20)
+
+
+### Bug Fixes
+
+* **ci:** fix bash arithmetic and emoji in timeout message ([ec93251](https://github.com/danielvm-git/big-bolao/commit/ec932512426c0fe4409aa207b1a9af41012844da))
+
 ## [1.0.1](https://github.com/danielvm-git/big-bolao/compare/v1.0.0...v1.0.1) (2026-06-20)
 
 
