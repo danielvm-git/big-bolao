@@ -127,7 +127,7 @@ const FLAGS = {
   'dr congo':'🇨🇩','republica democratica do congo':'🇨🇩',egypt:'🇪🇬',egito:'🇪🇬',
   iraq:'🇮🇶',iraque:'🇮🇶',jordan:'🇯🇴',jordania:'🇯🇴',uzbekistan:'🇺🇿',uzbequistao:'🇺🇿',
   tunisia:'🇹🇳','south africa':'🇿🇦','africa do sul':'🇿🇦',
-  'bosnia and herzegovina':'🇧🇦','bosnia e herzegovina':'🇧🇦',
+  'bosnia and herzegovina':'🇧🇦','bosnia e herzegovina':'🇧🇦','bosnia herzegovina':'🇧🇦',
   'czech republic':'🇨🇿',czechia:'🇨🇿','republica tcheca':'🇨🇿',
 }
 

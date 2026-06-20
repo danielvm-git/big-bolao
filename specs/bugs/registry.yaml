@@ -140,3 +140,29 @@ bugs:
   approach: Converter og-image.svg para PNG 1200x630 via rsvg-convert. Atualizar referencias
     em web/index.html e web/dist/index.html.
   risk_level: low
+- bug_id: BUG-2026-06-20-190000
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: web-dashboard
+  summary: Bosnia & Herzegovina flag not showing — FLAGS missing ampersand-normalized
+    variant; normalization strips & but dictionary only has "and"/"e" forms
+  file: specs/bugs/BUG-2026-06-20-190000-bosnia-ampersand-flag.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: API returns "Bosnia & Herzegovina" (ampersand). _normTeam() strips
+    & → "bosnia herzegovina". FLAGS only had "bosnia and herzegovina" and "bosnia
+    e herzegovina" — neither matched the stripped form.
+  approach: Added 'bosnia herzegovina':'🇧🇦' to FLAGS dictionary; updated test
+    to include both ampersand and "and" forms in TOURNAMENT_EN coverage guard.
+  risk_level: low
+  files_changed:
+  - web/src/api.js
+  - web/tests/flags.test.js
+  tests_added:
+  - test for flag('Bosnia & Herzegovina') == 🇧🇦
+  - both forms added to coverage test TOURNAMENT_EN list
+  hardening: Coverage test validates both ampersand and "and" name forms; test
+    fails if either falls to white flag
+  commit_message: 'fix(web): bosnia & herzegovina flag not showing — add ampersand-normalized
+    form to FLAGS'

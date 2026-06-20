@@ -10,6 +10,7 @@ const TOURNAMENT_EN = [
   'South Africa', 'Germany', 'Saudi Arabia', 'Algeria', 'Argentina',
   'Australia', 'Austria', 'Belgium', 'Bosnia and Herzegovina', 'Brazil',
   'Cape Verde', 'Canada', 'Qatar', 'Colombia', 'South Korea', 'Ivory Coast',
+  'Bosnia & Herzegovina',
   'Croatia', 'Curacao', 'Egypt', 'Ecuador', 'Scotland', 'Spain', 'USA',
   'France', 'Ghana', 'Haiti', 'England', 'Iran', 'Iraq', 'Japan', 'Jordan',
   'Morocco', 'Mexico', 'Norway', 'New Zealand', 'Netherlands', 'Panama',
@@ -37,6 +38,11 @@ test('normalization: punctuation, spacing and case all resolve the same', () => 
   for (const variant of ['d.r. congo', 'D.R.  Congo', 'DR Congo', 'dr congo']) {
     assert.equal(flag(variant), expected, `variant "${variant}" should match`)
   }
+})
+
+test('bosnia & herzegovina (ampersand form from API) resolves to real flag', () => {
+  assert.equal(flag('Bosnia & Herzegovina'), '🇧🇦', 'ampersand form should match')
+  assert.equal(flag('Bosnia and Herzegovina'), '🇧🇦', 'and form should still match')
 })
 
 test('unknown country still returns the white-flag fallback', () => {
