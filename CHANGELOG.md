@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/danielvm-git/big-bolao/compare/v1.8.0...v1.9.0) (2026-06-20)
+
+
+### Features
+
+* **spec:** close gaps 3, 5, 6, 7 and resolve deploy blockages ([c8f0c37](https://github.com/danielvm-git/big-bolao/commit/c8f0c37f012a289b614d21817a327ae9e9123db6))
+
 # [1.8.0](https://github.com/danielvm-git/big-bolao/compare/v1.7.1...v1.8.0) (2026-06-20)
 
 
