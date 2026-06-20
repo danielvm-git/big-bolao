@@ -1,102 +1,184 @@
 # Big Bolão Site — Release Plan
 
-release: v0.1.0
+release: v0.2.0
 product: Big Bolão Site
-status: planned
+status: in_progress
 
 epics:
   - id: e01
     slug: bolao-site
-    title: "Site Big Bolão (Vite + Vue 3)"
+    title: "Site Big Bolão Mobile (Vite + Vue 3)"
     bcp: 7
     priority: 1
+    status: done
+    wsjf: 4.0
+
+  - id: e02
+    slug: api-integration
+    title: "Live API Integration (Copa 2026 fixtures)"
+    bcp: 4
+    priority: 1
+    status: in_progress
+    wsjf: 4.5
+
+  - id: e03
+    slug: web-dashboard
+    title: "Web Dashboard — grade, detalhes e navegação interativa"
+    bcp: 8
+    priority: 2
     status: planned
     wsjf: 4.0
 
 stories:
+  # ── e01 — Mobile SPA (DONE) ─────────────────────────────────────
   - id: e01-s01
     title: Scaffold Vite + Vue 3 + vue-router + estrutura de views
     bcp: 1
     depends: []
-    status: planned
+    status: done
 
   - id: e01-s02
     title: Home / Dashboard com stats e mini ranking
     bcp: 1
     depends: [e01-s01]
-    status: planned
+    status: done
 
   - id: e01-s03
     title: Jogos — lista com filtros + GameCard
     bcp: 1
     depends: [e01-s02]
-    status: planned
+    status: done
 
   - id: e01-s04
     title: Fluxo de palpite — modal com placar + salvar
     bcp: 1
     depends: [e01-s03]
-    status: planned
+    status: done
 
   - id: e01-s05
     title: Ranking completo com pódio
     bcp: 0.5
     depends: [e01-s02]
-    status: planned
+    status: done
 
   - id: e01-s06
     title: Meus Palpites com agrupamento por status
     bcp: 0.5
     depends: [e01-s04]
-    status: planned
+    status: done
 
   - id: e01-s07
     title: Detalhe do resultado (quem cravou)
     bcp: 0.5
     depends: [e01-s06]
-    status: planned
+    status: done
 
   - id: e01-s08
     title: Conectar dados reais do BigBase (collections)
     bcp: 1
     depends: [e01-s04, e01-s06]
-    status: planned
+    status: done
 
   - id: e01-s09
     title: Magic token auth via BigBase Functions
     bcp: 0.5
     depends: [e01-s08]
-    status: planned
+    status: done
 
   - id: e01-s10
     title: PWA manifest + service worker + icons
     bcp: 0.5
     depends: []
-    status: planned
+    status: done
 
   - id: e01-s11
     title: Deploy — BigBase Sites (GitHub → build → Caddy)
     bcp: 0.5
     depends: [e01-s08, e01-s09]
-    status: planned
+    status: pending
 
-  - id: e01-s12
-    title: Detalhe do País — bandeira, grupo, stats, apostas
-    bcp: 0.5
-    depends: [e01-s08]
-    status: planned
-    wsjf: 3.5
-
-  - id: e01-s13
-    title: Detalhe do Jogo — timeline de gols + cartões
-    bcp: 0.5
-    depends: [e01-s07, e01-s08]
-    status: planned
-    wsjf: 3.0
-
-  - id: e01-s14
-    title: Grade de Palpites — matriz jogos × participantes
+  # ── e02 — API Integration ───────────────────────────────────────
+  - id: e02-s01
+    title: "fixtures.py — fetch & normalise fixtures from apifootball.com"
     bcp: 1
-    depends: [e01-s08]
+    depends: []
     status: planned
-    wsjf: 4.0
+
+  - id: e02-s02
+    title: "Config: add FIXTURES_PROVIDER env var"
+    bcp: 0.5
+    depends: []
+    status: planned
+
+  - id: e02-s03
+    title: "BigBase.ensure_setup — upsert from API, store api_fixture_id"
+    bcp: 1
+    depends: [e02-s01]
+    status: planned
+
+  - id: e02-s04
+    title: "results.py — match results by api_fixture_id"
+    bcp: 0.5
+    depends: [e02-s03]
+    status: planned
+
+  - id: e02-s05
+    title: "/sync_jogos admin command + job_sync_fixtures (24h)"
+    bcp: 0.5
+    depends: [e02-s04]
+    status: planned
+
+  - id: e02-s06
+    title: ".env.example + README docs"
+    bcp: 0.5
+    depends: []
+    status: planned
+
+  # ── e03 — Web Dashboard ────────────────────────────────────────
+  - id: e03-s01
+    title: "Estrutura do Dashboard — layout desktop, sticky header, rota"
+    bcp: 1
+    depends: []
+    status: planned
+
+  - id: e03-s02
+    title: "Hero section — estatísticas gerais + card do líder"
+    bcp: 0.5
+    depends: [e03-s01]
+    status: planned
+
+  - id: e03-s03
+    title: "Two-column layout — próximos jogos + ranking sidebar"
+    bcp: 1.5
+    depends: [e03-s02]
+    status: planned
+
+  - id: e03-s04
+    title: "Grade/Matriz de palpites (jogos × participantes)"
+    bcp: 2
+    depends: [e03-s01]
+    status: planned
+
+  - id: e03-s05
+    title: "Player Detail — estatísticas + lista de palpites"
+    bcp: 1
+    depends: [e03-s04]
+    status: planned
+
+  - id: e03-s06
+    title: "Country/Team Detail — recorde W/D/L + jogos da seleção"
+    bcp: 1
+    depends: [e03-s04]
+    status: planned
+
+  - id: e03-s07
+    title: "Group Detail — classificação + jogos do grupo"
+    bcp: 0.5
+    depends: [e03-s04]
+    status: planned
+
+  - id: e03-s08
+    title: "Navegação interativa entre views + breadcrumb"
+    bcp: 0.5
+    depends: [e03-s05, e03-s06, e03-s07]
+    status: planned

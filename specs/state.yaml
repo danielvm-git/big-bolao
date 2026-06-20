@@ -1,16 +1,16 @@
 # Orchestrate state
 phase: build
 active_flow: build_epic
-active_epic_id: e01-bolao-site
-last_step_completed: change-request
+active_epic_id: e03-web-dashboard
+last_step_completed: gap-analysis
 next_skill: survey-context
 
 epic_cycle:
-  epic: e01-bolao-site
-  step: 2
-  story: e01-s08
+  epic: e03-web-dashboard
+  step: 3
+  story: e03-s01
   story_bcps: 1
-  next_story: e01-s11
+  next_story: e03-s01
 
 environment:
   node: v24.15.0
@@ -28,14 +28,15 @@ required_reading:
   - prototype/project/Big\ Bolão.dc.html
 
 handoff:
-  current_phase: plan
-  next_skill: scope-work
+  current_phase: build
+  next_skill: kickoff-branch
   notes: >
-    DISCOVER e ELABORATE concluídos. Pesquisa de open source feita (world-cup-pool, 
-    FriendlyBet, Palpiteiros). Código do BigBase lido. Stack decidida: Vite + Vue 3 SPA, 
-    deploy no BigBase Sites. Protótipo navegável em prototype/. 
-    Agora precisa scope-work → slice-tasks → plan-work → build.
+    Step 2 (plan-work) complete. Story e03-s01 tasks written.
+    Next: kickoff-branch → create feature branch for e03-web-dashboard.
 
 git:
   branch: main
-  hash: ""
+  hash: b224e71
+
+metrics:
+  story_start: "2026-06-19T21:10:00-03:00"

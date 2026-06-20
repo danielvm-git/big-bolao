@@ -1,0 +1,161 @@
+id: e03
+slug: web-dashboard
+title: "Web Dashboard — grade de palpites, detalhes e navegação interativa"
+status: planned
+bcp: 8
+wsjf: 4.0
+wsjf_rationale: >
+  BV=9 unlock web as first-class experience + TC=4 competitive parity +
+  RR=2 data shown is already in BigBase / JS=4 ~1 week
+
+description: >
+  Implementar o **Web Dashboard** do Big Bolão, seguindo o protótipo
+  `specs/prototype/project/Big Bolão Web.dc.html`. Este é um layout
+  **desktop-first** (1440px) que complementa o SPA mobile existente.
+
+  O dashboard inclui:
+  - Sticky header com progresso de jogos finalizados
+  - Hero com estatísticas gerais + card do líder
+  - Layout de duas colunas: próximos jogos + ranking lateral
+  - Grade/Matriz de palpites (jogos × participantes) com células
+    coloridas por resultado (exato 🟢, vencedor 🔵, errou 🔴)
+  - Detalhe do participante: card de estatísticas + lista de palpites
+  - Detalhe do país: bandeira, grupo, W/D/L, jogos
+  - Detalhe do grupo: tabela de classificação + jogos
+  - Drill-down interativo: clicar em qualquer avatar, time ou badge
+    navega para a view detalhada
+  - Breadcrumb "Voltar" na navegação
+
+  O dashboard pode ser servido em uma rota separada (`/dashboard`)
+  ou em um subdomínio, mantendo o SPA mobile intacto.
+
+screenshots:
+  - path: "specs/prototype/project/screenshots/web-landing.png"
+    desc: "hero + two-column layout + tabela"
+
+references:
+  - path: "specs/prototype/project/Big Bolão Web.dc.html"
+    desc: "protótipo completo do dashboard"
+  - path: "specs/prototype/GAP_ANALYSIS.md"
+    desc: "análise de gaps G10-G16"
+
+stories:
+  - id: e03-s01
+    title: "Estrutura do Dashboard — layout desktop, sticky header, rota"
+    description: >
+      Criar DashboardView.vue como novo layout desktop-first.
+      - Max-width 1440px, centralizado, responsivo
+      - Sticky header: logo "Big Bolão" + badge "COPA 2026", indicador de
+        progresso "X / Y jogos finalizados", botão "Voltar" em sub-páginas
+      - Rota `/dashboard` no vue-router
+      - CSS global: scrollbar customizada, animações fadeIn/fadeInUp
+    spec: e03s01-dashboard-layout.md
+    verify: |
+      grep -q 'DashboardView' /Users/danielvm/Developer/big-bolao/web/src/router/index.js && echo "✅ rota dashboard existe"
+    bcp: 1
+    status: planned
+
+  - id: e03-s02
+    title: "Hero section — estatísticas gerais + card do líder"
+    description: >
+      Implementar o hero do dashboard:
+      - Título "Bolão da Copa 2026"
+      - Subtítulo: "X participantes · Y jogos finalizados · Z abertos"
+      - Card do líder atual: 🏆, nome, pontos, clicável → player detail
+    verify: |
+      grep -q 'totalPlayers\|leaderName' /Users/danielvm/Developer/big-bolao/web/src/views/DashboardView.vue 2>/dev/null && echo "✅ hero existe"
+    bcp: 0.5
+
+  - id: e03-s03
+    title: "Two-column layout — próximos jogos + ranking sidebar"
+    description: >
+      Layout grid de 2 colunas (1fr 296px) na landing do dashboard:
+      - Coluna esquerda: lista de próximos jogos e em andamento
+        Cada card mostra: badge de status, badge de grupo, times,
+        data/hora, palpites dos participantes (avatar + placar)
+      - Coluna direita: ranking compacto com avatar, nome, exatos,
+        pontos por participante. Ao clicar → player detail.
+      - Abaixo da sidebar: card "Como pontuar" com legenda
+    verify: |
+      grep -q 'proximosJogos\|rankingRows' /Users/danielvm/Developer/big-bolao/web/src/views/DashboardView.vue 2>/dev/null && echo "✅ two-column existe"
+    bcp: 1.5
+
+  - id: e03-s04
+    title: "Grade/Matriz de palpites (jogos × participantes)"
+    description: >
+      Implementar a **grade completa** (matriz) de palpites:
+      - Cabeçalho fixo: avatar + nome + pontos de cada participante
+      - Linhas: cada jogo com times, grupo, placar real
+      - Células: palpite do participante para aquele jogo
+      - Cores das células:
+        🟢 fundo verde + borda → exato (+3 pts)
+        🔵 fundo azul + borda → vencedor/empate (+1 pt)
+        🔴 fundo vermelho + borda → errou (0 pts)
+        🟠 fundo laranja + borda → em andamento
+        ⚪ fundo transparente → aberto / sem palpite
+      - Legenda de cores no topo
+      - Scroll horizontal com cabeçalho sticky
+      - Destaque "você" na coluna do usuário logado
+    verify: |
+      grep -q 'activeTableRows\|tableHeaderPlayers' /Users/danielvm/Developer/big-bolao/web/src/views/DashboardView.vue 2>/dev/null && echo "✅ grades existe"
+    bcp: 2
+
+  - id: e03-s05
+    title: "Player Detail — estatísticas + lista de palpites"
+    description: >
+      View de detalhe do participante (acessada clicando no ranking/grade):
+      - Header: avatar grande, nome, posição no ranking
+      - Stats card (grid 4-colunas):
+        🟡 Pontos totais
+        🟢 Exatos (placar exato)
+        🔵 Vencedores (acertou vencedor/empate)
+        🔴 Erros
+      - Lista completa de palpites do participante:
+        status dot, times, data, grupo, resultado, palpite, pontuação
+      - Cores por status: exato 🟢, vencedor 🔵, errou 🔴
+    verify: |
+      grep -q 'selPlayerName\|playerGameRows' /Users/danielvm/Developer/big-bolao/web/src/views/PlayerDetailView.vue 2>/dev/null && echo "✅ player detail existe"
+    bcp: 1
+
+  - id: e03-s06
+    title: "Country/Team Detail — recorde W/D/L + jogos da seleção"
+    description: >
+      View de detalhe do país (acessada clicando em bandeira ou nome):
+      - Bandeira grande + nome
+      - Badge do grupo (clicável → group detail)
+      - Stats card (3-colunas): Vitórias 🟢, Empates 🟡, Derrotas 🔴
+      - Abaixo: lista de jogos da seleção com resultados e palpites
+      - Breadcrumb "Voltar" no header
+    verify: |
+      grep -q 'selectedCountry\|countryW\|countryD\|countryL' /Users/danielvm/Developer/big-bolao/web/src/views/CountryDetailView.vue 2>/dev/null && echo "✅ country detail existe"
+    bcp: 1
+
+  - id: e03-s07
+    title: "Group Detail — classificação + jogos do grupo"
+    description: >
+      View de detalhe do grupo (acessada clicando no badge de grupo):
+      - Título do grupo (ex: "Grupo F")
+      - Tabela de classificação: pos, seleção (bandeira + nome),
+        pts, W/D/L, GP:GS (gols pró : gols contra)
+      - Cores: pos 1 🟢, pos 2 🔵, demais ⚪
+      - Abaixo: lista de jogos do grupo
+      - Breadcrumb "Voltar" no header
+    verify: |
+      grep -q 'selectedGroup\|groupStandings' /Users/danielvm/Developer/big-bolao/web/src/views/GroupDetailView.vue 2>/dev/null && echo "✅ group detail existe"
+    bcp: 0.5
+
+  - id: e03-s08
+    title: "Navegação interativa entre views + breadcrumb"
+    description: >
+      Conectar todas as views com navegação clicável:
+      - Clicar no líder → PlayerDetailView
+      - Clicar em avatar/nome no ranking → PlayerDetailView
+      - Clicar em avatar/nome no cabeçalho da grade → PlayerDetailView
+      - Clicar em bandeira/nome do time → CountryDetailView
+      - Clicar em badge de grupo → GroupDetailView
+      - Botão "Voltar" no header retorna à landing do dashboard
+      - Clicar no logo "Big Bolão" volta à landing
+      - Transições suaves entre views (fadeIn)
+    verify: |
+      grep -q 'goHome\|goBack\|onClick\|router.push' /Users/danielvm/Developer/big-bolao/web/src/views/DashboardView.vue 2>/dev/null && echo "✅ navegação existe"
+    bcp: 0.5

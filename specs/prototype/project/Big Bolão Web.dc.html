@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #030B16; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  </style>
+</helmet>
+
+<div style="min-height: 100vh; background: #030B16; color: #EBF0F5; animation: fadeIn 0.2s ease;">
+
+  <!-- STICKY HEADER -->
+  <header style="position: sticky; top: 0; z-index: 100; background: rgba(3,11,22,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07);">
+    <div style="max-width: 1440px; margin: 0 auto; padding: 0 32px; height: 54px; display: flex; align-items: center; gap: 16px;">
+      <div onClick="{{ goHome }}" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex-shrink: 0;">
+        <span style="font-size: 22px; line-height: 1;">⚽</span>
+        <span style="font-size: 16px; font-weight: 700; color: #EBF0F5; letter-spacing: -0.3px;">Big Bolão</span>
+        <span style="font-size: 11px; font-weight: 700; color: #F7C948; letter-spacing: 1.2px; background: rgba(247,201,72,0.12); padding: 2px 9px; border-radius: 20px;">COPA 2026</span>
+      </div>
+      <div style="flex: 1;"></div>
+      <sc-if value="{{ showBreadcrumb }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ goBack }}" style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: #94A3B8; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600;">← Voltar</button>
+      </sc-if>
+      <div style="display: flex; align-items: center; gap: 7px; flex-shrink: 0;">
+        <span style="width: 7px; height: 7px; border-radius: 50%; background: #00DC82; display: inline-block;"></span>
+        <span style="font-size: 13px; color: #445566;"><span style="color: #94A3B8; font-weight: 600;">{{ finalizadoCount }}</span> / <span style="color: #94A3B8;">{{ totalGames }}</span> jogos finalizados</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width: 1440px; margin: 0 auto; padding: 36px 32px;">
+
+    <!-- ══ LANDING ══ -->
+    <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+
+      <!-- Hero -->
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; animation: fadeInUp 0.3s ease;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700; color: #EBF0F5; letter-spacing: -0.7px;">Bolão da Copa 2026</h1>
+          <p style="font-size: 14px; color: #7A8FA0; margin-top: 5px;">{{ totalPlayers }} participantes · {{ finalizadoCount }} jogos finalizados · {{ abertoCount }} abertos para palpitar</p>
+        </div>
+        <div onClick="{{ leaderOnClick }}" style="display: flex; align-items: center; gap: 12px; background: rgba(247,201,72,0.08); border: 1px solid rgba(247,201,72,0.18); border-radius: 12px; padding: 10px 18px; cursor: pointer; flex-shrink: 0;">
+          <span style="font-size: 20px;">🏆</span>
+          <div>
+            <p style="font-size: 10px; font-weight: 700; color: #F7C948; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 3px;">Líder atual</p>
+            <p style="font-size: 14px; font-weight: 700; color: #EBF0F5;">{{ leaderName }} · {{ leaderPts }} pts</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-col: proximos jogos + ranking -->
+      <div style="display: grid; grid-template-columns: 1fr 296px; gap: 28px; margin-bottom: 36px; align-items: start; animation: fadeInUp 0.3s ease 0.05s both;">
+
+        <!-- Proximos jogos -->
+        <div>
+          <p style="font-size: 11px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 14px;">PRÓXIMOS JOGOS &amp; EM ANDAMENTO</p>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{ proximosJogos }}" as="jogo" hint-placeholder-count="3">
+              <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; overflow: hidden;">
+                <div style="padding: 10px 14px; display: flex; align-items: center; gap: 10px; background: #0A1628; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <span style="font-size: 12px; font-weight: 700; color: {{ jogo.statusColor }}; background: {{ jogo.statusBg }}; padding: 3px 10px; border-radius: 20px; flex-shrink: 0;">{{ jogo.statusBadge }}</span>
+                  <button onClick="{{ jogo.onGroupClick }}" style="font-size: 11px; color: #7A8FA0; background: rgba(255,255,255,0.07); border: none; cursor: pointer; padding: 3px 8px; border-radius: 5px; font-family: inherit; font-weight: 600;">{{ jogo.grupo }}</button>
+                  <span style="margin-left: auto; font-size: 12px; color: #445566; flex-shrink: 0;">{{ jogo.date }} · {{ jogo.time }}</span>
+                </div>
+                <div style="padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <div onClick="{{ jogo.onTeamAClick }}" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1;">
+                    <span style="font-size: 28px; line-height: 1; flex-shrink: 0;">{{ jogo.flagA }}</span>
+                    <span style="font-size: 15px; font-weight: 700; color: #EBF0F5;">{{ jogo.teamA }}</span>
+                  </div>
+                  <span style="font-size: 16px; font-weight: 700; color: #1E3A5F; flex-shrink: 0;">×</span>
+                  <div onClick="{{ jogo.onTeamBClick }}" style="display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; justify-content: flex-end;">
+                    <span style="font-size: 15px; font-weight: 700; color: #EBF0F5;">{{ jogo.teamB }}</span>
+                    <span style="font-size: 28px; line-height: 1; flex-shrink: 0;">{{ jogo.flagB }}</span>
+                  </div>
+                </div>
+                <div style="padding: 10px 14px; background: rgba(0,0,0,0.22); border-top: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span style="font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1px; margin-right: 6px; flex-shrink: 0;">Palpites</span>
+                  <sc-for list="{{ jogo.guesses }}" as="g" hint-placeholder-count="7">
+                    <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 3px 8px 3px 4px; flex-shrink: 0;">
+                      <div style="width: 18px; height: 18px; border-radius: 50%; background: {{ g.avatarBg }}; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #030B16; flex-shrink: 0;">{{ g.initial }}</div>
+                      <span style="font-size: 12px; font-weight: 600; color: {{ g.labelColor }}; font-family: 'Fira Code', monospace;">{{ g.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- Ranking + scoring info -->
+        <div>
+          <p style="font-size: 11px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 14px;">🏆 RANKING</p>
+          <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; overflow: hidden; margin-bottom: 14px;">
+            <sc-for list="{{ rankingRows }}" as="r" hint-placeholder-count="7">
+              <div onClick="{{ r.onClick }}" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;" style-hover="background: rgba(255,255,255,0.03)">
+                <span style="font-size: 12px; color: #2A3D52; font-weight: 700; width: 16px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums;">{{ r.pos }}</span>
+                <span style="font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; line-height: 1;">{{ r.medal }}</span>
+                <div style="width: 30px; height: 30px; border-radius: 50%; background: {{ r.color }}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #030B16; flex-shrink: 0;">{{ r.initial }}</div>
+                <div style="flex: 1; min-width: 0;">
+                  <p style="font-size: 13px; font-weight: 600; color: #EBF0F5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.name }}</p>
+                  <p style="font-size: 11px; color: #445566; margin-top: 1px;">{{ r.exatos }} exato(s)</p>
+                </div>
+                <div style="text-align: right; flex-shrink: 0;">
+                  <p style="font-size: 16px; font-weight: 700; color: {{ r.ptColor }}; line-height: 1;">{{ r.pontos }}</p>
+                  <p style="font-size: 10px; color: #445566; margin-top: 1px;">pts</p>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background: rgba(96,165,250,0.06); border: 1px solid rgba(96,165,250,0.13); border-radius: 10px; padding: 12px 14px;">
+            <p style="font-size: 10px; font-weight: 700; color: #60A5FA; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Como pontuar</p>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 13px; flex-shrink: 0;">🎯</span>
+                <span style="font-size: 12px; color: #7A8FA0;"><strong style="color: #00DC82;">+3</strong> placar exato</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 13px; flex-shrink: 0;">✓</span>
+                <span style="font-size: 12px; color: #7A8FA0;"><strong style="color: #60A5FA;">+1</strong> vencedor / empate</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 13px; flex-shrink: 0;">✗</span>
+                <span style="font-size: 12px; color: #7A8FA0;"><strong style="color: #F87171;">0</strong> erro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </sc-if>
+    <!-- END LANDING -->
+
+    <!-- ══ PLAYER DETAIL ══ -->
+    <sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom: 28px; animation: fadeInUp 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 18px; margin-bottom: 24px;">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background: {{ selPlayerColor }}; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: #030B16; flex-shrink: 0;">{{ selPlayerInitial }}</div>
+          <div>
+            <h1 style="font-size: 24px; font-weight: 700; color: #EBF0F5; letter-spacing: -0.5px;">{{ selPlayerName }}</h1>
+            <p style="font-size: 14px; color: #7A8FA0; margin-top: 3px;">#{{ selPlayerPos }} no ranking</p>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="font-size: 32px; font-weight: 700; color: #F7C948; line-height: 1; letter-spacing: -1px;">{{ selPlayerPts }}</p>
+            <p style="font-size: 11px; color: #445566; margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">Pontos</p>
+          </div>
+          <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="font-size: 32px; font-weight: 700; color: #00DC82; line-height: 1; letter-spacing: -1px;">{{ selPlayerExatos }}</p>
+            <p style="font-size: 11px; color: #445566; margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">🎯 Exatos</p>
+          </div>
+          <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="font-size: 32px; font-weight: 700; color: #60A5FA; line-height: 1; letter-spacing: -1px;">{{ selPlayerVencedor }}</p>
+            <p style="font-size: 11px; color: #445566; margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">✓ Vencedores</p>
+          </div>
+          <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 20px; text-align: center;">
+            <p style="font-size: 32px; font-weight: 700; color: #F87171; line-height: 1; letter-spacing: -1px;">{{ selPlayerErrou }}</p>
+            <p style="font-size: 11px; color: #445566; margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">✗ Erros</p>
+          </div>
+        </div>
+      </div>
+
+      <p style="font-size: 11px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 14px;">PALPITES DE {{ selPlayerNameUpper }}</p>
+      <div style="display: flex; flex-direction: column; gap: 8px; animation: fadeInUp 0.3s ease 0.08s both;">
+        <sc-for list="{{ playerGameRows }}" as="pgRow" hint-placeholder-count="8">
+          <div style="display: flex; align-items: center; gap: 14px; background: #0F1D2E; border: {{ pgRow.borderStyle }}; border-radius: 12px; padding: 14px 18px; flex-wrap: wrap;">
+            <span style="width: 9px; height: 9px; border-radius: 50%; background: {{ pgRow.statusDot }}; flex-shrink: 0;"></span>
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px;">
+              <span style="font-size: 20px; line-height: 1; flex-shrink: 0;">{{ pgRow.flagA }}</span>
+              <span style="font-size: 13px; font-weight: 600; color: #EBF0F5;">{{ pgRow.teamA }}</span>
+              <span style="color: #2A3D52; font-size: 12px;">×</span>
+              <span style="font-size: 13px; font-weight: 600; color: #EBF0F5;">{{ pgRow.teamB }}</span>
+              <span style="font-size: 20px; line-height: 1; flex-shrink: 0;">{{ pgRow.flagB }}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; min-width: 88px;">
+              <span style="font-size: 11px; color: #445566;">{{ pgRow.date }} · {{ pgRow.time }}</span>
+              <span style="font-size: 11px; color: #445566; font-weight: 600;">{{ pgRow.grupo }}</span>
+            </div>
+            <sc-if value="{{ pgRow.isFinalizado }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align: center; min-width: 64px; flex-shrink: 0;">
+                <p style="font-size: 10px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;">Resultado</p>
+                <p style="font-size: 18px; font-weight: 700; color: #EBF0F5; font-family: 'Fira Code', monospace; letter-spacing: 2px; line-height: 1;">{{ pgRow.resultText }}</p>
+              </div>
+            </sc-if>
+            <div style="text-align: center; min-width: 76px; flex-shrink: 0;">
+              <p style="font-size: 10px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px;">Meu palpite</p>
+              <div style="display: inline-block; background: {{ pgRow.palpiteBg }}; color: {{ pgRow.palpiteColor }}; border: {{ pgRow.palpiteBorder }}; border-radius: 8px; padding: 5px 12px; font-size: 15px; font-weight: 700; font-family: 'Fira Code', monospace; letter-spacing: 2px; min-width: 60px; text-align: center;">{{ pgRow.palpiteLabel }}</div>
+            </div>
+            <sc-if value="{{ pgRow.showPts }}" hint-placeholder-val="{{ false }}">
+              <div style="background: {{ pgRow.ptsBg }}; border: {{ pgRow.ptsBorder }}; border-radius: 8px; padding: 8px 14px; text-align: center; min-width: 52px; flex-shrink: 0;">
+                <p style="font-size: 16px; font-weight: 700; color: {{ pgRow.ptsColor }}; line-height: 1;">{{ pgRow.ptsText }}</p>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <!-- END PLAYER -->
+
+    <!-- ══ COUNTRY DETAIL ══ -->
+    <sc-if value="{{ isCountry }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 28px; flex-wrap: wrap; animation: fadeInUp 0.3s ease;">
+        <span style="font-size: 52px; line-height: 1; flex-shrink: 0;">{{ countryFlag }}</span>
+        <div>
+          <h1 style="font-size: 24px; font-weight: 700; color: #EBF0F5; letter-spacing: -0.5px;">{{ selectedCountry }}</h1>
+          <button onClick="{{ countryGroupClick }}" style="margin-top: 6px; font-size: 12px; font-weight: 700; color: #60A5FA; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2); cursor: pointer; padding: 4px 12px; border-radius: 20px; font-family: inherit;">{{ countryGroup }} →</button>
+        </div>
+        <div style="margin-left: auto; display: flex; gap: 12px; flex-shrink: 0; flex-wrap: wrap;">
+          <div style="text-align: center; padding: 14px 20px; background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; min-width: 72px;">
+            <p style="font-size: 26px; font-weight: 700; color: #00DC82; line-height: 1;">{{ countryW }}</p>
+            <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #445566; margin-top: 4px; font-weight: 700;">Vitórias</p>
+          </div>
+          <div style="text-align: center; padding: 14px 20px; background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; min-width: 72px;">
+            <p style="font-size: 26px; font-weight: 700; color: #F7C948; line-height: 1;">{{ countryD }}</p>
+            <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #445566; margin-top: 4px; font-weight: 700;">Empates</p>
+          </div>
+          <div style="text-align: center; padding: 14px 20px; background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; min-width: 72px;">
+            <p style="font-size: 26px; font-weight: 700; color: #F87171; line-height: 1;">{{ countryL }}</p>
+            <p style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #445566; margin-top: 4px; font-weight: 700;">Derrotas</p>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <!-- END COUNTRY -->
+
+    <!-- ══ GROUP DETAIL ══ -->
+    <sc-if value="{{ isGroup }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom: 28px; animation: fadeInUp 0.3s ease;">
+        <h1 style="font-size: 24px; font-weight: 700; color: #EBF0F5; letter-spacing: -0.5px;">{{ selectedGroup }}</h1>
+        <p style="font-size: 14px; color: #7A8FA0; margin-top: 4px;">Classificação e palpites</p>
+      </div>
+      <p style="font-size: 11px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px;">CLASSIFICAÇÃO</p>
+      <div style="background: #0F1D2E; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; overflow: hidden; margin-bottom: 28px;">
+        <div style="display: grid; grid-template-columns: 28px 1fr 48px 72px 60px; padding: 10px 14px; background: #0A1628; border-bottom: 1px solid rgba(255,255,255,0.07);">
+          <div></div>
+          <div style="font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1px;">Seleção</div>
+          <div style="font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1px; text-align: center;">Pts</div>
+          <div style="font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1px; text-align: center;">V–E–D</div>
+          <div style="font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1px; text-align: center;">GP:GS</div>
+        </div>
+        <sc-for list="{{ groupStandings }}" as="standing" hint-placeholder-count="2">
+          <div onClick="{{ standing.onClick }}" style="display: grid; grid-template-columns: 28px 1fr 48px 72px 60px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;" style-hover="background: rgba(255,255,255,0.03)">
+            <div style="display: flex; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ standing.posColor }}; flex-shrink: 0;"></span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px; line-height: 1; flex-shrink: 0;">{{ standing.flag }}</span>
+              <span style="font-size: 14px; font-weight: 600; color: #EBF0F5;">{{ standing.team }}</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 15px; font-weight: 700; color: {{ standing.posColor }};">{{ standing.pts }}</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 13px; color: #7A8FA0; font-family: 'Fira Code', monospace;">{{ standing.wdl }}</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 13px; color: #7A8FA0; font-family: 'Fira Code', monospace;">{{ standing.gfga }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <!-- END GROUP -->
+
+    <!-- ══ PALPITES TABLE (landing + country + group) ══ -->
+    <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+        <p style="font-size: 11px; font-weight: 700; color: #445566; text-transform: uppercase; letter-spacing: 1.2px;">{{ tableTitle }}</p>
+        <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(0,220,130,0.35); display: inline-block; flex-shrink: 0;"></span>
+              <span style="font-size: 12px; color: #00DC82; font-weight: 600;">Exato +3</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(96,165,250,0.35); display: inline-block; flex-shrink: 0;"></span>
+              <span style="font-size: 12px; color: #60A5FA; font-weight: 600;">Vencedor +1</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(248,113,113,0.3); display: inline-block; flex-shrink: 0;"></span>
+              <span style="font-size: 12px; color: #F87171; font-weight: 600;">Errou</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: rgba(251,146,60,0.3); display: inline-block; flex-shrink: 0;"></span>
+              <span style="font-size: 12px; color: #FB923C; font-weight: 600;">Em andamento</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="overflow-x: auto; border-radius: 14px; border: 1px solid rgba(255,255,255,0.07);">
+        <!-- Header row -->
+        <div style="display: grid; grid-template-columns: 210px 72px 72px repeat(7, minmax(78px, 1fr)); min-width: 900px; background: #0A1628; border-bottom: 2px solid rgba(255,255,255,0.08);">
+          <div style="padding: 12px 14px; font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1.2px;">Jogo</div>
+          <div style="padding: 12px 8px; font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1.2px;">Grupo</div>
+          <div style="padding: 12px 8px; font-size: 10px; font-weight: 700; color: #2A3D52; text-transform: uppercase; letter-spacing: 1.2px; text-align: center;">Placar</div>
+          <sc-for list="{{ tableHeaderPlayers }}" as="ph" hint-placeholder-count="7">
+            <div onClick="{{ ph.onClick }}" style="padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; border-left: 1px solid rgba(255,255,255,0.05);" style-hover="background: rgba(255,255,255,0.03)">
+              <div style="width: 30px; height: 30px; border-radius: 50%; background: {{ ph.avatarBg }}; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #030B16; flex-shrink: 0;">{{ ph.initial }}</div>
+              <span style="font-size: 10px; font-weight: 600; color: #94A3B8; text-align: center; line-height: 1.2; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px;">{{ ph.name }}</span>
+              <span style="font-size: 12px; font-weight: 700; color: {{ ph.ptColor }}; line-height: 1;">{{ ph.pontos }}<span style="font-size: 9px; color: #2A3D52; font-weight: 500;"> pts</span></span>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- Data rows -->
+        <sc-for list="{{ activeTableRows }}" as="row" hint-placeholder-count="8">
+          <div style="display: grid; grid-template-columns: 210px 72px 72px repeat(7, minmax(78px, 1fr)); min-width: 900px; border-bottom: 1px solid rgba(255,255,255,0.04); background: {{ row.rowBg }};">
+            <!-- Game info cell -->
+            <div style="padding: 12px 14px 12px 11px; display: flex; flex-direction: column; justify-content: center; gap: 5px; border-left: {{ row.borderLeft }};">
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span onClick="{{ row.onTeamAClick }}" style="font-size: 17px; line-height: 1; cursor: pointer; flex-shrink: 0;">{{ row.flagA }}</span>
+                <span style="font-size: 12px; font-weight: 600; color: #EBF0F5; white-space: nowrap;">{{ row.teamA }}</span>
+                <span style="font-size: 11px; color: #1E3A5F; font-weight: 700; flex-shrink: 0;">×</span>
+                <span style="font-size: 12px; font-weight: 600; color: #EBF0F5; white-space: nowrap;">{{ row.teamB }}</span>
+                <span onClick="{{ row.onTeamBClick }}" style="font-size: 17px; line-height: 1; cursor: pointer; flex-shrink: 0;">{{ row.flagB }}</span>
+              </div>
+              <span style="font-size: 10px; color: #2A3D52;">{{ row.date }} · {{ row.time }}</span>
+            </div>
+            <!-- Grupo cell -->
+            <div style="padding: 12px 8px; display: flex; align-items: center; justify-content: center;">
+              <button onClick="{{ row.onGroupClick }}" style="font-size: 10px; color: #7A8FA0; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; padding: 4px 7px; border-radius: 6px; font-family: inherit; font-weight: 600; white-space: nowrap; line-height: 1.3; text-align: center;" style-hover="background: rgba(255,255,255,0.1); color: #EBF0F5">{{ row.grupo }}</button>
+            </div>
+            <!-- Score cell -->
+            <div style="padding: 12px 8px; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 14px; font-weight: 700; color: {{ row.resultColor }}; font-family: 'Fira Code', monospace; letter-spacing: 1px; white-space: nowrap;">{{ row.resultText }}</span>
+            </div>
+            <!-- Player palpite cells -->
+            <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="7">
+              <div style="padding: 8px 5px; display: flex; align-items: center; justify-content: center; border-left: 1px solid rgba(255,255,255,0.04);">
+                <div style="background: {{ cell.bg }}; color: {{ cell.color }}; border: {{ cell.border }}; border-radius: 7px; padding: 5px 7px; font-size: 13px; font-weight: 700; min-width: 44px; text-align: center; font-family: 'Fira Code', monospace; letter-spacing: 1px; line-height: 1.3;">{{ cell.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <!-- END TABLE -->
+
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  state = {
+    page: 'landing',
+    selectedPlayerId: null,
+    selectedCountry: null,
+    selectedGroup: null,
+  };
+
+  PLAYERS = [
+    { id:1, name:'Ricardo',    initial:'R', avatarBg:'linear-gradient(135deg,#F7C948,#F59E0B)' },
+    { id:2, name:'Pajé',       initial:'P', avatarBg:'linear-gradient(135deg,#94A3B8,#64748B)' },
+    { id:3, name:'Big',        initial:'B', avatarBg:'linear-gradient(135deg,#CD7F32,#92400E)' },
+    { id:4, name:'Flávia',     initial:'F', avatarBg:'linear-gradient(135deg,#60A5FA,#2563EB)' },
+    { id:5, name:'Mari Gallo', initial:'M', avatarBg:'linear-gradient(135deg,#A78BFA,#7C3AED)' },
+    { id:6, name:'Mari Som',   initial:'S', avatarBg:'linear-gradient(135deg,#4ADE80,#16A34A)' },
+    { id:7, name:'Lere',       initial:'L', avatarBg:'linear-gradient(135deg,#F87171,#DC2626)' },
+  ];
+
+  RANKING_DATA = [
+    { id:1, pontos:15, exatos:5 },
+    { id:2, pontos:12, exatos:4 },
+    { id:3, pontos:11, exatos:3 },
+    { id:4, pontos:11, exatos:3 },
+    { id:5, pontos:9,  exatos:2 },
+    { id:6, pontos:7,  exatos:2 },
+    { id:7, pontos:0,  exatos:0 },
+  ];
+
+  GAMES = [
+    { id:1, teamA:'Espanha',    teamB:'Alemanha',  flagA:'🇪🇸', flagB:'🇩🇪', date:'14 Jun', time:'18:00', status:'finalizado', grupo:'Grupo E', resultado:{goalsA:2,goalsB:1} },
+    { id:2, teamA:'Brasil',     teamB:'Canadá',    flagA:'🇧🇷', flagB:'🇨🇦', date:'15 Jun', time:'16:00', status:'finalizado', grupo:'Grupo F', resultado:{goalsA:3,goalsB:0} },
+    { id:3, teamA:'Portugal',   teamB:'Uruguai',   flagA:'🇵🇹', flagB:'🇺🇾', date:'15 Jun', time:'21:00', status:'finalizado', grupo:'Grupo H', resultado:{goalsA:1,goalsB:1} },
+    { id:4, teamA:'Argentina',  teamB:'Croácia',   flagA:'🇦🇷', flagB:'🇭🇷', date:'16 Jun', time:'19:00', status:'finalizado', grupo:'Grupo C', resultado:{goalsA:1,goalsB:0} },
+    { id:5, teamA:'França',     teamB:'Japão',     flagA:'🇫🇷', flagB:'🇯🇵', date:'17 Jun', time:'15:00', status:'finalizado', grupo:'Grupo A', resultado:{goalsA:2,goalsB:0} },
+    { id:6, teamA:'Inglaterra', teamB:'EUA',       flagA:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', flagB:'🇺🇸', date:'19 Jun', time:'14:00', status:'bloqueado', grupo:'Grupo B' },
+    { id:7, teamA:'Brasil',     teamB:'Marrocos',  flagA:'🇧🇷', flagB:'🇲🇦', date:'20 Jun', time:'16:00', status:'aberto',    grupo:'Grupo F' },
+    { id:8, teamA:'Argentina',  teamB:'México',    flagA:'🇦🇷', flagB:'🇲🇽', date:'21 Jun', time:'19:00', status:'aberto',    grupo:'Grupo C' },
+  ];
+
+  // palpites[playerId][gameId] = {a, b} or null
+  PALPITES = {
+    1: {1:{a:2,b:1},2:{a:3,b:0},3:{a:1,b:1},4:{a:1,b:0},5:{a:2,b:0},6:{a:2,b:0},7:{a:3,b:0},8:{a:2,b:0}},
+    2: {1:{a:2,b:1},2:{a:3,b:0},3:{a:2,b:1},4:{a:1,b:0},5:{a:2,b:0},6:{a:1,b:0},7:{a:2,b:1},8:{a:1,b:0}},
+    3: {1:{a:1,b:0},2:{a:3,b:0},3:{a:1,b:1},4:{a:2,b:1},5:{a:2,b:0},6:{a:2,b:1},7:{a:2,b:0},8:{a:2,b:1}},
+    4: {1:{a:2,b:0},2:{a:2,b:0},3:{a:1,b:1},4:{a:1,b:0},5:{a:2,b:0},6:{a:1,b:0},7:{a:2,b:0},8:{a:1,b:0}},
+    5: {1:{a:1,b:0},2:{a:2,b:0},3:{a:1,b:1},4:{a:1,b:0},5:{a:1,b:0},6:{a:2,b:1},7:{a:1,b:0},8:{a:1,b:0}},
+    6: {1:{a:0,b:1},2:{a:2,b:0},3:{a:1,b:1},4:{a:0,b:0},5:{a:2,b:0},6:{a:1,b:1},7:null,     8:{a:1,b:0}},
+    7: {1:{a:0,b:2},2:{a:0,b:0},3:{a:2,b:0},4:{a:0,b:1},5:{a:0,b:2},6:{a:1,b:2},7:null,     8:null     },
+  };
+
+  getPal(pid, gid) {
+    const pp = this.PALPITES[pid];
+    return pp ? (pp[gid] || null) : null;
+  }
+
+  scoreCell(pal, game) {
+    if (!pal) return { tipo: 'sem', pts: 0 };
+    if (game.status === 'aberto')    return { tipo: 'aberto',    pts: 0 };
+    if (game.status === 'bloqueado') return { tipo: 'bloqueado', pts: 0 };
+    const { goalsA: rA, goalsB: rB } = game.resultado;
+    if (pal.a === rA && pal.b === rB) return { tipo: 'exato', pts: 3 };
+    const rW = rA > rB ? 'A' : rB > rA ? 'B' : 'E';
+    const pW = pal.a > pal.b ? 'A' : pal.b > pal.a ? 'B' : 'E';
+    return rW === pW ? { tipo: 'vencedor', pts: 1 } : { tipo: 'errou', pts: 0 };
+  }
+
+  cellStyle(tipo) {
+    const M = {
+      exato:    ['rgba(0,220,130,0.15)',   '#00DC82', 'rgba(0,220,130,0.3)'   ],
+      vencedor: ['rgba(96,165,250,0.12)',  '#60A5FA', 'rgba(96,165,250,0.22)' ],
+      errou:    ['rgba(248,113,113,0.1)',  '#F87171', 'rgba(248,113,113,0.22)'],
+      bloqueado:['rgba(251,146,60,0.1)',   '#FB923C', 'rgba(251,146,60,0.22)' ],
+      aberto:   ['rgba(255,255,255,0.04)', '#7A8FA0', 'rgba(255,255,255,0.1)' ],
+      sem:      ['transparent',            '#2A3D52', 'rgba(255,255,255,0.05)'],
+    };
+    const [bg, color, bc] = M[tipo] || M.sem;
+    return { bg, color, border: '1px solid ' + bc };
+  }
+
+  computeTableRows(games) {
+    return games.map(g => {
+      const cells = this.PLAYERS.map(p => {
+        const pal = this.getPal(p.id, g.id);
+        const scored = this.scoreCell(pal, g);
+        const s = this.cellStyle(scored.tipo);
+        return { ...s, label: pal ? (pal.a + '-' + pal.b) : '—' };
+      });
+      const statusBorderColor = g.status === 'finalizado' ? '#1E3A5F' : g.status === 'bloqueado' ? '#FB923C' : '#00DC82';
+      return {
+        ...g,
+        cells,
+        rowBg:      g.status === 'finalizado' ? '#0A1628' : g.status === 'bloqueado' ? 'rgba(251,146,60,0.025)' : 'rgba(0,220,130,0.015)',
+        borderLeft: '3px solid ' + statusBorderColor,
+        resultText:  g.resultado ? (g.resultado.goalsA + '-' + g.resultado.goalsB) : g.status === 'bloqueado' ? '⏱' : '—',
+        resultColor: g.status === 'finalizado' ? '#EBF0F5' : g.status === 'bloqueado' ? '#FB923C' : '#2A3D52',
+        onTeamAClick: () => this.setState({ page:'country', selectedCountry: g.teamA }),
+        onTeamBClick: () => this.setState({ page:'country', selectedCountry: g.teamB }),
+        onGroupClick: () => this.setState({ page:'group', selectedGroup: g.grupo }),
+      };
+    });
+  }
+
+  renderVals() {
+    const { page, selectedPlayerId, selectedCountry, selectedGroup } = this.state;
+
+    // Ranking rows
+    const MEDALS = ['🥇','🥈','🥉'];
+    const RANK_COLORS = ['#F7C948','#94A3B8','#CD7F32'];
+    const rankingRows = this.RANKING_DATA.map((r, i) => {
+      const p = this.PLAYERS.find(pl => pl.id === r.id);
+      return {
+        ...r, name: p.name, initial: p.initial, color: p.avatarBg,
+        pos: i + 1,
+        medal: MEDALS[i] || '',
+        ptColor: RANK_COLORS[i] || '#EBF0F5',
+        onClick: () => this.setState({ page:'player', selectedPlayerId: r.id }),
+      };
+    });
+
+    // Table header players (same order as PLAYERS)
+    const tableHeaderPlayers = this.PLAYERS.map(p => {
+      const rIdx = this.RANKING_DATA.findIndex(r => r.id === p.id);
+      const rd = rIdx >= 0 ? this.RANKING_DATA[rIdx] : { pontos:0, exatos:0 };
+      return {
+        ...p, pontos: rd.pontos,
+        ptColor: rIdx === 0 ? '#F7C948' : rIdx === 1 ? '#94A3B8' : rIdx === 2 ? '#CD7F32' : rd.pontos >= 9 ? '#60A5FA' : '#7A8FA0',
+        onClick: () => this.setState({ page:'player', selectedPlayerId: p.id }),
+      };
+    });
+
+    // Proximos jogos (non-finalized)
+    const proximosJogos = this.GAMES.filter(g => g.status !== 'finalizado').map(g => ({
+      ...g,
+      guesses: this.PLAYERS.map(p => {
+        const pal = this.getPal(p.id, g.id);
+        return { initial: p.initial, avatarBg: p.avatarBg, label: pal ? (pal.a + '-' + pal.b) : '—', labelColor: pal ? '#EBF0F5' : '#2A3D52' };
+      }),
+      statusBadge: g.status === 'bloqueado' ? '● Em andamento' : '● Aberto',
+      statusColor: g.status === 'bloqueado' ? '#FB923C' : '#00DC82',
+      statusBg:    g.status === 'bloqueado' ? 'rgba(251,146,60,0.12)' : 'rgba(0,220,130,0.1)',
+      onTeamAClick: () => this.setState({ page:'country', selectedCountry: g.teamA }),
+      onTeamBClick: () => this.setState({ page:'country', selectedCountry: g.teamB }),
+      onGroupClick: () => this.setState({ page:'group', selectedGroup: g.grupo }),
+    }));
+
+    // Active table data
+    let activeGames, tableTitle;
+    if (page === 'country' && selectedCountry) {
+      activeGames = this.GAMES.filter(g => g.teamA === selectedCountry || g.teamB === selectedCountry);
+      tableTitle  = 'JOGOS DE ' + selectedCountry.toUpperCase();
+    } else if (page === 'group' && selectedGroup) {
+      activeGames = this.GAMES.filter(g => g.grupo === selectedGroup);
+      tableTitle  = 'JOGOS DO ' + selectedGroup.toUpperCase();
+    } else {
+      activeGames = this.GAMES;
+      tableTitle  = 'TODOS OS PALPITES';
+    }
+    const activeTableRows = this.computeTableRows(activeGames);
+
+    // General stats
+    const finalizadoCount = this.GAMES.filter(g => g.status === 'finalizado').length;
+    const abertoCount     = this.GAMES.filter(g => g.status === 'aberto').length;
+    const totalGames      = this.GAMES.length;
+    const totalPlayers    = this.PLAYERS.length;
+    const leader          = rankingRows[0];
+
+    // ── Player detail ──
+    const selPlayer  = selectedPlayerId ? this.PLAYERS.find(p => p.id === selectedPlayerId) : null;
+    const selRankIdx = selectedPlayerId ? this.RANKING_DATA.findIndex(r => r.id === selectedPlayerId) : -1;
+    const selRankData = selRankIdx >= 0 ? this.RANKING_DATA[selRankIdx] : null;
+
+    let selPlayerExatos = 0, selPlayerVencedor = 0, selPlayerErrou = 0;
+    const playerGameRows = selPlayer ? this.GAMES.map(g => {
+      const pal = this.getPal(selPlayer.id, g.id);
+      const scored = this.scoreCell(pal, g);
+      const isFinalizado = g.status === 'finalizado';
+      if (isFinalizado && pal) {
+        if (scored.tipo === 'exato')    selPlayerExatos++;
+        else if (scored.tipo === 'vencedor') selPlayerVencedor++;
+        else                            selPlayerErrou++;
+      }
+      const cs      = this.cellStyle(scored.tipo);
+      const showPts = isFinalizado && !!pal;
+      const ptsText  = showPts ? (scored.pts === 3 ? '+3' : scored.pts === 1 ? '+1' : '0') : '';
+      const ptsColor = scored.pts === 3 ? '#00DC82' : scored.pts === 1 ? '#60A5FA' : '#F87171';
+      const ptsBg    = scored.pts === 3 ? 'rgba(0,220,130,0.12)' : scored.pts === 1 ? 'rgba(96,165,250,0.1)' : 'rgba(248,113,113,0.08)';
+      const ptsBorder= '1px solid ' + (scored.pts === 3 ? 'rgba(0,220,130,0.25)' : scored.pts === 1 ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.15)');
+      let statusDot;
+      if (!pal)               statusDot = g.status === 'bloqueado' ? '#FB923C' : g.status === 'aberto' ? '#00DC82' : '#2A3D52';
+      else if (isFinalizado)  statusDot = scored.tipo === 'exato' ? '#00DC82' : scored.tipo === 'vencedor' ? '#60A5FA' : '#F87171';
+      else                    statusDot = g.status === 'bloqueado' ? '#FB923C' : '#00DC82';
+      const borderBC = (isFinalizado && pal)
+        ? (scored.tipo === 'exato' ? 'rgba(0,220,130,0.2)' : scored.tipo === 'vencedor' ? 'rgba(96,165,250,0.15)' : scored.tipo === 'errou' ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.07)')
+        : 'rgba(255,255,255,0.07)';
+      return {
+        ...g, isFinalizado, showPts,
+        resultText:    g.resultado ? (g.resultado.goalsA + '-' + g.resultado.goalsB) : '',
+        palpiteLabel:  pal ? (pal.a + '-' + pal.b) : '—',
+        palpiteBg: cs.bg, palpiteColor: cs.color, palpiteBorder: cs.border,
+        ptsText, ptsColor, ptsBg, ptsBorder, statusDot,
+        borderStyle: '1px solid ' + borderBC,
+      };
+    }) : [];
+
+    // ── Country detail ──
+    const cGames = selectedCountry ? this.GAMES.filter(g => g.teamA === selectedCountry || g.teamB === selectedCountry) : [];
+    let countryW = 0, countryD = 0, countryL = 0;
+    cGames.filter(g => g.status === 'finalizado').forEach(g => {
+      const isA = g.teamA === selectedCountry;
+      const { goalsA: rA, goalsB: rB } = g.resultado;
+      if (rA === rB) countryD++;
+      else if ((isA && rA > rB) || (!isA && rB > rA)) countryW++;
+      else countryL++;
+    });
+    const cGame = selectedCountry ? this.GAMES.find(g => g.teamA === selectedCountry || g.teamB === selectedCountry) : null;
+    const countryFlagVal  = cGame ? (cGame.teamA === selectedCountry ? cGame.flagA : cGame.flagB) : '';
+    const countryGroupVal = cGame ? cGame.grupo : '';
+
+    // ── Group detail ──
+    const gGames = selectedGroup ? this.GAMES.filter(g => g.grupo === selectedGroup) : [];
+    const tsMap = {};
+    gGames.forEach(g => {
+      if (!tsMap[g.teamA]) tsMap[g.teamA] = { team:g.teamA, flag:g.flagA, w:0,d:0,l:0,pts:0,gf:0,ga:0 };
+      if (!tsMap[g.teamB]) tsMap[g.teamB] = { team:g.teamB, flag:g.flagB, w:0,d:0,l:0,pts:0,gf:0,ga:0 };
+    });
+    gGames.filter(g => g.status === 'finalizado').forEach(g => {
+      const { goalsA: rA, goalsB: rB } = g.resultado;
+      tsMap[g.teamA].gf += rA; tsMap[g.teamA].ga += rB;
+      tsMap[g.teamB].gf += rB; tsMap[g.teamB].ga += rA;
+      if (rA > rB)       { tsMap[g.teamA].w++; tsMap[g.teamA].pts += 3; tsMap[g.teamB].l++; }
+      else if (rA === rB){ tsMap[g.teamA].d++; tsMap[g.teamA].pts++; tsMap[g.teamB].d++; tsMap[g.teamB].pts++; }
+      else               { tsMap[g.teamB].w++; tsMap[g.teamB].pts += 3; tsMap[g.teamA].l++; }
+    });
+    const groupStandings = Object.values(tsMap)
+      .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga))
+      .map((t, i) => ({
+        ...t,
+        wdl: t.w + '-' + t.d + '-' + t.l,
+        gfga: t.gf + ':' + t.ga,
+        posColor: i === 0 ? '#00DC82' : i === 1 ? '#60A5FA' : '#7A8FA0',
+        onClick: () => this.setState({ page:'country', selectedCountry: t.team }),
+      }));
+
+    return {
+      isLanding: page === 'landing',
+      isPlayer:  page === 'player',
+      isCountry: page === 'country',
+      isGroup:   page === 'group',
+      showTable: page !== 'player',
+      showBreadcrumb: page !== 'landing',
+
+      finalizadoCount, totalGames, totalPlayers, abertoCount,
+
+      leaderName: leader ? leader.name : '',
+      leaderPts:  leader ? leader.pontos : 0,
+      leaderOnClick: () => leader && this.setState({ page:'player', selectedPlayerId: leader.id }),
+
+      proximosJogos,
+      rankingRows,
+      tableHeaderPlayers,
+      activeTableRows,
+      tableTitle,
+
+      selPlayerName:      selPlayer ? selPlayer.name : '',
+      selPlayerNameUpper: selPlayer ? selPlayer.name.toUpperCase() : '',
+      selPlayerInitial:   selPlayer ? selPlayer.initial : '',
+      selPlayerColor:     selPlayer ? selPlayer.avatarBg : '#445566',
+      selPlayerPos:       selRankIdx >= 0 ? selRankIdx + 1 : 0,
+      selPlayerPts:       selRankData ? selRankData.pontos : 0,
+      selPlayerExatos, selPlayerVencedor, selPlayerErrou,
+      playerGameRows,
+
+      selectedCountry: selectedCountry || '',
+      countryFlag:     countryFlagVal,
+      countryGroup:    countryGroupVal,
+      countryW, countryD, countryL,
+      countryGroupClick: countryGroupVal ? () => this.setState({ page:'group', selectedGroup: countryGroupVal }) : () => {},
+
+      selectedGroup: selectedGroup || '',
+      groupStandings,
+
+      goBack: () => this.setState({ page:'landing', selectedPlayerId:null, selectedCountry:null, selectedGroup:null }),
+      goHome: () => this.setState({ page:'landing', selectedPlayerId:null, selectedCountry:null, selectedGroup:null }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
