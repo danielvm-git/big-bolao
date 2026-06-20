@@ -3,6 +3,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
+    "build": "echo 'dist pre-built, skipping'",
     "start": "node index.js"
   }
 }
