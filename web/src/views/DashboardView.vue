@@ -9,6 +9,9 @@ const { jogos, loaded: jogosLoaded } = useJogos()
 const { rankingList } = useRanking()
 
 const page = ref('landing')
+const selectedPlayerId = ref(null)
+const selectedCountry = ref(null)
+const selectedGroup = ref(null)
 const showBreadcrumb = computed(() => page.value !== 'landing')
 
 const finalizadoCount = computed(() => jogos.value.filter(g => g.isFinalizado).length)
@@ -145,6 +148,92 @@ function generateGuesses(game) {
   }))
 }
 
+// ── Player Detail ──
+const selPlayer = computed(() => {
+  if (!selectedPlayerId.value) return null
+  return rankingList.value.find(p => p.id === selectedPlayerId.value) || null
+})
+const selPlayerPos = computed(() => selPlayer.value ? rankingList.value.findIndex(p => p.id === selPlayer.value.id) + 1 : 0)
+
+const playerGameRows = computed(() => {
+  if (!selPlayer.value || !allGuesses.value) return []
+  const pIdx = PLAYER_NAMES.indexOf(selPlayer.value.name)
+  if (pIdx < 0) return []
+  let exatos = 0, vencedores = 0, erros = 0
+  const rows = jogos.value.map(g => {
+    const pal = (allGuesses.value[pIdx] || {})[g.id] || null
+    const resultText = g.resultado ? (g.resultado.goalsA + '-' + g.resultado.goalsB) : ''
+    const isFinalizado = g.isFinalizado
+    const statusDot = g.isAberto ? (pal ? 'var(--accent-green)' : '#2A3D52')
+      : g.isBloqueado ? 'var(--accent-orange)'
+      : isFinalizado && pal
+        ? (g.resultado && pal.a === g.resultado.goalsA && pal.b === g.resultado.goalsB ? 'var(--accent-green)'
+          : (() => { const rv = g.resultado.goalsA > g.resultado.goalsB ? 'A' : g.resultado.goalsB > g.resultado.goalsA ? 'B' : 'E'
+            const pv = pal.a > pal.b ? 'A' : pal.b > pal.a ? 'B' : 'E'
+            return rv === pv ? 'var(--accent-blue)' : 'var(--accent-red)' })())
+        : '#2A3D52'
+    if (isFinalizado && pal && g.resultado) {
+      const rv = g.resultado.goalsA > g.resultado.goalsB ? 'A' : g.resultado.goalsB > g.resultado.goalsA ? 'B' : 'E'
+      const pv = pal.a > pal.b ? 'A' : pal.b > pal.a ? 'B' : 'E'
+      const isExato = pal.a === g.resultado.goalsA && pal.b === g.resultado.goalsB
+      if (isExato) exatos++
+      else if (rv === pv) vencedores++
+      else erros++
+    }
+    return { ...g, isFinalizado, pal, resultText, statusDot }
+  })
+  // Store computed stats for renderVals
+  return { rows, exatos, vencedores, erros }
+})
+
+const selPlayerExatos = computed(() => playerGameRows.value?.exatos || 0)
+const selPlayerVencedor = computed(() => playerGameRows.value?.vencedores || 0)
+const selPlayerErrou = computed(() => playerGameRows.value?.erros || 0)
+
+// ── Country Detail ──
+const countryGames = computed(() =>
+  selectedCountry.value ? jogos.value.filter(g => g.teamA === selectedCountry.value || g.teamB === selectedCountry.value) : []
+)
+const countryW = computed(() => countryGames.value.filter(g => g.isFinalizado && g.resultado && (
+  (g.teamA === selectedCountry.value && g.resultado.goalsA > g.resultado.goalsB) ||
+  (g.teamB === selectedCountry.value && g.resultado.goalsB > g.resultado.goalsA)
+)).length)
+const countryD = computed(() => countryGames.value.filter(g => g.isFinalizado && g.resultado && g.resultado.goalsA === g.resultado.goalsB).length)
+const countryL = computed(() => countryGames.value.filter(g => g.isFinalizado && g.resultado && (
+  (g.teamA === selectedCountry.value && g.resultado.goalsA < g.resultado.goalsB) ||
+  (g.teamB === selectedCountry.value && g.resultado.goalsB < g.resultado.goalsA)
+)).length)
+const countryFlag = computed(() => {
+  const cg = countryGames.value[0]
+  if (!cg) return '🏳️'
+  return cg.teamA === selectedCountry.value ? cg.flagA : cg.flagB
+})
+const countryGroupVal = computed(() => countryGames.value[0]?.grupo || '')
+
+// ── Group Detail ──
+const groupGames = computed(() =>
+  selectedGroup.value ? jogos.value.filter(g => g.grupo === selectedGroup.value) : []
+)
+const groupStandings = computed(() => {
+  const tsMap = {}
+  for (const g of groupGames.value) {
+    if (!tsMap[g.teamA]) tsMap[g.teamA] = { team: g.teamA, flag: g.flagA, w: 0, d: 0, l: 0, pts: 0, gf: 0, ga: 0 }
+    if (!tsMap[g.teamB]) tsMap[g.teamB] = { team: g.teamB, flag: g.flagB, w: 0, d: 0, l: 0, pts: 0, gf: 0, ga: 0 }
+  }
+  for (const g of groupGames.value) {
+    if (!g.isFinalizado || !g.resultado) continue
+    const { goalsA: rA, goalsB: rB } = g.resultado
+    tsMap[g.teamA].gf += rA; tsMap[g.teamA].ga += rB
+    tsMap[g.teamB].gf += rB; tsMap[g.teamB].ga += rA
+    if (rA > rB) { tsMap[g.teamA].w++; tsMap[g.teamA].pts += 3; tsMap[g.teamB].l++ }
+    else if (rA === rB) { tsMap[g.teamA].d++; tsMap[g.teamA].pts++; tsMap[g.teamB].d++; tsMap[g.teamB].pts++ }
+    else { tsMap[g.teamB].w++; tsMap[g.teamB].pts += 3; tsMap[g.teamA].l++ }
+  }
+  return Object.values(tsMap)
+    .sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga))
+    .map((t, i) => ({ ...t, wdl: t.w + '-' + t.d + '-' + t.l, gfga: t.gf + ':' + t.ga, posColor: i === 0 ? 'var(--accent-green)' : i === 1 ? 'var(--accent-blue)' : 'var(--text-secondary)' }))
+})
+
 const proximosJogos = computed(() =>
   jogos.value.filter(g => !g.isFinalizado).map(g => ({
     ...g,
@@ -161,11 +250,30 @@ function goHome() {
 
 function goBack() {
   page.value = 'landing'
+  selectedPlayerId.value = null
+  selectedCountry.value = null
+  selectedGroup.value = null
 }
 
 function goToPlayer(player) {
-  // Will navigate to player detail view in e03-s05
-  console.log('Player:', player)
+  selectedPlayerId.value = player.id
+  selectedCountry.value = null
+  selectedGroup.value = null
+  page.value = 'player'
+}
+
+function goToCountry(teamName) {
+  selectedCountry.value = teamName
+  selectedPlayerId.value = null
+  selectedGroup.value = null
+  page.value = 'country'
+}
+
+function goToGroup(grupo) {
+  selectedGroup.value = grupo
+  selectedPlayerId.value = null
+  selectedCountry.value = null
+  page.value = 'group'
 }
 </script>
 
@@ -197,6 +305,117 @@ function goToPlayer(player) {
 
     <!-- MAIN CONTENT -->
     <main class="dash-main">
+      <!-- PLAYER DETAIL -->
+      <div v-if="page === 'player' && selPlayer" class="dash-player-page">
+        <div class="dash-player-header">
+          <div class="dash-player-avatar-big" :style="{ background: selPlayer.avatarColor }">{{ selPlayer.initial }}</div>
+          <div>
+            <h1 class="dash-player-name">{{ selPlayer.name }}</h1>
+            <p class="dash-player-pos">#{{ selPlayerPos }} no ranking</p>
+          </div>
+        </div>
+        <div class="dash-player-stats-grid">
+          <div class="dash-player-stat">
+            <p class="dash-player-stat-val gold">{{ selPlayer.pontos }}</p>
+            <p class="dash-player-stat-label">Pontos</p>
+          </div>
+          <div class="dash-player-stat">
+            <p class="dash-player-stat-val green">{{ selPlayerExatos }}</p>
+            <p class="dash-player-stat-label">🎯 Exatos</p>
+          </div>
+          <div class="dash-player-stat">
+            <p class="dash-player-stat-val blue">{{ selPlayerVencedor }}</p>
+            <p class="dash-player-stat-label">✓ Vencedores</p>
+          </div>
+          <div class="dash-player-stat">
+            <p class="dash-player-stat-val red">{{ selPlayerErrou }}</p>
+            <p class="dash-player-stat-label">✗ Erros</p>
+          </div>
+        </div>
+        <p class="dash-col-label" style="margin-bottom: 14px;">PALPITES DE {{ selPlayer.name?.toUpperCase() }}</p>
+        <div class="dash-player-games-list">
+          <div v-for="g in playerGameRows?.rows" :key="g.id" class="dash-pg-row">
+            <span class="dash-pg-dot" :style="{ background: g.statusDot }"></span>
+            <div class="dash-pg-teams">
+              <span class="dash-pg-flag">{{ g.flagA }}</span>
+              <span class="dash-pg-team">{{ g.teamA }}</span>
+              <span class="dash-pg-vs">×</span>
+              <span class="dash-pg-team">{{ g.teamB }}</span>
+              <span class="dash-pg-flag">{{ g.flagB }}</span>
+            </div>
+            <div class="dash-pg-meta">
+              <span class="dash-pg-meta-line">{{ g.date }} · {{ g.time }}</span>
+              <span class="dash-pg-meta-line">{{ g.grupo }}</span>
+            </div>
+            <div v-if="g.isFinalizado" class="dash-pg-resultado">
+              <p class="dash-pg-rlabel">Resultado</p>
+              <p class="dash-pg-rscore">{{ g.resultText }}</p>
+            </div>
+            <div class="dash-pg-palpite">
+              <p class="dash-pg-rlabel">Palpite</p>
+              <div class="dash-pg-pchip" :style="{
+                background: g.pal ? 'rgba(255,255,255,0.08)' : 'transparent',
+                color: g.pal ? 'var(--text-primary)' : '#2A3D52',
+                border: g.pal ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.04)'
+              }">{{ g.pal ? (g.pal.a + '-' + g.pal.b) : '—' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COUNTRY DETAIL -->
+      <div v-if="page === 'country' && selectedCountry" class="dash-country-page">
+        <div class="dash-country-header">
+          <span class="dash-country-flag-big">{{ countryFlag }}</span>
+          <div>
+            <h1 class="dash-country-name">{{ selectedCountry }}</h1>
+            <span class="dash-country-group-btn" @click="goToGroup(countryGroupVal)">{{ countryGroupVal }} →</span>
+          </div>
+          <div class="dash-country-stats">
+            <div class="dash-cstat">
+              <p class="dash-cstat-val green">{{ countryW }}</p>
+              <p class="dash-cstat-label">Vitórias</p>
+            </div>
+            <div class="dash-cstat">
+              <p class="dash-cstat-val gold">{{ countryD }}</p>
+              <p class="dash-cstat-label">Empates</p>
+            </div>
+            <div class="dash-cstat">
+              <p class="dash-cstat-val red">{{ countryL }}</p>
+              <p class="dash-cstat-label">Derrotas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP DETAIL -->
+      <div v-if="page === 'group' && selectedGroup" class="dash-group-page">
+        <div class="dash-group-header">
+          <h1 class="dash-group-title">{{ selectedGroup }}</h1>
+          <p class="dash-group-subtitle">Classificação e palpites</p>
+        </div>
+        <p class="dash-col-label">CLASSIFICAÇÃO</p>
+        <div class="dash-group-standings">
+          <div class="dash-gs-header">
+            <div></div>
+            <div class="dash-gs-hcell">Seleção</div>
+            <div class="dash-gs-hcell center">Pts</div>
+            <div class="dash-gs-hcell center">V–E–D</div>
+            <div class="dash-gs-hcell center">GP:GS</div>
+          </div>
+          <div v-for="s in groupStandings" :key="s.team" class="dash-gs-row" @click="goToCountry(s.team)">
+            <div class="dash-gs-pos"><span class="dash-gs-pos-dot" :style="{ background: s.posColor }"></span></div>
+            <div class="dash-gs-team">
+              <span class="dash-gs-flag">{{ s.flag }}</span>
+              <span class="dash-gs-team-name">{{ s.team }}</span>
+            </div>
+            <div class="dash-gs-cell"><span class="dash-gs-pts" :style="{ color: s.posColor }">{{ s.pts }}</span></div>
+            <div class="dash-gs-cell"><span class="dash-gs-wdl">{{ s.wdl }}</span></div>
+            <div class="dash-gs-cell"><span class="dash-gs-gfga">{{ s.gfga }}</span></div>
+          </div>
+        </div>
+      </div>
+
       <!-- LANDING -->
       <div v-if="page === 'landing'" class="dash-landing">
         <!-- Hero -->
@@ -228,17 +447,17 @@ function goToPlayer(player) {
                   <span class="dash-game-badge" :style="{ color: jogo.statusColor, background: jogo.statusBg }">
                     {{ jogo.statusBadge }}
                   </span>
-                  <span class="dash-game-grupo-btn">{{ jogo.grupo }}</span>
+                  <span class="dash-game-grupo-btn" @click="goToGroup(jogo.grupo)">{{ jogo.grupo }}</span>
                   <span class="dash-game-date">{{ jogo.date }} · {{ jogo.time }}</span>
                 </div>
                 <!-- Teams -->
                 <div class="dash-game-teams">
-                  <div class="dash-game-team">
+                  <div class="dash-game-team" @click="goToCountry(jogo.teamA)">
                     <span class="dash-game-flag">{{ jogo.flagA }}</span>
                     <span class="dash-game-team-name">{{ jogo.teamA }}</span>
                   </div>
                   <span class="dash-game-vs">×</span>
-                  <div class="dash-game-team right">
+                  <div class="dash-game-team right" @click="goToCountry(jogo.teamB)">
                     <span class="dash-game-team-name">{{ jogo.teamB }}</span>
                     <span class="dash-game-flag">{{ jogo.flagB }}</span>
                   </div>
@@ -341,16 +560,16 @@ function goToPlayer(player) {
               >
                 <div class="dash-td dash-td-game" :style="{ borderLeft: row.borderLeft }">
                   <div class="dash-td-teams">
-                    <span class="dash-td-flag">{{ row.flagA }}</span>
+                    <span class="dash-td-flag" @click="goToCountry(row.teamA)">{{ row.flagA }}</span>
                     <span class="dash-td-team-name">{{ row.teamA }}</span>
                     <span class="dash-td-vs">×</span>
                     <span class="dash-td-team-name">{{ row.teamB }}</span>
-                    <span class="dash-td-flag">{{ row.flagB }}</span>
+                    <span class="dash-td-flag" @click="goToCountry(row.teamB)">{{ row.flagB }}</span>
                   </div>
                   <span class="dash-td-date">{{ row.date }} · {{ row.time }}</span>
                 </div>
                 <div class="dash-td dash-td-group">
-                  <span class="dash-td-grupo-btn">{{ row.grupo }}</span>
+                  <span class="dash-td-grupo-btn" @click="goToGroup(row.grupo)">{{ row.grupo }}</span>
                 </div>
                 <div class="dash-td dash-td-score">
                   <span class="dash-td-score-text" :style="{ color: row.resultColor }">{{ row.resultText }}</span>
@@ -991,4 +1210,203 @@ function goToPlayer(player) {
   min-width: 44px;
   text-align: center;
 }
+
+/* ─── Player Detail ─── */
+.dash-player-page { animation: fadeInUp 0.3s ease; }
+.dash-player-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.dash-player-avatar-big {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #030B16;
+  flex-shrink: 0;
+}
+.dash-player-name { font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+.dash-player-pos { font-size: 14px; color: var(--text-secondary); margin-top: 3px; }
+.dash-player-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.dash-player-stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.dash-player-stat-val { font-size: 32px; font-weight: 700; line-height: 1; letter-spacing: -1px; }
+.dash-player-stat-val.gold { color: var(--accent-gold); }
+.dash-player-stat-val.green { color: var(--accent-green); }
+.dash-player-stat-val.blue { color: var(--accent-blue); }
+.dash-player-stat-val.red { color: var(--accent-red); }
+.dash-player-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.dash-player-games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dash-pg-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px 18px;
+  flex-wrap: wrap;
+}
+.dash-pg-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-pg-teams {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+.dash-pg-flag { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.dash-pg-team { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.dash-pg-vs { color: #2A3D52; font-size: 12px; }
+.dash-pg-meta { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; min-width: 88px; }
+.dash-pg-meta-line { font-size: 11px; color: var(--text-muted); }
+.dash-pg-resultado { text-align: center; min-width: 64px; flex-shrink: 0; }
+.dash-pg-rlabel { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+.dash-pg-rscore { font-size: 18px; font-weight: 700; color: var(--text-primary); font-family: 'Fira Code', monospace; letter-spacing: 2px; line-height: 1; }
+.dash-pg-palpite { text-align: center; min-width: 76px; flex-shrink: 0; }
+.dash-pg-pchip {
+  display: inline-block;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Fira Code', monospace;
+  letter-spacing: 2px;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ─── Country Detail ─── */
+.dash-country-page { animation: fadeInUp 0.3s ease; }
+.dash-country-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.dash-country-flag-big { font-size: 52px; line-height: 1; flex-shrink: 0; }
+.dash-country-name { font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+.dash-country-group-btn {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  background: rgba(96,165,250,0.1);
+  border: 1px solid rgba(96,165,250,0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: inline-block;
+  cursor: pointer;
+}
+.dash-country-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.dash-cstat {
+  text-align: center;
+  padding: 14px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  min-width: 72px;
+}
+.dash-cstat-val { font-size: 26px; font-weight: 700; line-height: 1; }
+.dash-cstat-val.green { color: var(--accent-green); }
+.dash-cstat-val.gold { color: var(--accent-gold); }
+.dash-cstat-val.red { color: var(--accent-red); }
+.dash-cstat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-weight: 700;
+}
+
+/* ─── Group Detail ─── */
+.dash-group-page { animation: fadeInUp 0.3s ease; }
+.dash-group-header { margin-bottom: 28px; }
+.dash-group-title { font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+.dash-group-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+.dash-group-standings {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.dash-gs-header {
+  display: grid;
+  grid-template-columns: 28px 1fr 48px 72px 60px;
+  padding: 10px 14px;
+  background: #0A1628;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.dash-gs-hcell {
+  font-size: 10px;
+  font-weight: 700;
+  color: #2A3D52;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.dash-gs-hcell.center { text-align: center; }
+.dash-gs-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 48px 72px 60px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.dash-gs-row:hover { background: rgba(255,255,255,0.03); }
+.dash-gs-row:last-child { border-bottom: none; }
+.dash-gs-pos { display: flex; align-items: center; }
+.dash-gs-pos-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-gs-team { display: flex; align-items: center; gap: 8px; }
+.dash-gs-flag { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.dash-gs-team-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.dash-gs-cell { display: flex; align-items: center; justify-content: center; }
+.dash-gs-pts { font-size: 15px; font-weight: 700; }
+.dash-gs-wdl { font-size: 13px; color: var(--text-secondary); font-family: 'Fira Code', monospace; }
+.dash-gs-gfga { font-size: 13px; color: var(--text-secondary); font-family: 'Fira Code', monospace; }
 </style>
