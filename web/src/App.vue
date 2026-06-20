@@ -11,7 +11,7 @@ const { isLoggedIn } = useAuth()
 <template>
   <div class="app-shell" :class="{ 'is-logged-in': isLoggedIn }">
     <div class="app-screen" :class="{ 'is-logged-in': isLoggedIn }">
-      <LoginView v-if="!isLoggedIn && route.name !== 'Login'" class="login-overlay" />
+      <LoginView v-if="!isLoggedIn && route.name !== 'Login' && route.name !== 'Dashboard'" class="login-overlay" />
 <!--
   LAYOUT HARDENING (BUG-2026-06-19-183500):
   - router-view MUST be always mounted (never inside v-if/v-else)

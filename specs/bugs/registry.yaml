@@ -50,6 +50,18 @@ bugs:
       - "26-test suite covering all fixed code paths"
     commit_message: "fix(bot): wrong league_id, SQL 403, Markdown parse errors — add startup guard + test suite"
 
+  - bug_id: BUG-2026-06-19-215300
+    date: "2026-06-19"
+    severity: medium
+    priority: high
+    scope: web-dashboard
+    summary: "Dashboard shows 0/0 jogos finalizados — useJogos/useRanking gate on isLoggedIn, never fetch for public view"
+    file: specs/bugs/BUG-2026-06-19-215300-dashboard-zero-jogos.md
+    status: open
+    root_cause: "useJogos and useRanking only fetch when isLoggedIn fires; DashboardView is public but data never loads without auth"
+    approach: "DashboardView fetches jogos + ranking directly on onMounted, bypassing auth gate; raise LoginView z-index to 110"
+    risk_level: low
+
   - bug_id: BUG-2026-06-19-190000
     date: "2026-06-19"
     severity: medium

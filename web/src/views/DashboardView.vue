@@ -1,12 +1,50 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useJogos } from '../composables/useJogos.js'
-import { useRanking } from '../composables/useRanking.js'
+import { fetchJogos, fetchAllPalpites, fetchParticipantes, calcRanking } from '../api.js'
 
 const router = useRouter()
-const { jogos, loaded: jogosLoaded } = useJogos()
-const { rankingList } = useRanking()
+
+// Public data — loaded on mount, no auth required
+const jogos = ref([])
+const rankingData = ref([])
+
+onMounted(async () => {
+  try {
+    const [rawJogos, palpites, participantes] = await Promise.all([
+      fetchJogos(), fetchAllPalpites(), fetchParticipantes(),
+    ])
+    jogos.value = rawJogos.map(g => ({
+      ...g,
+      id: g.id || g.match_id,
+      match_id: g.match_id,
+      teamA: g.casa, teamB: g.fora,
+      flagA: flag(g.casa), flagB: flag(g.fora),
+      date: formatDate(g.kickoff),
+      time: formatTime(g.kickoff),
+      grupo: g.grupo || '',
+      isFinalizado: g.status === 'encerrado',
+      isAberto: !g.status || g.status === 'agendado' || g.status === 'aberto',
+      isBloqueado: g.status === 'bloqueado' || g.status === 'em_andamento',
+      resultado: g.gols_casa != null ? { goalsA: Number(g.gols_casa), goalsB: Number(g.gols_fora) } : null,
+    }))
+    rankingData.value = calcRanking(rawJogos, palpites, participantes)
+  } catch (e) {
+    console.warn('Dashboard fetch failed:', e.message)
+  }
+})
+
+const rankingList = computed(() =>
+  rankingData.value.map((r, i) => ({
+    ...r,
+    id: r.telegram_id || i,
+    name: r.nome,
+    posicao: i + 1,
+    medal: i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '',
+    avatarColor: ['#F7C948','#94A3B8','#CD7F32','#60A5FA','#A78BFA','#4ADE80','#F87171'][i % 7],
+    initial: (r.nome || '?')[0],
+  }))
+)
 
 const page = ref('landing')
 const selectedPlayerId = ref(null)
@@ -243,6 +281,35 @@ const proximosJogos = computed(() =>
     guesses: generateGuesses(g),
   }))
 )
+
+// ── Helpers ──
+const FLAGS = {
+  'brasil': '🇧🇷', 'argentina': '🇦🇷', 'méxico': '🇲🇽', 'estados unidos': '🇺🇸', 'canadá': '🇨🇦',
+  'alemanha': '🇩🇪', 'espanha': '🇪🇸', 'frança': '🇫🇷', 'inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'portugal': '🇵🇹',
+  'paises baixos': '🇳🇱', 'belgica': '🇧🇪', 'italia': '🇮🇹', 'croacia': '🇭🇷',
+  'uruguai': '🇺🇾', 'colombia': '🇨🇴', 'equador': '🇪🇨', 'paraguai': '🇵🇾', 'chile': '🇨🇱',
+  'marrocos': '🇲🇦', 'senegal': '🇸🇳', 'argelia': '🇩🇿', 'tunisia': '🇹🇳', 'egito': '🇪🇬',
+  'costa do marfim': '🇨🇮', 'gana': '🇬🇭', 'cabo verde': '🇨🇻', 'africa do sul': '🇿🇦',
+  'japao': '🇯🇵', 'coreia do sul': '🇰🇷', 'arabia saudita': '🇸🇦', 'australia': '🇦🇺', 'ira': '🇮🇷',
+  'nova zelandia': '🇳🇿', 'catar': '🇶🇦', 'uzbequistao': '🇺🇿', 'iraque': '🇮🇶', 'jordania': '🇯🇴',
+  'suecia': '🇸🇪', 'noruega': '🇳🇴', 'suica': '🇨🇭', 'austria': '🇦🇹', 'turquia': '🇹🇷',
+  'republica tcheca': '🇨🇿', 'escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'bosnia e herzegovina': '🇧🇦',
+  'curacao': '🇨🇼', 'haiti': '🇭🇹', 'panama': '🇵🇦',
+  'republica democratica do congo': '🇨🇩', 'usa': '🇺🇸',
+}
+function flag(team) {
+  if (!team) return '🏳️'
+  const key = team.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return FLAGS[key] || '🏳️'
+}
+function formatDate(iso) {
+  if (!iso) return ''
+  try { const [y, m, d] = iso.split('T')[0].split('-'); return `${d}/${m}` } catch { return '' }
+}
+function formatTime(iso) {
+  if (!iso) return ''
+  try { return iso.split('T')[1]?.slice(0, 5) || '' } catch { return '' }
+}
 
 function goHome() {
   page.value = 'landing'

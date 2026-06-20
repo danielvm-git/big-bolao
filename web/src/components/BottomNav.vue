@@ -5,15 +5,14 @@ const route = useRoute()
 const router = useRouter()
 
 const tabs = [
-  { name: 'Início', icon: '🏠', path: '/' },
+  { name: 'Início', icon: '🏠', path: '/home' },
   { name: 'Jogos', icon: '⚽', path: '/jogos' },
   { name: 'Ranking', icon: '🏆', path: '/ranking' },
   { name: 'Meus', icon: '🎯', path: '/meus' },
 ]
 
 function isActive(path) {
-  if (path === '/') return route.name === 'Home'
-  return route.path.startsWith(path)
+  return route.path === path || (path === '/home' && route.name === 'Home')
 }
 
 function bgColor(path) {

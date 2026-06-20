@@ -19,8 +19,8 @@ onMounted(async () => {
   if (uid) {
     const ok = await loginWithTelegramId(uid)
     if (ok) {
-      router.replace({ query: {} }) // clean URL
-      return // redirect will happen in App.vue
+      router.replace({ path: '/home', query: {} })
+      return
     } else {
       error.value = `Usuário com ID ${uid} não encontrado no bolão.`
     }
