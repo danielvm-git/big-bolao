@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/danielvm-git/big-bolao/compare/v1.4.0...v1.4.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **footer:** bake version into bundle via Vite define (CSP-safe) ([6ce6507](https://github.com/danielvm-git/big-bolao/commit/6ce6507103ac032fdbddac12bac7e65c0e012d28))
+
 # [1.4.0](https://github.com/danielvm-git/big-bolao/compare/v1.3.4...v1.4.0) (2026-06-20)
 
 
