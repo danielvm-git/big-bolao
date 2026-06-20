@@ -1,0 +1,8 @@
+{
+  "name": "big-bolao-web",
+  "private": true,
+  "scripts": {
+    "build": "echo 'dist pre-built'",
+    "start": "npx serve web/dist -s -l ${PORT:-3000}"
+  }
+}
