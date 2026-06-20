@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/danielvm-git/big-bolao/compare/v1.0.5...v1.1.0) (2026-06-20)
+
+
+### Features
+
+* **web:** add version footer to main app + remove landing page ([f2ecdea](https://github.com/danielvm-git/big-bolao/commit/f2ecdea19a9b08d075e5e2a153748dadbf735060))
+
 ## [1.0.5](https://github.com/danielvm-git/big-bolao/compare/v1.0.4...v1.0.5) (2026-06-20)
 
 
