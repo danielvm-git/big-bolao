@@ -77,16 +77,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '${{ env.NODE_VERSION }}'
-          cache: 'npm'
 
       - name: Save pre-release HEAD
         id: pre-release
         if: github.event_name == 'push'
         run: echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Install semantic-release dependencies
+      - name: Install semantic-release
         if: github.event_name == 'push'
-        run: npm ci
+        run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/changelog \
+            @semantic-release/exec \
+            @semantic-release/git
 
       - name: Semantic Release
         if: github.event_name == 'push'
