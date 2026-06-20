@@ -29,18 +29,24 @@ else:
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # Start Telegram bot in background thread
-async def run_bot():
+def run_bot():
     try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         from bolao.config import validate_config, TELEGRAM_TOKEN
         validate_config()
         log.info("Bot starting with token %s…", TELEGRAM_TOKEN[:8] + "...")
         from bolao.bot import build_app
         bot_app = build_app()
-        await bot_app.run_polling(allowed_updates=["message", "callback_query"])
+        # stop_signals=[] evita set_wakeup_fd (so funciona na main thread)
+        bot_app.run_polling(
+            allowed_updates=["message", "callback_query"],
+            stop_signals=[],
+        )
     except Exception as e:
         log.error("Bot failed: %s", e)
 
-threading.Thread(target=lambda: asyncio.run(run_bot()), daemon=True).start()
+threading.Thread(target=run_bot, daemon=True).start()
 
 # Serve web/dist/ as SPA on $PORT (BigBase health-checks this)
 import http.server, socketserver
