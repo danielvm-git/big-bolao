@@ -1,16 +1,16 @@
 # Orchestrate state
 phase: build
 active_flow: build_epic
-active_epic_id: e03-web-dashboard
+active_epic_id: e04-github-actions
 last_step_completed: gap-analysis
 next_skill: survey-context
 
 epic_cycle:
-  epic: e03-web-dashboard
+  epic: e04-github-actions
   step: 1
-  story: e03-s02
-  story_bcps: 0
-  next_story: e03-s02
+  story: e04-s01
+  story_bcps: 4
+  next_story: e04-s01
 
 environment:
   node: v24.15.0

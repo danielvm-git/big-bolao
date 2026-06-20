@@ -29,6 +29,14 @@ epics:
     status: planned
     wsjf: 4.0
 
+  - id: e04
+    slug: github-actions
+    title: "GitHub Actions CI/CD — build, test, deploy automático no BigBase"
+    bcp: 4
+    priority: 1
+    status: planned
+    wsjf: 9.0
+
 stories:
   # ── e01 — Mobile SPA (DONE) ─────────────────────────────────────
   - id: e01-s01
@@ -181,4 +189,53 @@ stories:
     title: "Navegação interativa entre views + breadcrumb"
     bcp: 0.5
     depends: [e03-s05, e03-s06, e03-s07]
+    status: planned
+
+  # ── e04 — GitHub Actions CI/CD ─────────────────────────────────
+  - id: e04-s01
+    title: "Semantic-release hook — conventional commits → auto-version + GitHub releases"
+    bcp: 0.5
+    depends: []
+    status: planned
+
+  - id: e04-s02
+    title: "Workflow scaffold — trigger on push to main, checkout + setup Node"
+    bcp: 0.5
+    depends: []
+    status: planned
+
+  - id: e04-s03
+    title: "Web build step — cd web && npm ci && npm run build"
+    bcp: 0.5
+    depends: [e04-s02]
+    status: planned
+
+  - id: e04-s04
+    title: "Python test step — pip install -r requirements.txt && pytest"
+    bcp: 0.5
+    depends: [e04-s02]
+    status: planned
+
+  - id: e04-s05
+    title: "Deploy trigger — POST /api/sites/{id}/deploy via BigBase API + BIGBASE_API_KEY secret"
+    bcp: 0.5
+    depends: [e04-s03, e04-s04]
+    status: planned
+
+  - id: e04-s06
+    title: "Status polling — GET /api/sites/{id} até status=success ou failed, timeout 5min"
+    bcp: 0.5
+    depends: [e04-s05]
+    status: planned
+
+  - id: e04-s07
+    title: "Health check — curl site URL, 5 tentativas com 3s intervalo, falha = step fails"
+    bcp: 0.5
+    depends: [e04-s06]
+    status: planned
+
+  - id: e04-s08
+    title: "Failure notification — summary no job output + GitHub Actions log link"
+    bcp: 0.5
+    depends: [e04-s06]
     status: planned

@@ -1,0 +1,146 @@
+id: e04
+slug: github-actions
+title: "GitHub Actions CI/CD — build, test, deploy automático no BigBase"
+status: planned
+bcp: 4
+wsjf: 9.0
+wsjf_rationale: >
+  BV=5 automate daily deploys remove manual friction +
+  TC=8 manual deploy causing repeated pain today's session proves it +
+  RR=5 status polling health check prevent silent deploy failures /
+  JS=2 one workflow YAML well-known pattern
+
+description: >
+  Pipeline automatizado de CI/CD usando GitHub Actions, baseado no
+  workflow `release-deploy.yml` do próprio BigBase.
+
+  O pipeline executa em push na branch main e workflow_dispatch:
+  1. **Semantic-release** — conventional commits → auto-versionamento
+     + GitHub Releases + CHANGELOG.md
+  2. **Build** — `cd web && npm ci && npm run build`
+  3. **Test** — `pip install -r requirements.txt && pytest`
+  4. **Deploy** — `POST /api/sites/{id}/deploy` via API do BigBase
+  5. **Status polling** — loop até `success`/`failed` com timeout 5min
+  6. **Health check** — 5× curl no site com 3s de intervalo
+  7. **Notificação** — summary + link do Actions run em caso de falha
+
+  Secret necessário: `BIGBASE_API_KEY` (gerado via BigBase Dashboard).
+
+references:
+  - path: ".github/workflows/release-deploy.yml"
+    desc: "workflow de referência do BigBase (release + deploy + health check + rollback)"
+  - path: "CLAUDE.md"
+    desc: "snippet existente de GitHub Actions (curl deploy trigger)"
+  - path: ".mcp.json"
+    desc: "MCP tools disponíveis para deploy monitoring"
+
+stories:
+  - id: e04-s01
+    title: "Semantic-release hook — conventional commits → auto-version + GitHub releases"
+    description: >
+      Configurar semantic-release para versionamento automático:
+      - Criar `.releaserc` com plugins: commit-analyzer,
+        release-notes-generator, changelog, exec (VERSION file),
+        git (commit assets), github (create releases)
+      - Adicionar `semantic-release` como devDependency no package.json
+      - Script `"semantic-release": "semantic-release"` no package.json
+      - Branches: ["main"]
+      - Output: VERSION, CHANGELOG.md, GitHub Release
+    verify: |
+      test -f .releaserc && grep -q 'semantic-release' .releaserc && echo "✅ semantic-release config exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s02
+    title: "Workflow scaffold — trigger on push to main + workflow_dispatch, checkout, setup Node/Python"
+    description: >
+      Criar `.github/workflows/ci-cd.yml`:
+      - Triggers: push to main + workflow_dispatch (manual)
+      - Permissions: contents: write (para semantic-release)
+      - Env: NODE_VERSION, site URL, BigBase API URL, repo_id
+      - Steps iniciais: checkout@v4 (fetch-depth: 0), setup-node@v4,
+        setup-python@v5
+    verify: |
+      test -f .github/workflows/ci-cd.yml && grep -q 'push:' .github/workflows/ci-cd.yml && echo "✅ workflow scaffold exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s03
+    title: "Web build step — cd web && npm ci && npm run build"
+    description: >
+      Step de build do frontend Vue no workflow:
+      - Cache de node_modules para builds mais rápidos
+      - `cd web && npm ci --prefer-offline`
+      - `cd web && npm run build` → gera `web/dist/`
+      - Upload do artifact `dist/` para uso no step de deploy
+        (ou commit direto, já que web/dist está no git)
+    verify: |
+      grep -q 'npm ci' .github/workflows/ci-cd.yml && grep -q 'npm run build' .github/workflows/ci-cd.yml && echo "✅ web build step exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s04
+    title: "Python test step — pip install -r requirements.txt && pytest"
+    description: >
+      Step de testes Python no workflow:
+      - `python -m pip install --upgrade pip`
+      - `pip install -r requirements.txt`
+      - `python -m pytest tests/ -v` (31 tests no momento)
+      - Se falhar, pipeline para aqui (não deploya código quebrado)
+    verify: |
+      grep -q 'pytest' .github/workflows/ci-cd.yml && echo "✅ python test step exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s05
+    title: "Deploy trigger — POST /api/sites/{id}/deploy via BigBase API + BIGBASE_API_KEY secret"
+    description: >
+      Step de disparo de deploy no BigBase:
+      - `POST https://bigbase.click/api/sites/{id}/deploy`
+        com header `Authorization: Bearer ${{ secrets.BIGBASE_API_KEY }}`
+        e body `{"repo_id": "...", "branch": "main"}`
+      - Extrair `deployment_id` da resposta
+      - Salvar como output do step
+    verify: |
+      grep -q 'BIGBASE_API_KEY' .github/workflows/ci-cd.yml && grep -q 'api/sites.*deploy' .github/workflows/ci-cd.yml && echo "✅ deploy trigger exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s06
+    title: "Status polling — GET /api/sites/{id} até status=success ou failed, timeout 5min"
+    description: >
+      Polling do status do deploy:
+      - Loop com `sleep 10` até status ser "success" ou "failed"
+      - Timeout após 30 iterações (5 minutos)
+      - Se failed: log dos últimos erros, step falha
+      - Se success: continua para health check
+    verify: |
+      grep -q 'while.*status' .github/workflows/ci-cd.yml && grep -q 'sleep 10' .github/workflows/ci-cd.yml && echo "✅ status polling exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s07
+    title: "Health check — curl site URL, 5 tentativas com 3s intervalo, falha = step fails"
+    description: >
+      Health check pós-deploy:
+      - Loop 5 tentativas com `sleep 3`
+      - `curl -sf https://bolao.bigbase.click/` → 200 OK
+      - Se passar: mensagem "✅ healthy"
+      - Se falhar: mensagem "❌ health check failed", step falha
+    verify: |
+      grep -q 'SITE_URL' .github/workflows/ci-cd.yml && grep -q 'for i in 1 2 3 4 5' .github/workflows/ci-cd.yml && echo "✅ health check exists"
+    bcp: 0.5
+    status: planned
+
+  - id: e04-s08
+    title: "Failure notification — summary no job output + GitHub Actions log link"
+    description: >
+      Notificação em caso de falha:
+      - Step `notify-failure` condicional: `if: failure()`
+      - Output: resumo do que falhou (qual step)
+      - Link direto para o Actions run log
+      - Mensagem formatada para fácil leitura
+    verify: |
+      grep -q 'failure()' .github/workflows/ci-cd.yml && grep -q 'actions/runs' .github/workflows/ci-cd.yml && echo "✅ failure notification exists"
+    bcp: 0.5
+    status: planned
