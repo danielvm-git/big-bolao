@@ -43,7 +43,7 @@ def calcular(jogos: list[dict], palpites: list[dict],
         e["nome"] = nomes.get(tid, p_nome_fallback(palpites, tid))
 
     return sorted(acc.values(),
-                  key=lambda e: (-e["pontos"], -e["exatos"], e["nome"].lower()))
+                  key=lambda e: (-e["pontos"], -e["exatos"], -e["acertos"], e["jogos"]))
 
 
 def p_nome_fallback(palpites: list[dict], tid: int) -> str:
@@ -58,10 +58,10 @@ def formatar(rank: list[dict]) -> str:
         return "Ainda nao ha pontos computados."
     medalhas = ["🥇", "🥈", "🥉"]
     linhas = ["🏆 <b>Ranking do Bolao</b>", ""]
-    linhas.append("<code>Nome             3pt 1pt  Pts</code>")
+    linhas.append("<code>Nome             3pt 1pt Jog  Pts</code>")
     for i, e in enumerate(rank):
         pts_1 = e['acertos'] - e['exatos']
         icone = medalhas[i] if i < 3 else f"{i + 1:>2}"
         linhas.append(
-            f"{icone} <code>{e['nome']:<18} 🎯{e['exatos']:<2} ✅{pts_1:<2} {e['pontos']:>4}</code>")
+            f"{icone} <code>{e['nome']:<18} 🎯{e['exatos']:<2} ✅{pts_1:<2} {e['jogos']:>3} {e['pontos']:>4}</code>")
     return "\n".join(linhas)
