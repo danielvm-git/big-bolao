@@ -5,7 +5,7 @@ import { loadAll, initUser, loaded, finalizados, total, user } from './store.js'
 
 const route = useRoute()
 const router = useRouter()
-const version = ref('—')
+const version = ref(window.__APP_VERSION__ || '—')
 
 onMounted(async () => {
   // Pick up ?uid= from bot link
@@ -16,12 +16,6 @@ onMounted(async () => {
     router.replace({ path: route.path, hash: '' })
   }
   loadAll()
-
-  // Fetch app version from static VERSION file
-  fetch('/VERSION')
-    .then(r => r.text())
-    .then(text => { version.value = text.trim() })
-    .catch(() => {})
 })
 
 const TABS = [
