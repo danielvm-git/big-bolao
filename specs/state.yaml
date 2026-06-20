@@ -1,6 +1,6 @@
 # Orchestrate state
 phase: build
-active_flow: build_epic
+active_flow: fix_bug
 active_epic_id: e04-github-actions
 last_step_completed: gap-analysis
 next_skill: survey-context
