@@ -93,8 +93,8 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0].lstrip('/')
 
-        # API: return version (rate-limited)
-        if path == 'api/version':
+        # App version endpoint (not intercepted by BigBase)
+        if path == 'app-version.json':
             client_ip = self.client_address[0]
             if not _check_rate_limit(client_ip):
                 self.send_response(429)

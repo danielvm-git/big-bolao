@@ -17,8 +17,8 @@ onMounted(async () => {
   }
   loadAll()
 
-  // Fetch version
-  fetch('/api/version')
+  // Fetch app version (not intercepted by BigBase middleware)
+  fetch('/app-version.json')
     .then(r => r.json())
     .then(data => { version.value = data.version })
     .catch(() => {})
