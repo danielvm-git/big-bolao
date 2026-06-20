@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/danielvm-git/big-bolao/compare/v1.4.1...v1.4.2) (2026-06-20)
+
+
+### Bug Fixes
+
+* **web:** change og:image from SVG to PNG for Telegram link preview ([2abb224](https://github.com/danielvm-git/big-bolao/commit/2abb224c543aa93a9e25ab46e1bf0da452d98459))
+
 ## [1.4.1](https://github.com/danielvm-git/big-bolao/compare/v1.4.0...v1.4.1) (2026-06-20)
 
 
