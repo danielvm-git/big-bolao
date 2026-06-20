@@ -81,12 +81,49 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split('?')[0].lstrip('/')
+        ua = self.headers.get('User-Agent', '')
+
+        # Telegram Instant View bot nao executa JS — serve pagina estatica
+        # com conteudo real para o IV parser extrair title + body.
+        if path == '' and ('TelegramBot' in ua or 'TelegramIV' in ua):
+            self._serve_telegram_iv()
+            return
 
         # SPA: serve files or fallback to index.html
         full = DIST / path
         if not full.exists() or full.is_dir():
             self.path = '/index.html'
         super().do_GET()
+
+    def _serve_telegram_iv(self):
+        """Serve uma pagina HTML estatica otimizada para o parser de IV."""
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.end_headers()
+        page = (
+            '<!DOCTYPE html>\n'
+            '<html lang="pt-BR">\n'
+            '<head>\n'
+            '<meta charset="UTF-8">\n'
+            '<meta property="og:title" content="Big Bol\xe3o \u2014 Copa do Mundo 2026">\n'
+            '<meta property="og:description" content="O bol\xe3o dos Jararacas. '
+            'Palpite, ranking e resultados em tempo real.">\n'
+            '<meta property="og:image" content="https://bolao.bigbase.click/og-image.png">\n'
+            '<title>Big Bol\xe3o \u2014 Copa 2026</title>\n'
+            '</head>\n'
+            '<body>\n'
+            '<article>\n'
+            '<h1>Big Bol\xe3o \u2014 Copa do Mundo 2026</h1>\n'
+            '<p>O bol\xe3o dos Jararacas. 72 jogos, 1 campe\xe3o.</p>\n'
+            '<p>Palpite no placar exato dos jogos, acompanhe o ranking ao vivo e veja os resultados.</p>\n'
+            '<p><b>Pontua\xe7\xe3o:</b> 3 pontos por placar exato, 1 ponto por acertar o vencedor.</p>\n'
+            '<p><a href="https://bolao.bigbase.click/">Acessar o bol\xe3o</a></p>\n'
+            '<p><a href="https://t.me/JararacasBolao_bot">Falar com o bot no Telegram</a></p>\n'
+            '</article>\n'
+            '</body>\n'
+            '</html>'
+        )
+        self.wfile.write(page.encode('utf-8'))
 
     def log_message(self, fmt, *args):
         pass

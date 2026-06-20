@@ -125,12 +125,26 @@ const FLAGS = {
   haiti:'🇭🇹',curacao:'🇨🇼','cape verde':'🇨🇻','cabo verde':'🇨🇻',panama:'🇵🇦',
   qatar:'🇶🇦',catar:'🇶🇦','new zealand':'🇳🇿','nova zelandia':'🇳🇿',
   'dr congo':'🇨🇩','republica democratica do congo':'🇨🇩',egypt:'🇪🇬',egito:'🇪🇬',
+  iraq:'🇮🇶',iraque:'🇮🇶',jordan:'🇯🇴',jordania:'🇯🇴',uzbekistan:'🇺🇿',uzbequistao:'🇺🇿',
+  tunisia:'🇹🇳','south africa':'🇿🇦','africa do sul':'🇿🇦',
+  'bosnia and herzegovina':'🇧🇦','bosnia e herzegovina':'🇧🇦',
+  'czech republic':'🇨🇿',czechia:'🇨🇿','republica tcheca':'🇨🇿',
+}
+
+// Normalize: lowercase, strip accents, drop punctuation (so "D.R. Congo"
+// matches "dr congo"), collapse whitespace. BigBase serves team names in
+// English; PT variants are kept as fallback for other surfaces.
+function _normTeam(team) {
+  return team.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 export function flag(team) {
   if (!team) return '🏳️'
-  const k = team.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-  return FLAGS[k] || '🏳️'
+  return FLAGS[_normTeam(team)] || '🏳️'
 }
 
 export function fmtDate(iso) {
