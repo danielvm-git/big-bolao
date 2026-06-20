@@ -48,8 +48,22 @@ Dividir em três módulos:
 
 ## Acceptance Criteria
 
-- [ ] `scoring.js` testável isoladamente com `node --test` (sem stub de rede)
-- [ ] `calcRanking` ganha teste de unidade espelhando `tests/test_ranking.py`
-- [ ] Transporte stubável em testes de query sem tocar em scoring
-- [ ] Testes web existentes continuam passando
-- [ ] Build do Vite (`web/dist/`) continua válido
+- [x] `scoring.js` testável isoladamente com `node --test` (sem stub de rede)
+- [x] `calcRanking` ganha teste de unidade espelhando `tests/test_ranking.py`
+- [x] Transporte stubável em testes de query sem tocar em scoring
+- [x] Testes web existentes continuam passando
+- [x] Build do Vite (`web/dist/`) continua válido
+
+## Resolution
+
+**Fixed:** 2026-06-20
+**Root cause confirmed:** api.js accumulated 6 responsibilities (auth, HTTP transport, domain queries, scoring, flags, formatting) in one shallow module — pure logic was untestable without network stubs.
+**Fix applied:** Split into three modules: scoring.js (pure logic + formatting + flags — 231 lines, 20 tests), transport.js (HTTP singleton — 62 lines, 7 tests), queries.js (domain queries consuming transport — 58 lines, 8 tests). api.js became a re-export barrel.
+**Hardening added:** Module boundaries enforce separation of pure logic from I/O. Each module independently testable. scoring.js mirrors Python scoring.py structure to prevent divergence.
+**Evidence:** 35/35 tests pass, Vite build succeeds.
+  ```
+  node --test web/tests/scoring.test.js web/tests/flags.test.js web/tests/transport.test.js web/tests/queries.test.js
+  # 35 pass, 0 fail
+  cd web && npx vite build
+  # built in 82ms
+  ```

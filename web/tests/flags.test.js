@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { flag } from '../src/api.js'
+import { flag } from '../src/scoring.js'
 
 const WHITE = '🏳️' // fallback returned when a country has no flag
 
