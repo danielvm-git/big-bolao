@@ -195,3 +195,35 @@ bugs:
   - Transições inválidas rejeitadas com ValueError
   - Formatação de mensagens testável sem mock do Telegram
   commit_message: 'refactor(bot): extract BettingFlow + GroupPublisher from handlers.py god-module'
+- bug_id: BUG-2026-06-20-200100
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: web-architecture
+  type: tech-debt
+  summary: api.js concentra seis responsabilidades num único arquivo raso
+  file: specs/bugs/BUG-2026-06-20-200100-api-js-six-responsibilities.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: api.js accumulated 6 responsibilities (auth, HTTP transport, domain queries, scoring, flags, formatting) in one shallow module — pure logic was untestable without network stubs
+  approach: Split into scoring.js (pure logic), transport.js (HTTP singleton), queries.js (domain queries). api.js became re-export barrel.
+  risk_level: low
+  files_changed:
+  - web/src/api.js
+  - web/src/scoring.js (new)
+  - web/src/transport.js (new)
+  - web/src/queries.js (new)
+  - web/tests/scoring.test.js (new)
+  - web/tests/transport.test.js (new)
+  - web/tests/queries.test.js (new)
+  - web/tests/flags.test.js (updated import)
+  tests_added:
+  - web/tests/scoring.test.js (20 tests)
+  - web/tests/transport.test.js (7 tests)
+  - web/tests/queries.test.js (8 tests)
+  hardening:
+  - Module boundaries enforce separation of pure logic from I/O
+  - Each module independently testable via public interface
+  - scoring.js mirrors Python scoring.py structure to prevent divergence
+  - api.js is a re-export barrel — no hidden logic
+  commit_message: 'refactor(web): extract scoring.js, transport.js, queries.js from api.js god-module'
