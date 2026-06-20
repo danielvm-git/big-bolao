@@ -34,7 +34,7 @@ epics:
     title: "GitHub Actions CI/CD — build, test, deploy automático no BigBase"
     bcp: 4
     priority: 1
-    status: planned
+    status: done
     wsjf: 9.0
 
 stories:

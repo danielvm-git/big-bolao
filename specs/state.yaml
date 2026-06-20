@@ -7,10 +7,10 @@ next_skill: survey-context
 
 epic_cycle:
   epic: e04-github-actions
-  step: 1
-  story: e04-s01
+  step: 8
+  story: e04-s08
   story_bcps: 4
-  next_story: e04-s01
+  next_story: done
 
 environment:
   node: v24.15.0
