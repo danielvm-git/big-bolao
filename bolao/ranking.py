@@ -7,8 +7,11 @@ from bolao.scoring import pontos
 def calcular(jogos: list[dict], palpites: list[dict],
              participantes: list[dict]) -> list[dict]:
     """Retorna lista ordenada: [{nome, telegram_id, pontos, exatos, acertos, jogos}]."""
-    # So participantes ativos — inativos sao duplicatas fundidas por reivindicar
-    ativos = [p for p in participantes if p.get("ativo", True)]
+    # So participantes ativos — inativos sao duplicatas fundidas por reivindicar.
+    # Placeholders criados pelo seed tem telegram_id < 0 (nunca sao usuarios reais).
+    # Dupla checagem: ativo=False OU telegram_id negativo = placeholder removido.
+    ativos = [p for p in participantes
+              if p.get("ativo", True) and int(p.get("telegram_id", 0)) >= 0]
     nomes = {int(p["telegram_id"]): p.get("nome", "?") for p in ativos}
 
     encerrados = {
@@ -41,6 +44,9 @@ def calcular(jogos: list[dict], palpites: list[dict],
 
     for tid, e in acc.items():
         e["nome"] = nomes.get(tid, p_nome_fallback(palpites, tid))
+
+    # Descarta linhas de placeholders (telegram_id < 0)
+    acc = {tid: e for tid, e in acc.items() if tid >= 0}
 
     return sorted(acc.values(),
                   key=lambda e: (-e["pontos"], -e["exatos"], -e["acertos"], e["jogos"]))

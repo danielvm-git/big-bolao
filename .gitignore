@@ -1,6 +1,7 @@
 .env
 credentials.json
-__pycache__/
+__pycache__
+prototype-mobile.html/
 *.pyc
 .venv/
 venv/
