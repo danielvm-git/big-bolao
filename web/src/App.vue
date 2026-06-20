@@ -64,6 +64,13 @@ const TABS = [
   </nav>
 
   <footer class="app-footer">
-    <span class="footer-version">v{{ version }}</span>
+    <div class="footer-content">
+      <span class="footer-left">© 2026 Big Bolão · Copa do Mundo 2026</span>
+      <div class="footer-right">
+        <a href="https://t.me/JararacasBolao_bot" target="_blank">Telegram</a>
+        <span class="footer-version">v{{ version }}</span>
+        <a href="https://github.com/danielvm-git/big-bolao" target="_blank">GitHub</a>
+      </div>
+    </div>
   </footer>
 </template>
