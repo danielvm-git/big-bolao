@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/danielvm-git/big-bolao/compare/v1.5.0...v1.6.0) (2026-06-20)
+
+
+### Features
+
+* **web:** replace favicon with a football to match the site theme ([f70dd68](https://github.com/danielvm-git/big-bolao/commit/f70dd6845cddeb6d695134592cb8f47f3dc9b305))
+
 # [1.5.0](https://github.com/danielvm-git/big-bolao/compare/v1.4.2...v1.5.0) (2026-06-20)
 
 
