@@ -58,10 +58,10 @@ def formatar(rank: list[dict]) -> str:
         return "Ainda nao ha pontos computados."
     medalhas = ["🥇", "🥈", "🥉"]
     linhas = ["🏆 <b>Ranking do Bolao</b>", ""]
-    linhas.append("<code>Nome             3pt 1pt Jog  Pts</code>")
     for i, e in enumerate(rank):
+        pos = medalhas[i] if i < 3 else f"{i + 1}º "
         pts_1 = e['acertos'] - e['exatos']
-        icone = medalhas[i] if i < 3 else f"{i + 1:>2}"
         linhas.append(
-            f"{icone} <code>{e['nome']:<18} 🎯{e['exatos']:<2} ✅{pts_1:<2} {e['jogos']:>3} {e['pontos']:>4}</code>")
+            f"{pos} <b>{e['nome']}</b> — {e['pontos']} pts"
+            f"  🎯{e['exatos']}  ✅{pts_1}  📋{e['jogos']}")
     return "\n".join(linhas)
