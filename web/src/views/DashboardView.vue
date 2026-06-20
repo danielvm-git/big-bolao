@@ -18,6 +18,45 @@ const totalPlayers = computed(() => rankingList.value.length)
 
 const leader = computed(() => rankingList.value[0] || null)
 
+const COLORS = ['#F7C948', '#94A3B8', '#CD7F32', '#60A5FA', '#A78BFA', '#4ADE80', '#F87171']
+
+// Generate mock guesses for each game (replace with real cross-participant data later)
+function generateGuesses(game) {
+  const names = ['Ricardo', 'Pajé', 'Big', 'Flávia', 'Mari Gallo', 'Mari Som', 'Lere']
+  if (game.isFinalizado) {
+    // Only show participants who had a palpite — use quemCravou + quemVencedor
+    const all = [...(game.quemCravou || []), ...(game.quemVencedor || [])]
+    if (all.length === 0) {
+      // Fallback: show all with mock scores
+      return names.map((n, i) => {
+        const a = Math.floor(Math.random() * 4)
+        const b = Math.floor(Math.random() * 4)
+        return { name: n, initial: n[0], avatarBg: COLORS[i % COLORS.length], label: a + '-' + b, labelColor: '#2A3D52' }
+      })
+    }
+    return all.map((n, i) => {
+      const pIdx = names.indexOf(n)
+      return { name: n, initial: n[0], avatarBg: COLORS[pIdx >= 0 ? pIdx % COLORS.length : i % COLORS.length], label: '✓', labelColor: '#EBF0F5' }
+    })
+  }
+  // Non-finalized: show all participants
+  return names.map((n, i) => {
+    const a = Math.floor(Math.random() * 3)
+    const b = Math.floor(Math.random() * 3)
+    return { name: n, initial: n[0], avatarBg: COLORS[i % COLORS.length], label: a + '-' + b, labelColor: '#EBF0F5' }
+  })
+}
+
+const proximosJogos = computed(() =>
+  jogos.value.filter(g => !g.isFinalizado).map(g => ({
+    ...g,
+    statusBadge: g.isBloqueado ? '● Em andamento' : '● Aberto',
+    statusColor: g.isBloqueado ? 'var(--accent-orange)' : 'var(--accent-green)',
+    statusBg: g.isBloqueado ? 'rgba(251,146,60,0.12)' : 'rgba(0,220,130,0.1)',
+    guesses: generateGuesses(g),
+  }))
+)
+
 function goHome() {
   page.value = 'landing'
 }
@@ -75,6 +114,92 @@ function goToPlayer(player) {
             <div>
               <p class="dash-leader-label">Líder atual</p>
               <p class="dash-leader-name">{{ leader.name }} · {{ leader.pontos }} pts</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="dash-two-col">
+          <!-- LEFT: Proximos jogos -->
+          <div class="dash-col-left">
+            <p class="dash-col-label">PRÓXIMOS JOGOS &amp; EM ANDAMENTO</p>
+            <div class="dash-games-list">
+              <div v-for="jogo in proximosJogos" :key="jogo.id" class="dash-game-card">
+                <!-- Header row -->
+                <div class="dash-game-header">
+                  <span class="dash-game-badge" :style="{ color: jogo.statusColor, background: jogo.statusBg }">
+                    {{ jogo.statusBadge }}
+                  </span>
+                  <span class="dash-game-grupo-btn">{{ jogo.grupo }}</span>
+                  <span class="dash-game-date">{{ jogo.date }} · {{ jogo.time }}</span>
+                </div>
+                <!-- Teams -->
+                <div class="dash-game-teams">
+                  <div class="dash-game-team">
+                    <span class="dash-game-flag">{{ jogo.flagA }}</span>
+                    <span class="dash-game-team-name">{{ jogo.teamA }}</span>
+                  </div>
+                  <span class="dash-game-vs">×</span>
+                  <div class="dash-game-team right">
+                    <span class="dash-game-team-name">{{ jogo.teamB }}</span>
+                    <span class="dash-game-flag">{{ jogo.flagB }}</span>
+                  </div>
+                </div>
+                <!-- Guesses -->
+                <div class="dash-game-guesses">
+                  <span class="dash-guesses-label">Palpites</span>
+                  <div v-for="g in jogo.guesses" :key="g.name" class="dash-guess-chip">
+                    <div class="dash-guess-avatar" :style="{ background: g.avatarBg }">{{ g.initial }}</div>
+                    <span class="dash-guess-score" :style="{ color: g.labelColor }">{{ g.label }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Ranking sidebar -->
+          <div class="dash-col-right">
+            <p class="dash-col-label">🏆 RANKING</p>
+            <div class="dash-ranking-box">
+              <div
+                v-for="(r, i) in rankingList"
+                :key="r.id"
+                class="dash-rank-row"
+                @click="goToPlayer(r)"
+              >
+                <span class="dash-rank-pos">{{ r.posicao }}</span>
+                <span class="dash-rank-medal">{{ r.medal }}</span>
+                <div class="dash-rank-avatar" :style="{ background: r.avatarColor }">{{ r.initial }}</div>
+                <div class="dash-rank-info">
+                  <p class="dash-rank-name">{{ r.name }}</p>
+                  <p class="dash-rank-exatos">{{ r.exatos }} exato(s)</p>
+                </div>
+                <div class="dash-rank-pts-block">
+                  <p class="dash-rank-pts" :style="{ color: i < 3 ? ['#F7C948','#94A3B8','#CD7F32'][i] : 'var(--text-primary)' }">
+                    {{ r.pontos }}
+                  </p>
+                  <p class="dash-rank-pts-label">pts</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Como pontuar -->
+            <div class="dash-scoring-card">
+              <p class="dash-scoring-title">Como pontuar</p>
+              <div class="dash-scoring-rows">
+                <div class="dash-scoring-row">
+                  <span class="dash-scoring-icon">🎯</span>
+                  <span class="dash-scoring-text"><strong class="green">+3</strong> placar exato</span>
+                </div>
+                <div class="dash-scoring-row">
+                  <span class="dash-scoring-icon">✓</span>
+                  <span class="dash-scoring-text"><strong class="blue">+1</strong> vencedor / empate</span>
+                </div>
+                <div class="dash-scoring-row">
+                  <span class="dash-scoring-icon">✗</span>
+                  <span class="dash-scoring-text"><strong class="red">0</strong> erro</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -244,4 +369,260 @@ function goToPlayer(player) {
   font-weight: 700;
   color: var(--text-primary);
 }
+
+/* ─── Two-column layout ─── */
+.dash-two-col {
+  display: grid;
+  grid-template-columns: 1fr 296px;
+  gap: 28px;
+  align-items: start;
+}
+.dash-col-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 14px;
+}
+
+/* ─── Games list ─── */
+.dash-games-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dash-game-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.dash-game-header {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0A1628;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.dash-game-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.dash-game-grupo-btn {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.07);
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dash-game-date {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.dash-game-teams {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dash-game-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+.dash-game-team.right {
+  justify-content: flex-end;
+}
+.dash-game-flag {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.dash-game-team-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.dash-game-vs {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E3A5F;
+  flex-shrink: 0;
+}
+.dash-game-guesses {
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.22);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dash-guesses-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #2A3D52;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.dash-guess-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 3px 8px 3px 4px;
+  flex-shrink: 0;
+}
+.dash-guess-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #030B16;
+  flex-shrink: 0;
+}
+.dash-guess-score {
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+/* ─── Ranking sidebar ─── */
+.dash-ranking-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.dash-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.dash-rank-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.dash-rank-row:last-child {
+  border-bottom: none;
+}
+.dash-rank-pos {
+  font-size: 12px;
+  color: #2A3D52;
+  font-weight: 700;
+  width: 16px;
+  text-align: right;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.dash-rank-medal {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.dash-rank-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #030B16;
+  flex-shrink: 0;
+}
+.dash-rank-info {
+  flex: 1;
+  min-width: 0;
+}
+.dash-rank-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dash-rank-exatos {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+.dash-rank-pts-block {
+  text-align: right;
+  flex-shrink: 0;
+}
+.dash-rank-pts {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+.dash-rank-pts-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* ─── Como pontuar ─── */
+.dash-scoring-card {
+  background: rgba(96, 165, 250, 0.06);
+  border: 1px solid rgba(96, 165, 250, 0.13);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.dash-scoring-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.dash-scoring-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dash-scoring-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-scoring-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.dash-scoring-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.dash-scoring-text .green { color: var(--accent-green); }
+.dash-scoring-text .blue { color: var(--accent-blue); }
+.dash-scoring-text .red { color: var(--accent-red); }
 </style>
