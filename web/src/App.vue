@@ -17,10 +17,10 @@ onMounted(async () => {
   }
   loadAll()
 
-  // Fetch app version (not intercepted by BigBase middleware)
-  fetch('/app-version.json')
-    .then(r => r.json())
-    .then(data => { version.value = data.version })
+  // Fetch app version from static VERSION file
+  fetch('/VERSION')
+    .then(r => r.text())
+    .then(text => { version.value = text.trim() })
     .catch(() => {})
 })
 
