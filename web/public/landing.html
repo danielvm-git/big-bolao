@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big Bolão — Copa do Mundo 2026</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cols:12;
+  --bl:8px;
+  --lh:24px;
+  --gutter:24px;
+  --margin:48px;
+  --pad:96px;
+  --maxw:1440px;
+  --paper:#ffffff;
+  --ink:#111315;
+  --ink-soft:#5b6066;
+  --accent:#e4002b;
+  --g-col:rgba(228,0,43,.055);
+  --g-edge:rgba(228,0,43,.35);
+  --g-base:rgba(0,150,140,.30);
+  --g-base-min:rgba(0,150,140,.10);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;scroll-behavior:smooth;}
+body{background:var(--paper);color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif;font-size:16px;line-height:var(--lh);
+  -webkit-font-smoothing:antialiased;}
+
+/* ── Grid scaffold ── */
+.spread{position:relative;width:100%;border-bottom:1px solid #e8e8e8;}
+.wrap{position:relative;max-width:var(--maxw);margin:0 auto;
+  padding:var(--pad) var(--margin);}
+.grid{display:grid;grid-template-columns:repeat(var(--cols),1fr);
+  column-gap:var(--gutter);row-gap:var(--lh);}
+.band{grid-column:1/-1;display:grid;grid-template-columns:subgrid;
+  column-gap:var(--gutter);row-gap:var(--lh);align-items:start;}
+@supports not (grid-template-columns:subgrid){
+  .band{grid-template-columns:repeat(var(--cols),1fr);}
+}
+
+/* ── Grid overlay (same content box) ── */
+.guides{position:absolute;inset:0;pointer-events:none;z-index:60;
+  opacity:0;transition:opacity .26s ease;}
+body.grid-on .guides{opacity:1;}
+.guides .cols{position:absolute;top:0;bottom:0;
+  left:var(--margin);right:var(--margin);
+  display:grid;grid-template-columns:repeat(var(--cols),1fr);
+  column-gap:var(--gutter);}
+.guides .col{background:var(--g-col);
+  box-shadow:inset 1px 0 0 var(--g-edge),inset -1px 0 0 var(--g-edge);}
+.guides .col span{position:absolute;top:8px;left:0;right:0;text-align:center;
+  font-family:"Space Mono",monospace;font-size:9px;line-height:1;color:var(--accent);}
+.guides .rows{position:absolute;left:var(--margin);right:var(--margin);
+  top:var(--pad);bottom:0;
+  background-image:
+    repeating-linear-gradient(to bottom,var(--g-base) 0 1px,transparent 1px var(--lh)),
+    repeating-linear-gradient(to bottom,var(--g-base-min) 0 1px,transparent 1px var(--bl));}
+
+/* ── Toggle button ── */
+.grid-toggle{position:fixed;bottom:32px;right:32px;z-index:100;
+  background:var(--ink);color:var(--paper);border:none;cursor:pointer;
+  font-family:"Space Mono",monospace;font-size:11px;padding:8px 16px;
+  letter-spacing:.08em;}
+.grid-toggle:hover{background:var(--accent);}
+
+/* ── Typography ── */
+.kicker{font-family:"Space Mono",monospace;font-size:11px;line-height:var(--lh);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);}
+.masthead{font-size:120px;line-height:120px;font-weight:900;
+  letter-spacing:-4px;color:var(--ink);margin:0;margin-top:16px;}
+.masthead-red{color:var(--accent);}
+.subhead{font-size:18px;line-height:var(--lh);font-weight:400;
+  color:var(--ink-soft);margin-top:24px;max-width:40ch;}
+
+.numeral{font-size:80px;line-height:80px;font-weight:800;
+  letter-spacing:-2px;color:var(--ink);}
+.numeral-label{font-family:"Space Mono",monospace;font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
+  margin-top:8px;}
+
+.section-rule{grid-column:1/-1;border:none;border-top:2px solid var(--ink);
+  margin:0 0 calc(var(--lh) * 2);}
+.section-label{font-family:"Space Mono",monospace;font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--accent);}
+
+/* ── Ranking table ── */
+.rank-table{width:100%;border-collapse:collapse;}
+.rank-table th{font-family:"Space Mono",monospace;font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);
+  border-bottom:1px solid var(--ink);padding:8px 0;font-weight:400;text-align:left;}
+.rank-table th:last-child,.rank-table td:last-child{text-align:right;}
+.rank-table td{padding:16px 0;border-bottom:1px solid #e8e8e8;vertical-align:middle;}
+.rank-pos{font-family:"Space Mono",monospace;font-size:12px;color:var(--ink-soft);
+  width:32px;}
+.rank-name{font-size:20px;font-weight:700;line-height:var(--lh);}
+.rank-name.leader{color:var(--accent);}
+.rank-pts{font-size:40px;font-weight:800;line-height:40px;letter-spacing:-1px;
+  font-variant-numeric:tabular-nums;}
+.rank-sub{font-family:"Space Mono",monospace;font-size:10px;color:var(--ink-soft);
+  margin-top:4px;}
+.rank-bar-wrap{height:4px;background:#f0f0f0;margin-top:8px;}
+.rank-bar{height:4px;background:var(--accent);}
+.rank-table tr:first-child .rank-name{color:var(--accent);}
+.rank-table tr:first-child .rank-pts{color:var(--accent);}
+
+/* ── CTA ── */
+.cta-block{padding:48px 0;}
+.cta-head{font-size:56px;font-weight:800;line-height:56px;
+  letter-spacing:-2px;margin-bottom:24px;}
+.cta-link{display:inline-block;background:var(--accent);color:#fff;
+  font-family:"Space Mono",monospace;font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;text-decoration:none;padding:16px 32px;
+  margin-top:8px;}
+.cta-link:hover{background:var(--ink);}
+
+/* ── Footer ── */
+.footer-text{font-family:"Space Mono",monospace;font-size:10px;
+  color:var(--ink-soft);letter-spacing:.08em;}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  :root{--margin:24px;--pad:48px;}
+  .masthead{font-size:64px;line-height:64px;letter-spacing:-2px;}
+  .numeral{font-size:48px;line-height:48px;}
+  .rank-pts{font-size:28px;line-height:28px;}
+  .cta-head{font-size:36px;line-height:40px;}
+}
+@media(max-width:600px){
+  :root{--cols:6;--margin:16px;--gutter:16px;}
+  .masthead{font-size:48px;line-height:48px;letter-spacing:-1px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     SPREAD 1 — MASTHEAD
+═══════════════════════════════════════════════════ -->
+<div class="spread" id="s-masthead">
+  <div class="wrap">
+    <div class="guides">
+      <div class="cols" id="cols-1"></div>
+      <div class="rows"></div>
+    </div>
+    <div class="grid">
+
+      <!-- Kicker + folio -->
+      <div class="band">
+        <div style="grid-column:1/7">
+          <p class="kicker">Big Bolão — Temporada 2026</p>
+        </div>
+        <div style="grid-column:10/13;text-align:right">
+          <p class="kicker">bolao.bigbase.click</p>
+        </div>
+      </div>
+
+      <!-- Rule -->
+      <hr class="section-rule">
+
+      <!-- Masthead -->
+      <div class="band" style="padding-top:16px">
+        <div style="grid-column:1/10">
+          <h1 class="masthead masthead-js">Big<br><span class="masthead-red">Bolão.</span></h1>
+        </div>
+        <div style="grid-column:10/13;padding-top:48px">
+          <p class="kicker" style="margin-bottom:8px">Copa do Mundo</p>
+          <p style="font-size:56px;font-weight:800;line-height:56px;letter-spacing:-2px;margin:0">2026</p>
+          <p class="subhead" style="font-size:14px;margin-top:24px;max-width:24ch">
+            O bolão dos Jararacas.<br>72 jogos. 1 campeão.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SPREAD 2 — STATS
+═══════════════════════════════════════════════════ -->
+<div class="spread" id="s-stats">
+  <div class="wrap" style="--pad:72px">
+    <div class="guides">
+      <div class="cols" id="cols-2"></div>
+      <div class="rows"></div>
+    </div>
+    <div class="grid">
+
+      <div class="band">
+        <div style="grid-column:1/4">
+          <div class="numeral numeral-js" id="num-finalizados">30</div>
+          <p class="numeral-label">Jogos finalizados</p>
+        </div>
+        <div style="grid-column:4/7">
+          <div class="numeral">42</div>
+          <p class="numeral-label">Jogos restantes</p>
+        </div>
+        <div style="grid-column:7/10">
+          <div class="numeral">6</div>
+          <p class="numeral-label">Participantes</p>
+        </div>
+        <div style="grid-column:10/13">
+          <div class="numeral">164</div>
+          <p class="numeral-label">Palpites registrados</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SPREAD 3 — RANKING
+═══════════════════════════════════════════════════ -->
+<div class="spread" id="s-ranking">
+  <div class="wrap">
+    <div class="guides">
+      <div class="cols" id="cols-3"></div>
+      <div class="rows"></div>
+    </div>
+    <div class="grid">
+
+      <div class="band" style="margin-bottom:32px">
+        <div style="grid-column:1/4">
+          <p class="section-label">Ranking atual</p>
+        </div>
+        <div style="grid-column:10/13;text-align:right">
+          <p class="kicker">Atualizado via /sync</p>
+        </div>
+      </div>
+
+      <hr class="section-rule">
+
+      <div class="band">
+        <div style="grid-column:1/8">
+          <table class="rank-table">
+            <thead>
+              <tr>
+                <th style="width:32px">#</th>
+                <th>Participante</th>
+                <th>Exatos</th>
+                <th>Pontos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="rank-pos">1</td>
+                <td>
+                  <div class="rank-name leader">Ricardo</div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:100%"></div></div>
+                </td>
+                <td><span class="kicker">2 🎯</span></td>
+                <td><div class="rank-pts" style="color:var(--accent)">15</div><div class="rank-sub">pts</div></td>
+              </tr>
+              <tr>
+                <td class="rank-pos">2</td>
+                <td>
+                  <div class="rank-name">Pajeh</div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:80%;background:#111"></div></div>
+                </td>
+                <td><span class="kicker">1 🎯</span></td>
+                <td><div class="rank-pts">12</div><div class="rank-sub">pts</div></td>
+              </tr>
+              <tr>
+                <td class="rank-pos">3</td>
+                <td>
+                  <div class="rank-name">Big</div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:73%;background:#111"></div></div>
+                </td>
+                <td><span class="kicker">1 🎯</span></td>
+                <td><div class="rank-pts">11</div><div class="rank-sub">pts</div></td>
+              </tr>
+              <tr>
+                <td class="rank-pos">4</td>
+                <td>
+                  <div class="rank-name">Mari Gallo</div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:60%;background:#111"></div></div>
+                </td>
+                <td><span class="kicker">1 🎯</span></td>
+                <td><div class="rank-pts">9</div><div class="rank-sub">pts</div></td>
+              </tr>
+              <tr>
+                <td class="rank-pos">5</td>
+                <td>
+                  <div class="rank-name">Mari Sombrio</div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:47%;background:#111"></div></div>
+                </td>
+                <td><span class="kicker">0 🎯</span></td>
+                <td><div class="rank-pts">7</div><div class="rank-sub">pts</div></td>
+              </tr>
+              <tr>
+                <td class="rank-pos">6</td>
+                <td>
+                  <div class="rank-name">Lere Canela</div>
+                  <div class="rank-bar-wrap"><div class="rank-bar" style="width:0%"></div></div>
+                </td>
+                <td><span class="kicker">0 🎯</span></td>
+                <td><div class="rank-pts">0</div><div class="rank-sub">pts</div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pontuação sidebar -->
+        <div style="grid-column:9/13;padding-top:48px">
+          <p class="section-label" style="margin-bottom:24px">Como pontuar</p>
+          <div style="margin-bottom:32px">
+            <div style="font-size:40px;font-weight:800;letter-spacing:-1px;line-height:40px;color:var(--accent)">+3</div>
+            <p style="margin:8px 0 0;font-size:14px;color:var(--ink-soft)">Placar exato</p>
+          </div>
+          <div style="margin-bottom:32px">
+            <div style="font-size:40px;font-weight:800;letter-spacing:-1px;line-height:40px">+1</div>
+            <p style="margin:8px 0 0;font-size:14px;color:var(--ink-soft)">Vencedor ou empate certo</p>
+          </div>
+          <div>
+            <div style="font-size:40px;font-weight:800;letter-spacing:-1px;line-height:40px;color:#ccc">0</div>
+            <p style="margin:8px 0 0;font-size:14px;color:var(--ink-soft)">Erro</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SPREAD 4 — CTA
+═══════════════════════════════════════════════════ -->
+<div class="spread" id="s-cta" style="border-bottom:none">
+  <div class="wrap" style="--pad:80px">
+    <div class="guides">
+      <div class="cols" id="cols-4"></div>
+      <div class="rows"></div>
+    </div>
+    <div class="grid">
+
+      <div class="band">
+        <div style="grid-column:1/8">
+          <p class="section-label" style="margin-bottom:24px">Participar</p>
+          <h2 class="cta-head cta-js">Entre pelo<br>Telegram.</h2>
+          <p style="font-size:16px;line-height:var(--lh);color:var(--ink-soft);margin-top:24px;max-width:36ch">
+            Abra o link enviado pelo bot no Telegram para palpitar, acompanhar o ranking e ver os resultados em tempo real.
+          </p>
+          <a href="https://t.me/JararacasBolao_bot" class="cta-link">
+            Abrir no Telegram →
+          </a>
+        </div>
+        <div style="grid-column:9/13;padding-top:16px">
+          <p class="kicker" style="margin-bottom:16px">Próximos jogos</p>
+          <div style="border-top:1px solid #e8e8e8">
+            <div style="padding:16px 0;border-bottom:1px solid #f0f0f0">
+              <p class="kicker" style="color:var(--accent)">20/06 · 00:00</p>
+              <p style="font-size:15px;font-weight:600;margin-top:4px">Turkey × Paraguay</p>
+            </div>
+            <div style="padding:16px 0;border-bottom:1px solid #f0f0f0">
+              <p class="kicker" style="color:var(--ink-soft)">20/06 · 14:00</p>
+              <p style="font-size:15px;font-weight:600;margin-top:4px">Netherlands × Sweden</p>
+            </div>
+            <div style="padding:16px 0;border-bottom:1px solid #f0f0f0">
+              <p class="kicker" style="color:var(--ink-soft)">20/06 · 17:00</p>
+              <p style="font-size:15px;font-weight:600;margin-top:4px">Germany × Ivory Coast</p>
+            </div>
+            <div style="padding:16px 0">
+              <p class="kicker" style="color:var(--ink-soft)">20/06 · 21:30</p>
+              <p style="font-size:15px;font-weight:600;margin-top:4px">Ecuador × Curaçao</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="band" style="margin-top:48px;padding-top:24px;border-top:1px solid #e8e8e8">
+        <div style="grid-column:1/7">
+          <p class="footer-text">Big Bolão — Copa do Mundo 2026 — Jararacas</p>
+        </div>
+        <div style="grid-column:10/13;text-align:right">
+          <p class="footer-text">bolao.bigbase.click</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     GRID TOGGLE
+═══════════════════════════════════════════════════ -->
+<button class="grid-toggle" id="gtoggle">Grid [G]</button>
+
+<script>
+// Build column guides for each spread
+document.querySelectorAll('[id^=cols-]').forEach(function(el){
+  var n = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cols').trim()) || 12;
+  for(var i=0;i<n;i++){
+    var d=document.createElement('div');
+    d.className='col';
+    var s=document.createElement('span');
+    s.textContent=i+1;
+    d.appendChild(s);
+    el.appendChild(d);
+  }
+});
+
+// Toggle
+var btn=document.getElementById('gtoggle');
+btn.addEventListener('click',function(){document.body.classList.toggle('grid-on');});
+document.addEventListener('keydown',function(e){if(e.key==='g'||e.key==='G') document.body.classList.toggle('grid-on');});
+
+// Optical alignment — shift display type so INK lands on column line
+document.fonts.ready.then(function(){
+  alignInk();
+  window.addEventListener('resize',alignInk);
+});
+function alignInk(){
+  var cvs=document.createElement('canvas');
+  var ctx=cvs.getContext('2d');
+  document.querySelectorAll('.masthead-js,.numeral-js,.cta-js').forEach(function(el){
+    el.style.marginLeft='0px';
+    var cs=getComputedStyle(el);
+    var ch=(el.textContent||'').trim()[0];
+    if(!ch) return;
+    if(cs.textTransform==='uppercase') ch=ch.toUpperCase();
+    ctx.font=cs.fontStyle+' '+cs.fontWeight+' '+cs.fontSize+' '+cs.fontFamily;
+    ctx.textAlign='left';
+    var m=ctx.measureText(ch);
+    var abl=m.actualBoundingBoxLeft;
+    if(isFinite(abl)) el.style.marginLeft=abl.toFixed(2)+'px';
+  });
+}
+</script>
+</body>
+</html>
