@@ -6,16 +6,15 @@
 #   - Manual workflow_dispatch (for re-deploying without a new release)
 #
 # Pipeline:
-#   0. Semantic Release (determine version, publish release)
-#   1. Web build (npm ci + vite build)
-#   2. Python tests (pytest)
-#   3. BigBase login (email/password → JWT)
-#   4. Deploy to BigBase (POST /api/sites/{id}/deploy)
-#   5. Status polling (loop until success/failed, timeout 5min)
-#   6. Health check (5× curl site with 3s interval)
-#   7. Failure notification (summary + Actions run link)
+#   1. Semantic Release (commit-analyzer → version bump → GitHub Release)
+#   2. Web build (npm ci + vite build in web/)
+#   3. Python tests (pytest, 31 tests)
+#   4. BigBase login (email/password → JWT)
+#   5. Deploy trigger (POST /api/sites/{id}/deploy → BigBase auto-deploys)
+#   6. Health check (curl site, 5 retries, 10s interval)
+#   7. Failure notification
 #
-# Secrets needed (add in repo Settings → Secrets and variables → Actions):
+# Secrets needed (repo Settings → Secrets and variables → Actions):
 #   - BIGBASE_EMAIL: service account email
 #   - BIGBASE_PASSWORD: service account password
 # ============================================================================
@@ -25,11 +24,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      ref:
-        description: 'Branch to deploy (default: main)'
-        required: false
-        default: 'main'
 
 permissions:
   contents: write
@@ -42,21 +36,12 @@ env:
   BIGBASE_URL: 'https://bigbase.click'
   BIGBASE_REPO_ID: '04c58b9df51405ee33378c2539f9ea68'
   SITE_URL: 'https://bolao.bigbase.click'
-  DEPLOY_TIMEOUT_SECONDS: 300
 
 jobs:
-  # ==========================================================================
-  # JOB: CI/CD (single job — build, test, deploy)
-  # ==========================================================================
   ci-cd:
     name: CI/CD
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    outputs:
-      new_release: ${{ steps.detect-release.outputs.new_release }}
-      version: ${{ steps.detect-release.outputs.version }}
-      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
+    timeout-minutes: 10
 
     steps:
       # -----------------------------------------------------------------------
@@ -66,11 +51,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.inputs.ref || github.ref }}
           persist-credentials: true
 
       # -----------------------------------------------------------------------
-      # Step 1: Semantic Release (only on push events)
+      # Step 1: Semantic Release
       # -----------------------------------------------------------------------
       - name: Setup Node
         if: github.event_name == 'push'
@@ -104,25 +88,21 @@ jobs:
         id: detect-release
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION=$(cat VERSION 2>/dev/null || echo "dev")
             echo "new_release=true" >> "$GITHUB_OUTPUT"
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "Manual deploy — version ${VERSION}"
+            echo "Manual deploy"
           else
             NEW_HEAD=$(git rev-parse HEAD)
             if [ "${{ steps.pre-release.outputs.head }}" != "$NEW_HEAD" ]; then
-              VERSION=$(cat VERSION)
               echo "new_release=true" >> "$GITHUB_OUTPUT"
-              echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-              echo "New release: v${VERSION}"
+              echo "New release detected"
             else
               echo "new_release=false" >> "$GITHUB_OUTPUT"
-              echo "No new release — skipping deploy"
+              echo "No new release - skipping deploy"
             fi
           fi
 
       # -----------------------------------------------------------------------
-      # Step 2: Web build (skip if no release)
+      # Step 2: Web build
       # -----------------------------------------------------------------------
       - name: Setup Node for web build
         if: steps.detect-release.outputs.new_release == 'true'
@@ -133,10 +113,12 @@ jobs:
       - name: Build web (Vite)
         if: steps.detect-release.outputs.new_release == 'true'
         working-directory: web
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
         run: |
           npm ci --prefer-offline
           npm run build
-          echo "Web dist built: $(ls dist/ 2>/dev/null | wc -l) files"
+          echo "Web dist: $(ls dist/ 2>/dev/null | wc -l) files"
 
       # -----------------------------------------------------------------------
       # Step 3: Python tests
@@ -147,7 +129,7 @@ jobs:
         with:
           python-version: '${{ env.PYTHON_VERSION }}'
 
-      - name: Run Python tests
+      - name: Run tests
         if: steps.detect-release.outputs.new_release == 'true'
         env:
           TELEGRAM_TOKEN: ci-test-token
@@ -159,7 +141,7 @@ jobs:
           python -m pytest tests/ -v
 
       # -----------------------------------------------------------------------
-      # Step 4: Login + Deploy to BigBase
+      # Step 4: Deploy to BigBase
       # -----------------------------------------------------------------------
       - name: Login to BigBase
         id: login
@@ -171,129 +153,75 @@ jobs:
             -d "{\"email\":\"${{ secrets.BIGBASE_EMAIL }}\",\"password\":\"${{ secrets.BIGBASE_PASSWORD }}\"}")
           TOKEN=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])" 2>/dev/null || echo "")
           if [ -z "${TOKEN}" ]; then
-            echo "ERROR: Login failed — response: ${RESPONSE}"
+            echo "ERROR: Login failed"
             exit 1
           fi
           echo "::add-mask::${TOKEN}"
           echo "token=${TOKEN}" >> "$GITHUB_OUTPUT"
-          echo "Logged in to BigBase"
 
-      - name: Deploy to BigBase
+      - name: Trigger BigBase deploy
         id: deploy
         if: steps.detect-release.outputs.new_release == 'true'
         run: |
-          echo "Deploying to BigBase..."
           RESPONSE=$(curl -sS -X POST \
             "${{ env.BIGBASE_URL }}/api/sites/${{ env.BIGBASE_REPO_ID }}/deploy" \
             -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
             -H "Content-Type: application/json" \
             -d '{"branch": "main"}')
-          echo "Response: ${RESPONSE}"
+          echo "Deploy triggered: ${RESPONSE}"
           DEPLOY_ID=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
-          if [ -z "${DEPLOY_ID}" ]; then
-            echo "ERROR: Could not extract deployment_id from response"
-            exit 1
-          fi
           echo "deployment_id=${DEPLOY_ID}" >> "$GITHUB_OUTPUT"
           echo "Deployment ID: ${DEPLOY_ID}"
 
       # -----------------------------------------------------------------------
-      # Step 5: Status polling
-      # -----------------------------------------------------------------------
-      - name: Wait for deploy
-        if: steps.detect-release.outputs.new_release == 'true'
-        run: |
-          DEPLOY_ID="${{ steps.deploy.outputs.deployment_id }}"
-          echo "Waiting for deploy ${DEPLOY_ID}..."
-          MAX_ATTEMPTS=30
-          INTERVAL=10
-          for i in $(seq 1 ${MAX_ATTEMPTS}); do
-            sleep ${INTERVAL}
-            STATUS=$(curl -sS \
-              "${{ env.BIGBASE_URL }}/api/sites/${{ env.BIGBASE_REPO_ID }}" \
-              -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
-              | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('latest_deployment',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
-            echo "  [${i}/${MAX_ATTEMPTS}] status=${STATUS}"
-            case "${STATUS}" in
-              success)
-                echo ""
-                echo "✅ Deploy successful!"
-                exit 0
-                ;;
-              failed)
-                echo ""
-                echo "❌ Deploy FAILED!"
-                curl -sS \
-                  "${{ env.BIGBASE_URL }}/api/deploy/${DEPLOY_ID}/logs" \
-                  -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
-                  | python3 -c "
-                    import json,sys
-                    d=json.load(sys.stdin)
-                    lines=d.get('lines',[])
-                    for line in lines[-15:]:
-                        if any(kw in line for kw in ['ERROR','error','failed','traceback']):
-                            print(f'    {line}')
-                  " 2>/dev/null || true
-                exit 1
-                ;;
-            esac
-          done
-          echo ""
-          echo "TIMEOUT ($((MAX_ATTEMPTS * INTERVAL))s) - deploy still running"
-          exit 1
-
-      # -----------------------------------------------------------------------
-      # Step 6: Health check
+      # Step 5: Health check (site responds, BigBase auto-finishes deploy)
       # -----------------------------------------------------------------------
       - name: Health check
         if: steps.detect-release.outputs.new_release == 'true'
         run: |
-          echo "Health checking ${{ env.SITE_URL }}..."
+          echo "Waiting for deploy to propagate..."
           HEALTH_PASS=false
-          for i in 1 2 3 4 5; do
-            sleep 3
-            STATUS_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${{ env.SITE_URL }}" 2>/dev/null || echo "000")
-            echo "  Attempt ${i}/5: HTTP ${STATUS_CODE}"
-            if [ "${STATUS_CODE}" = "200" ]; then
+          for i in 1 2 3 4 5 6 7 8; do
+            sleep 10
+            STATUS=$(curl -sS -o /dev/null -w "%{http_code}" "${{ env.SITE_URL }}" 2>/dev/null || echo "000")
+            echo "  [${i}/8] HTTP ${STATUS}"
+            if [ "${STATUS}" = "200" ]; then
               HEALTH_PASS=true
-              echo "  ✅ Healthy — Big Bolão is serving requests"
+              echo "  Healthy - Big Bolao is live"
               break
             fi
           done
           if [ "${HEALTH_PASS}" = false ]; then
-            echo ""
-            echo "❌ Health check FAILED after 5 attempts"
+            echo "Health check failed after 8 attempts"
             exit 1
           fi
 
       # -----------------------------------------------------------------------
-      # Step 7: Deployment summary
+      # Step 6: Summary
       # -----------------------------------------------------------------------
-      - name: Deployment summary
+      - name: Summary
         if: success() && steps.detect-release.outputs.new_release == 'true'
         run: |
           echo ""
           echo "========================================="
-          echo "  ✅ Deploy Complete"
+          echo "  CI/CD Complete"
           echo "  Site:    ${{ env.SITE_URL }}"
           echo "  Time:    $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
           echo "  Run:     ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           echo "========================================="
 
   # ==========================================================================
-  # JOB: Notify on failure
+  # Notify on failure
   # ==========================================================================
   notify:
     name: Notify on failure
     runs-on: ubuntu-latest
     needs: [ci-cd]
     if: failure() && github.event_name != 'workflow_dispatch'
-
     steps:
       - name: Build failure summary
         run: |
-          echo "❌ Big Bolão CI/CD FAILED"
-          echo "   Repository: ${{ github.repository }}"
-          echo "   Commit:     ${{ github.sha }}"
-          echo "   Branch:     ${{ github.ref_name }}"
-          echo "   Run:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "Big Bolao CI/CD FAILED"
+          echo "  Repository: ${{ github.repository }}"
+          echo "  Commit:     ${{ github.sha }}"
+          echo "  Run:        ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
