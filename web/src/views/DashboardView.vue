@@ -130,20 +130,8 @@ function cellStyle(scored) {
   return { bg, color, border: '1px solid ' + bc }
 }
 
-const allGuesses = ref(null)
-const crossTableReady = ref(false)
-
-// Build guesses on first load
-import { watch } from 'vue'
-watch(() => jogos.value.length, () => {
-  if (jogos.value.length > 0 && !crossTableReady.value) {
-    allGuesses.value = buildAllGuesses()
-    crossTableReady.value = true
-  }
-}, { immediate: true })
-
 const tableHeaderPlayers = computed(() =>
-  rankingList.value.slice(0, 7).map((p, i) => ({
+  rankingList.value.map((p, i) => ({
     ...p,
     initial: p.name[0],
     avatarBg: COLORS[i % COLORS.length],
@@ -153,10 +141,11 @@ const tableHeaderPlayers = computed(() =>
 )
 
 const activeTableRows = computed(() => {
-  if (!crossTableReady.value || !allGuesses.value) return []
+  if (!palpitesMap.value || jogos.value.length === 0) return []
   return jogos.value.map(g => {
-    const cells = PLAYER_NAMES.map((name, pi) => {
-      const pal = (allGuesses.value[pi] || {})[g.id] || null
+    const gameGuesses = palpitesMap.value[g.match_id] || {}
+    const cells = rankingList.value.map((player) => {
+      const pal = gameGuesses[Number(player.id)] || null
       const scored = g.isFinalizado && g.resultado
         ? scoreType(pal, g.resultado)
         : { tipo: g.isBloqueado ? 'bloqueado' : pal ? 'aberto' : 'sem', pts: 0 }
@@ -643,7 +632,7 @@ function goToGroup(grupo) {
           <div class="dash-table-wrapper">
             <div class="dash-table-inner">
               <!-- Header row -->
-              <div class="dash-tr dash-tr-header">
+              <div class="dash-tr dash-tr-header" :style="{ gridTemplateColumns: `210px 72px 72px repeat(${tableHeaderPlayers.length}, minmax(78px, 1fr))` }">
                 <div class="dash-th dash-th-game">Jogo</div>
                 <div class="dash-th dash-th-group">Grupo</div>
                 <div class="dash-th dash-th-score">Placar</div>
@@ -663,7 +652,7 @@ function goToGroup(grupo) {
                 v-for="row in activeTableRows"
                 :key="row.id"
                 class="dash-tr dash-tr-data"
-                :style="{ background: row.rowBg }"
+                :style="{ background: row.rowBg, gridTemplateColumns: `210px 72px 72px repeat(${tableHeaderPlayers.length}, minmax(78px, 1fr))` }"
               >
                 <div class="dash-td dash-td-game" :style="{ borderLeft: row.borderLeft }">
                   <div class="dash-td-teams">
