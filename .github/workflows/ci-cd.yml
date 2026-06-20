@@ -9,14 +9,15 @@
 #   0. Semantic Release (determine version, publish release)
 #   1. Web build (npm ci + vite build)
 #   2. Python tests (pytest)
-#   3. Deploy to BigBase (POST /api/sites/{id}/deploy)
-#   4. Status polling (loop until success/failed, timeout 5min)
-#   5. Health check (5× curl site with 3s interval)
-#   6. Failure notification (summary + Actions run link)
+#   3. BigBase login (email/password → JWT)
+#   4. Deploy to BigBase (POST /api/sites/{id}/deploy)
+#   5. Status polling (loop until success/failed, timeout 5min)
+#   6. Health check (5× curl site with 3s interval)
+#   7. Failure notification (summary + Actions run link)
 #
-# Secrets needed:
-#   - BIGBASE_API_KEY: generated via BigBase Dashboard or
-#     POST /api/orgs/{id}/api-keys (requires org admin)
+# Secrets needed (add in repo Settings → Secrets and variables → Actions):
+#   - BIGBASE_EMAIL: service account email
+#   - BIGBASE_PASSWORD: service account password
 # ============================================================================
 name: CI/CD
 
@@ -150,8 +151,25 @@ jobs:
           python -m pytest tests/ -v
 
       # -----------------------------------------------------------------------
-      # Step 4: Deploy to BigBase
+      # Step 4: Login + Deploy to BigBase
       # -----------------------------------------------------------------------
+      - name: Login to BigBase
+        id: login
+        if: steps.detect-release.outputs.new_release == 'true'
+        run: |
+          RESPONSE=$(curl -sS -X POST \
+            "${{ env.BIGBASE_URL }}/api/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${{ secrets.BIGBASE_EMAIL }}\",\"password\":\"${{ secrets.BIGBASE_PASSWORD }}\"}")
+          TOKEN=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])" 2>/dev/null || echo "")
+          if [ -z "${TOKEN}" ]; then
+            echo "ERROR: Login failed — response: ${RESPONSE}"
+            exit 1
+          fi
+          echo "::add-mask::${TOKEN}"
+          echo "token=${TOKEN}" >> "$GITHUB_OUTPUT"
+          echo "Logged in to BigBase"
+
       - name: Deploy to BigBase
         id: deploy
         if: steps.detect-release.outputs.new_release == 'true'
@@ -159,18 +177,15 @@ jobs:
           echo "Deploying to BigBase..."
           RESPONSE=$(curl -sS -X POST \
             "${{ env.BIGBASE_URL }}/api/sites/${{ env.BIGBASE_REPO_ID }}/deploy" \
-            -H "Authorization: Bearer ${{ secrets.BIGBASE_API_KEY }}" \
+            -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
             -H "Content-Type: application/json" \
             -d '{"branch": "main"}')
-
           echo "Response: ${RESPONSE}"
-
-          DEPLOY_ID=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id', ''))" 2>/dev/null || echo "")
+          DEPLOY_ID=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
           if [ -z "${DEPLOY_ID}" ]; then
             echo "ERROR: Could not extract deployment_id from response"
             exit 1
           fi
-
           echo "deployment_id=${DEPLOY_ID}" >> "$GITHUB_OUTPUT"
           echo "Deployment ID: ${DEPLOY_ID}"
 
@@ -182,20 +197,15 @@ jobs:
         run: |
           DEPLOY_ID="${{ steps.deploy.outputs.deployment_id }}"
           echo "Waiting for deploy ${DEPLOY_ID}..."
-
           MAX_ATTEMPTS=30
           INTERVAL=10
-
           for i in $(seq 1 ${MAX_ATTEMPTS}); do
             sleep ${INTERVAL}
-
             STATUS=$(curl -sS \
               "${{ env.BIGBASE_URL }}/api/sites/${{ env.BIGBASE_REPO_ID }}" \
-              -H "Authorization: Bearer ${{ secrets.BIGBASE_API_KEY }}" \
+              -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
               | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('latest_deployment',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
-
             echo "  [${i}/${MAX_ATTEMPTS}] status=${STATUS}"
-
             case "${STATUS}" in
               success)
                 echo ""
@@ -205,10 +215,9 @@ jobs:
               failed)
                 echo ""
                 echo "❌ Deploy FAILED!"
-                # Fetch logs
                 curl -sS \
                   "${{ env.BIGBASE_URL }}/api/deploy/${DEPLOY_ID}/logs" \
-                  -H "Authorization: Bearer ${{ secrets.BIGBASE_API_KEY }}" \
+                  -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
                   | python3 -c "
                     import json,sys
                     d=json.load(sys.stdin)
@@ -221,7 +230,6 @@ jobs:
                 ;;
             esac
           done
-
           echo ""
           echo "⏱  Timeout (${MAX_ATTEMPTS * INTERVAL}s) — deploy still running"
           exit 1
@@ -233,20 +241,17 @@ jobs:
         if: steps.detect-release.outputs.new_release == 'true'
         run: |
           echo "Health checking ${{ env.SITE_URL }}..."
-
           HEALTH_PASS=false
           for i in 1 2 3 4 5; do
             sleep 3
             STATUS_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${{ env.SITE_URL }}" 2>/dev/null || echo "000")
             echo "  Attempt ${i}/5: HTTP ${STATUS_CODE}"
-
             if [ "${STATUS_CODE}" = "200" ]; then
               HEALTH_PASS=true
               echo "  ✅ Healthy — Big Bolão is serving requests"
               break
             fi
           done
-
           if [ "${HEALTH_PASS}" = false ]; then
             echo ""
             echo "❌ Health check FAILED after 5 attempts"
