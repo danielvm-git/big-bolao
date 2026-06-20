@@ -6,11 +6,8 @@ import { avatarColor } from '../api.js'
 // Top 3 leaders
 const top3 = computed(() => rankingRich.value.slice(0, 3))
 
-// Recent finalized games (last 5)
-const recentGames = computed(() => [...jogosRich.value].filter(g => g.isFinalizado).reverse().slice(0, 5))
-
-// Upcoming games (next 6 open)
-const upcomingGames = computed(() => jogosRich.value.filter(g => g.isAberto).slice(0, 6))
+// Upcoming games (next 4 open)
+const upcomingGames = computed(() => jogosRich.value.filter(g => g.isAberto).slice(0, 4))
 </script>
 
 <template>
@@ -83,78 +80,35 @@ const upcomingGames = computed(() => jogosRich.value.filter(g => g.isAberto).sli
         </div>
 
         <!-- RIGHT: Games -->
-        <div>
-          <!-- Recent results -->
-          <div v-if="recentGames.length">
-            <p class="section-title">Últimos resultados</p>
-            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-              <div v-for="g in recentGames" :key="g.match_id" class="game-card">
-                <div class="game-head">
-                  <span class="game-status status-encerrado">Finalizado</span>
-                  <span class="text-2" style="font-size:12px">{{ g.date }} · {{ g.time }} · {{ g.grupo }}</span>
+        <div v-if="upcomingGames.length">
+          <p class="section-title">Próximos jogos</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div v-for="g in upcomingGames" :key="g.match_id" class="game-card">
+              <div class="game-head">
+                <span class="game-status status-aberto">Aberto</span>
+                <span class="text-2" style="font-size:12px">{{ g.date }} · {{ g.time }} · {{ g.grupo }}</span>
+              </div>
+              <div class="game-teams">
+                <div class="game-team">
+                  <span class="game-flag">{{ g.flagA }}</span>
+                  <span class="game-name">{{ g.casa }}</span>
                 </div>
-                <div class="game-teams">
-                  <div class="game-team">
-                    <span class="game-flag">{{ g.flagA }}</span>
-                    <span class="game-name">{{ g.casa }}</span>
-                  </div>
-                  <span class="game-result">{{ g.resultado }}</span>
-                  <div class="game-team right">
-                    <span class="game-name">{{ g.fora }}</span>
-                    <span class="game-flag">{{ g.flagB }}</span>
-                  </div>
-                </div>
-                <!-- Palpites -->
-                <div class="game-guesses">
-                  <span class="guess-label">Palpites</span>
-                  <template v-for="(r, i) in rankingRich" :key="r.telegram_id">
-                    <div
-                      v-if="palpitesIdx[g.match_id]?.[r.telegram_id]"
-                      class="guess-chip"
-                      :class="scoreLabel(palpitesIdx[g.match_id]?.[r.telegram_id], g)"
-                    >
-                      <div class="guess-avatar" :style="{ background: r.color }">{{ r.initial }}</div>
-                      <span class="guess-score">
-                        {{ palpitesIdx[g.match_id][r.telegram_id].a }}–{{ palpitesIdx[g.match_id][r.telegram_id].b }}
-                      </span>
-                    </div>
-                  </template>
+                <span class="game-score">×</span>
+                <div class="game-team right">
+                  <span class="game-name">{{ g.fora }}</span>
+                  <span class="game-flag">{{ g.flagB }}</span>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <!-- Upcoming -->
-          <div v-if="upcomingGames.length">
-            <p class="section-title">Próximos jogos</p>
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <div v-for="g in upcomingGames" :key="g.match_id" class="game-card">
-                <div class="game-head">
-                  <span class="game-status status-aberto">Aberto</span>
-                  <span class="text-2" style="font-size:12px">{{ g.date }} · {{ g.time }} · {{ g.grupo }}</span>
-                </div>
-                <div class="game-teams">
-                  <div class="game-team">
-                    <span class="game-flag">{{ g.flagA }}</span>
-                    <span class="game-name">{{ g.casa }}</span>
+              <div class="game-guesses" v-if="Object.keys(palpitesIdx[g.match_id] || {}).length">
+                <span class="guess-label">Palpites</span>
+                <template v-for="r in rankingRich" :key="r.telegram_id">
+                  <div v-if="palpitesIdx[g.match_id]?.[r.telegram_id]" class="guess-chip">
+                    <div class="guess-avatar" :style="{ background: r.color }">{{ r.initial }}</div>
+                    <span class="guess-score">
+                      {{ palpitesIdx[g.match_id][r.telegram_id].a }}–{{ palpitesIdx[g.match_id][r.telegram_id].b }}
+                    </span>
                   </div>
-                  <span class="game-score">×</span>
-                  <div class="game-team right">
-                    <span class="game-name">{{ g.fora }}</span>
-                    <span class="game-flag">{{ g.flagB }}</span>
-                  </div>
-                </div>
-                <div class="game-guesses" v-if="Object.keys(palpitesIdx[g.match_id] || {}).length">
-                  <span class="guess-label">Palpites</span>
-                  <template v-for="r in rankingRich" :key="r.telegram_id">
-                    <div v-if="palpitesIdx[g.match_id]?.[r.telegram_id]" class="guess-chip">
-                      <div class="guess-avatar" :style="{ background: r.color }">{{ r.initial }}</div>
-                      <span class="guess-score">
-                        {{ palpitesIdx[g.match_id][r.telegram_id].a }}–{{ palpitesIdx[g.match_id][r.telegram_id].b }}
-                      </span>
-                    </div>
-                  </template>
-                </div>
+                </template>
               </div>
             </div>
           </div>
