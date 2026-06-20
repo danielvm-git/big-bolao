@@ -47,7 +47,15 @@ mexer exige cobrir com os testes existentes (`tests/test_results.py`, `tests/tes
 
 ## Acceptance Criteria
 
-- [ ] `_FINISHED` definido em um único lugar
-- [ ] Hierarquia ft_score → score implementada uma vez
-- [ ] Adicionar um status novo é mudança em um único arquivo
-- [ ] `tests/test_results.py` e `tests/test_fixtures.py` continuam passando
+- [x] `_FINISHED` definido em um único lugar
+- [x] Hierarquia ft_score → score implementada uma vez
+- [x] Adicionar um status novo é mudança em um único arquivo
+- [x] `tests/test_results.py` e `tests/test_fixtures.py` continuam passando
+
+## Resolution
+
+**Fixed:** 2026-06-20
+**Root cause confirmed:** results.py reimplemented inline the field extraction that fixtures.normalise() already did — _FINISHED defined twice, ft_score→score hierarchy in 2 places.
+**Fix applied:** Extracted `_FINISHED` (frozenset) and `parse_result(fixture) → tuple[int,int] | None` into fixtures.py. Both normalise() and _apifootball() now import and use the shared functions. results.py no longer has its own _FINISHED or inline score parsing.
+**Hardening added:** Adding a new "finished" status is now a change in one file. parse_result() is independently testable.
+**Evidence:** 79/79 tests pass.

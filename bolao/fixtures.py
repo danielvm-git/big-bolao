@@ -28,6 +28,12 @@ log = logging.getLogger("bolao.fixtures")
 # Tempo retornado pela API e UTC; kickoff guardado em BRT (UTC-3)
 BRT = timezone(timedelta(hours=-3))
 
+# Constante compartilhada de status encerrado (usada tambem por results.py)
+_FINISHED = frozenset({
+    "Finished", "After ET", "After Pen.",
+    "FT", "AET", "PEN", "Finished AET", "Finished PEN",
+})
+
 # match_round → (phase_id, rodada)
 # A API retorna numeros simples ("1","2","3") na fase de grupos e strings
 # descritivas nos knockouts ("Round of 16", "Quarter-finals", etc.).
@@ -55,6 +61,23 @@ _STRING_PHASE_MAP: list[tuple[str, str, int]] = [
     ("3rd place",        "3P",  7),
     ("final",            "FIN", 8),
 ]
+
+def parse_result(fixture: dict) -> tuple[int, int] | None:
+    """Extrai placar de 90 minutos de um fixture bruto da API.
+
+    Retorna (gols_casa, gols_fora) usando match_hometeam_ft_score (90min),
+    com fallback para match_hometeam_score (prorrogação). Retorna None
+    se o placar nao estiver disponivel ou for invalido.
+    """
+    gh = fixture.get("match_hometeam_ft_score") or fixture.get("match_hometeam_score")
+    ga = fixture.get("match_awayteam_ft_score") or fixture.get("match_awayteam_score")
+    if gh in (None, "", "-") or ga in (None, "", "-"):
+        return None
+    try:
+        return int(gh), int(ga)
+    except (TypeError, ValueError):
+        return None
+
 
 def _parse_phase(round_str: str) -> tuple[str, int] | None:
     """Devolve (phase_id, rodada) ou None se a rodada nao for reconhecida."""
@@ -105,23 +128,11 @@ def normalise(raw_fixtures: list[dict]) -> list[dict]:
         )
 
         status_api = (fx.get("match_status") or "").strip()
-        finished = status_api in ("Finished", "After ET", "After Pen.",
-                                   "FT", "AET", "PEN", "Finished AET",
-                                   "Finished PEN")
+        finished = status_api in _FINISHED
 
-        # Use full-time (90 min) score for bolao scoring — NOT match_hometeam_score
-        # which includes extra time. Falls back to match_hometeam_score if ft field absent.
-        score_h = fx.get("match_hometeam_ft_score") or fx.get("match_hometeam_score")
-        score_a = fx.get("match_awayteam_ft_score") or fx.get("match_awayteam_score")
-
-        def _safe_int(v) -> int | None:
-            try:
-                return int(v) if v not in (None, "", "-") else None
-            except (TypeError, ValueError):
-                return None
-
-        gols_casa = _safe_int(score_h) if finished else None
-        gols_fora = _safe_int(score_a) if finished else None
+        placar = parse_result(fx) if finished else None
+        gols_casa = placar[0] if placar else None
+        gols_fora = placar[1] if placar else None
 
         record = {
             "api_fixture_id": str(fx.get("match_id", "")),

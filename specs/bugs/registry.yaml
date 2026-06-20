@@ -227,3 +227,29 @@ bugs:
   - scoring.js mirrors Python scoring.py structure to prevent divergence
   - api.js is a re-export barrel — no hidden logic
   commit_message: 'refactor(web): extract scoring.js, transport.js, queries.js from api.js god-module'
+- bug_id: BUG-2026-06-20-200200
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: bot-architecture
+  type: tech-debt
+  summary: results.py duplica parsing de fixtures.py — _FINISHED, ft_score hierarchy,
+    _safe_int reimplementados em 2 lugares
+  file: specs/bugs/BUG-2026-06-20-200200-results-fixtures-duplicated-parsing.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: results.py reimplementou inline a extração de campos que fixtures.normalise()
+    já fazia — _FINISHED definido duas vezes, ft_score→score em 2 lugares
+  approach: Extrair parse_result(fixture) + _FINISHED em fixtures.py; results.py
+    importa e consome em vez de reparsear
+  risk_level: low
+  files_changed:
+  - bolao/fixtures.py
+  - bolao/results.py
+  tests_added:
+  - (none — existing 21 tests cover both paths)
+  hardening:
+  - Adicionar status novo de "encerrado" é mudança em um único arquivo
+  - parse_result() testável independentemente via import
+  - _FINISHED como frozenset compartilhado
+  commit_message: 'refactor(bot): extract shared _FINISHED + parse_result from results.py into fixtures.py'

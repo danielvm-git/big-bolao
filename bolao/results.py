@@ -14,6 +14,7 @@ import logging
 import httpx
 
 from bolao import config
+from bolao.fixtures import _FINISHED, parse_result
 
 log = logging.getLogger("bolao.results")
 
@@ -39,11 +40,6 @@ async def buscar_encerrados(jogos: list[dict]) -> list[Resultado]:
 # ---------------------------------------------------------------------------
 # apifootball.com provider
 # ---------------------------------------------------------------------------
-
-_FINISHED = frozenset({
-    "Finished", "After ET", "After Pen.",
-    "FT", "AET", "PEN", "Finished AET", "Finished PEN",
-})
 
 # Fallback name-based matching (for records without api_fixture_id)
 _PT_TO_EN: dict[str, str] = {
@@ -118,15 +114,10 @@ async def _apifootball(jogos: list[dict]) -> list[Resultado]:
     for fx in fixtures:
         if fx.get("match_status", "") not in _FINISHED:
             continue
-        # 90-min FT score only — not ET/penalties
-        gh = fx.get("match_hometeam_ft_score") or fx.get("match_hometeam_score")
-        ga = fx.get("match_awayteam_ft_score") or fx.get("match_awayteam_score")
-        if gh in (None, "", "-") or ga in (None, "", "-"):
+        placar = parse_result(fx)
+        if placar is None:
             continue
-        try:
-            gc, gf = int(gh), int(ga)
-        except (TypeError, ValueError):
-            continue
+        gc, gf = placar
 
         api_id = str(fx.get("match_id", ""))
         if api_id:
