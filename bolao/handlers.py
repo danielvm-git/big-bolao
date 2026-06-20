@@ -13,7 +13,7 @@ from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, Update)
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
-from bolao import config, ranking as ranking_mod, results as results_mod
+from bolao import config, results as results_mod
 from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
 from bolao.group_publisher import format_lembrete, format_ranking, format_resultado

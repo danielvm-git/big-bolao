@@ -14,7 +14,7 @@ import logging
 import httpx
 
 from bolao import config
-from bolao.fixtures import _FINISHED, parse_result
+from bolao.fixtures import FINISHED_STATUSES, parse_result
 
 log = logging.getLogger("bolao.results")
 
@@ -112,7 +112,7 @@ async def _apifootball(jogos: list[dict]) -> list[Resultado]:
     por_times: dict[tuple[str, str], tuple[int, int]] = {}
 
     for fx in fixtures:
-        if fx.get("match_status", "") not in _FINISHED:
+        if fx.get("match_status", "") not in FINISHED_STATUSES:
             continue
         placar = parse_result(fx)
         if placar is None:

@@ -29,7 +29,7 @@ log = logging.getLogger("bolao.fixtures")
 BRT = timezone(timedelta(hours=-3))
 
 # Constante compartilhada de status encerrado (usada tambem por results.py)
-_FINISHED = frozenset({
+FINISHED_STATUSES = frozenset({
     "Finished", "After ET", "After Pen.",
     "FT", "AET", "PEN", "Finished AET", "Finished PEN",
 })
@@ -61,6 +61,7 @@ _STRING_PHASE_MAP: list[tuple[str, str, int]] = [
     ("3rd place",        "3P",  7),
     ("final",            "FIN", 8),
 ]
+
 
 def parse_result(fixture: dict) -> tuple[int, int] | None:
     """Extrai placar de 90 minutos de um fixture bruto da API.
@@ -128,7 +129,7 @@ def normalise(raw_fixtures: list[dict]) -> list[dict]:
         )
 
         status_api = (fx.get("match_status") or "").strip()
-        finished = status_api in _FINISHED
+        finished = status_api in FINISHED_STATUSES
 
         placar = parse_result(fx) if finished else None
         gols_casa = placar[0] if placar else None

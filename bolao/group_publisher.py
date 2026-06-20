@@ -2,7 +2,7 @@
 
 Toda funcao neste modulo e uma funcao pura: recebe dicts, retorna str.
 Nenhuma depende de I/O, ContextTypes, ou bot.send_message.
-O GroupPublisher (classe magra) so adiciona o envio.
+O envio (send_message) ainda vive em handlers.py.
 """
 from __future__ import annotations
 

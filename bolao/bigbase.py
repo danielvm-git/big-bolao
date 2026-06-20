@@ -216,6 +216,3 @@ class BigBase:
 
     async def get_palpites(self) -> list[dict]:
         return await self.list_records(PALPITES)
-
-
-
