@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/danielvm-git/big-bolao/compare/v1.0.4...v1.0.5) (2026-06-20)
+
+
+### Bug Fixes
+
+* **ranking:** named constant for min valid telegram_id + formatar tests ([e1f37e3](https://github.com/danielvm-git/big-bolao/commit/e1f37e30fda93b882f1e188849de2e6ad17bbe38))
+
 ## [1.0.4](https://github.com/danielvm-git/big-bolao/compare/v1.0.3...v1.0.4) (2026-06-20)
 
 
