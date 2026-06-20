@@ -56,12 +56,13 @@ def p_nome_fallback(palpites: list[dict], tid: int) -> str:
 def formatar(rank: list[dict]) -> str:
     if not rank:
         return "Ainda nao ha pontos computados."
-    medalhas = ["🥇", "🥈", "🥉"]
     linhas = ["🏆 <b>Ranking do Bolao</b>", ""]
+    # Cabecalho + separador
+    cab = f"{'#':>2}  {'Nome':<14} {'Ex':>3} {'1pt':>3} {'Jog':>3} {'Pts':>4}"
+    linhas.append(f"<code>{cab}</code>")
     for i, e in enumerate(rank):
-        pos = medalhas[i] if i < 3 else f"{i + 1}º "
+        pos = i + 1
         pts_1 = e['acertos'] - e['exatos']
         linhas.append(
-            f"{pos} <b>{e['nome']}</b> — {e['pontos']} pts"
-            f"  🎯{e['exatos']}  ✅{pts_1}  📋{e['jogos']}")
+            f"<code>{pos:>2}  {e['nome']:<14} {e['exatos']:>3} {pts_1:>3} {e['jogos']:>3} {e['pontos']:>4}</code>")
     return "\n".join(linhas)
