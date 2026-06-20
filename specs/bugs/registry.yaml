@@ -108,8 +108,24 @@ bugs:
   root_cause: registrar_participante só verifica nome exato antes de criar — não varre
     placeholders com telegram_id negativo cujo nome esteja contido no novo nome
   approach: Adicionar varredura de placeholders (telegram_id < 0) antes de criar,
-    vinculando por substring do nome
+    vinculando por substring do nome com normalização de acentos
   risk_level: low
+  files_changed:
+  - bolao/bigbase.py
+  - tests/test_participantes.py (new)
+  tests_added:
+  - tests/test_participantes.py (6 tests: placeholder match, no-false-match, reivindicar
+    still works, reverse match, acentos, auto-link after reivindicar)
+  hardening:
+  - Unicode normalization (NFKD) antes de substring match — "Flávia" casa com
+    "Ana Flavia Cernic Ramos" sem acento
+  - Ordem de precedência: match exato antes de fuzzy placeholder scan
+  - Métodos privados encapsulam a lógica de varredura (_placeholder_por_nome_parcial,
+    _vincular_placeholder)
+  - 6-test suite cobre match, no-match, casos inversos, acentos, e compat com
+    /sou
+  commit_message: 'fix(bot): duplicate participants on /start — add placeholder
+    scan with fuzzy name match'
 - bug_id: BUG-2026-06-20-143237
   date: '2026-06-20'
   severity: low

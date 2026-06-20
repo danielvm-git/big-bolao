@@ -185,6 +185,9 @@ class BigBase:
                 return p
         return None
 
+    # Alias publico para compatibilidade com scripts (seed_bigbase.py e outros)
+    participante_por_nome = _participante_por_nome_exato
+
     async def reivindicar(self, nome: str, novo_telegram_id: int) -> bool:
         """Vincula um participante historico (sem dono) a uma conta real,
         migrando os palpites antigos para o novo telegram_id. Usado por /sou."""

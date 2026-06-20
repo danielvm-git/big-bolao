@@ -197,7 +197,7 @@ async def test_reivindicar_after_auto_link():
 
     # /sou Flávia — reivindicar busca por nome exato "Flávia"
     # Mas o nome foi atualizado para "Ana Flavia Cernic Ramos"
-    # Então participante_por_nome("Flávia") deve retornar None
+    # Então _participante_por_nome_exato("Flávia") deve retornar None
     ok = await bb.reivindicar("Flávia", 12345)
     assert ok is False, "não acha 'Flávia' porque o nome foi atualizado"
 
