@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/danielvm-git/big-bolao/compare/v1.1.0...v1.1.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **review:** address all review findings ([5c11e68](https://github.com/danielvm-git/big-bolao/commit/5c11e681562f67e204b6c8c999a806625e7a0ec6))
+
 # [1.1.0](https://github.com/danielvm-git/big-bolao/compare/v1.0.5...v1.1.0) (2026-06-20)
 
 
