@@ -10,12 +10,13 @@ const routes = [
   { path: '/ranking',   name: 'Ranking' },
   { path: '/meus',      name: 'MeusPalpites' },
   { path: '/resultado/:id', name: 'Resultado' },
+  { path: '/dashboard', name: 'Dashboard' },
 ];
 
 describe('Router configuration', () => {
   it('all expected routes are defined', () => {
     const names = routes.map(r => r.name).sort();
-    assert.deepStrictEqual(names, ['Home', 'Jogos', 'Login', 'MeusPalpites', 'Ranking', 'Resultado']);
+    assert.deepStrictEqual(names, ['Dashboard', 'Home', 'Jogos', 'Login', 'MeusPalpites', 'Ranking', 'Resultado']);
   });
 
   it('no duplicate paths', () => {
