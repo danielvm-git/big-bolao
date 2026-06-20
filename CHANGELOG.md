@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/danielvm-git/big-bolao/compare/v1.0.3...v1.0.4) (2026-06-20)
+
+
+### Bug Fixes
+
+* **ci:** simplify workflow — deploy trigger + health check, no status polling ([9037f67](https://github.com/danielvm-git/big-bolao/commit/9037f67d7c663d578bebb45e2b925fe5bbd6cf6a))
+
 ## [1.0.3](https://github.com/danielvm-git/big-bolao/compare/v1.0.2...v1.0.3) (2026-06-20)
 
 
