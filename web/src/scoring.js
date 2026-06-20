@@ -40,3 +40,41 @@ export function flag(team) {
   if (!team) return '🏳️'
   return FLAGS[_normTeam(team)] || '🏳️'
 }
+
+export function fmtDate(iso) {
+  if (!iso) return ''
+  const [,m,d] = iso.split('T')[0].split('-')
+  return `${d}/${m}`
+}
+export function fmtTime(iso) {
+  if (!iso) return ''
+  return iso.split('T')[1]?.slice(0,5) || ''
+}
+
+const COLORS = ['#F7C948','#94A3B8','#CD7F32','#60A5FA','#A78BFA','#4ADE80','#F87171','#FB923C']
+export function avatarColor(i) { return COLORS[i % COLORS.length] }
+
+export function calcRanking(jogos, palpites, participantes) {
+  const ativos = participantes.filter(p => p.ativo !== false && Number(p.telegram_id) > 0)
+  const nomes = Object.fromEntries(ativos.map(p => [Number(p.telegram_id), p.nome || '?']))
+  const enc = {}
+  for (const j of jogos) {
+    if (j.status === 'encerrado' && j.gols_casa != null)
+      enc[j.match_id] = [Number(j.gols_casa), Number(j.gols_fora)]
+  }
+  const acc = {}
+  for (const p of palpites) {
+    const tid = Number(p.telegram_id)
+    if (!nomes[tid] || !enc[p.match_id]) continue
+    const [ra, rb] = enc[p.match_id]
+    const pts = calcPontos(Number(p.gols_casa), Number(p.gols_fora), ra, rb)
+    const e = acc[tid] || (acc[tid] = { telegram_id: tid, nome: nomes[tid], pontos: 0, exatos: 0, acertos: 0 })
+    e.pontos += pts
+    if (pts === 3) e.exatos++
+    if (pts >= 1) e.acertos++
+  }
+  for (const tid of Object.keys(nomes)) {
+    if (!acc[tid]) acc[Number(tid)] = { telegram_id: Number(tid), nome: nomes[tid], pontos: 0, exatos: 0, acertos: 0 }
+  }
+  return Object.values(acc).sort((a, b) => b.pontos - a.pontos || b.exatos - a.exatos || a.nome.localeCompare(b.nome))
+}
