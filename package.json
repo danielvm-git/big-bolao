@@ -2,7 +2,6 @@
   "name": "big-bolao-web",
   "private": true,
   "scripts": {
-    "start": "node server.js",
-    "build": "npm --prefix web install && npm --prefix web run build"
+    "start": "node server.js"
   }
 }
