@@ -16,3 +16,8 @@ e01-s14: planned
 e03-s01: done (DashboardView scaffold, sticky header, rota /dashboard)
 e03-s02: done (Hero section with stats + leader card)
 e03-s03: done (Two-column layout with games + ranking sidebar)
+e03-s04: done (Cross-table matrix with color-coded cells)
+e03-s05: done (Player detail view with stats + palpite history)
+e03-s06: done (Country/Team detail view with W/D/L stats)
+e03-s07: done (Group detail view with standings table)
+e03-s08: done (Interactive navigation between all views)
