@@ -31,16 +31,22 @@ handoff:
   current_phase: build
   next_skill: survey-context
   notes: >
-    Story e03-s01 complete! 8-step cycle finished.
-    Next epic story: e03-s02 (Hero section).
-    Run build-epic again to continue.
+    Branch released: refactor(bot) BettingFlow + GroupPublisher extraction.
+    12 files, 1138 insertions, 79 tests all passing.
+    Pushed to main. Next: survey-context.
 
 git:
   branch: main
-  hash: d827409
+  hash: e740c54
 
 metrics:
   story_start: "2026-06-19T21:10:00-03:00"
   story_end: "2026-06-19T21:40:00-03:00"
   cycle_minutes: 30
   bcp_per_hour: 2.0
+  - id: bot-refactor
+    bcps: 35
+    start: "2026-06-20T14:00:00-03:00"
+    end: "2026-06-20T14:25:00-03:00"
+    cycle_minutes: 25
+    bcp_per_hour: 84.0
