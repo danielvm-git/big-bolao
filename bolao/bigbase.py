@@ -123,9 +123,16 @@ class BigBase:
         existente = await self.get_participante(telegram_id)
         if existente:
             await self.patch(PARTICIPANTES, existente["id"], {"nome": nome, "ativo": True})
-        else:
-            await self.create(PARTICIPANTES, {
+            return
+        # Evita duplicata de nome: se outro registro tem o mesmo nome (caso
+        # de /sou ter "roubado" o registro original), reassina o telegram_id.
+        mesmo_nome = await self.participante_por_nome(nome)
+        if mesmo_nome:
+            await self.patch(PARTICIPANTES, mesmo_nome["id"], {
                 "telegram_id": int(telegram_id), "nome": nome, "ativo": True})
+            return
+        await self.create(PARTICIPANTES, {
+            "telegram_id": int(telegram_id), "nome": nome, "ativo": True})
 
     async def listar_participantes(self) -> list[dict]:
         return await self.list_records(PARTICIPANTES)
@@ -143,15 +150,26 @@ class BigBase:
         if not alvo:
             return False
         antigo_id = int(alvo["telegram_id"])
-        if antigo_id == int(novo_telegram_id):
+        novo_tid = int(novo_telegram_id)
+        if antigo_id == novo_tid:
             return True
         # migra palpites do id antigo -> novo
         todos = await self.list_records(PALPITES)
         for p in todos:
             if int(p.get("telegram_id", 0)) == antigo_id:
-                await self.patch(PALPITES, p["id"], {"telegram_id": int(novo_telegram_id)})
-        await self.patch(PARTICIPANTES, alvo["id"],
-                         {"telegram_id": int(novo_telegram_id), "ativo": True})
+                await self.patch(PALPITES, p["id"], {"telegram_id": novo_tid})
+        # Se o novo usuario ja tem registro proprio, fundir em vez de roubar
+        usuario_atual = await self.get_participante(novo_tid)
+        if usuario_atual and usuario_atual["id"] != alvo["id"]:
+            # Ja existe: marca o registro historico como inativo (evita
+            # duplicata no ranking) e atualiza o nome do usuario real.
+            await self.patch(PARTICIPANTES, usuario_atual["id"], {
+                "nome": nome, "ativo": True})
+            await self.patch(PARTICIPANTES, alvo["id"], {"ativo": False})
+        else:
+            # Nao existe: reaproveita o registro historico
+            await self.patch(PARTICIPANTES, alvo["id"], {
+                "telegram_id": novo_tid, "nome": nome, "ativo": True})
         return True
 
     # ---------- jogos ----------

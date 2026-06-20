@@ -7,7 +7,9 @@ from bolao.scoring import pontos
 def calcular(jogos: list[dict], palpites: list[dict],
              participantes: list[dict]) -> list[dict]:
     """Retorna lista ordenada: [{nome, telegram_id, pontos, exatos, acertos, jogos}]."""
-    nomes = {int(p["telegram_id"]): p.get("nome", "?") for p in participantes}
+    # So participantes ativos — inativos sao duplicatas fundidas por reivindicar
+    ativos = [p for p in participantes if p.get("ativo", True)]
+    nomes = {int(p["telegram_id"]): p.get("nome", "?") for p in ativos}
 
     encerrados = {
         j["match_id"]: (int(j["gols_casa"]), int(j["gols_fora"]))
@@ -57,8 +59,9 @@ def formatar(rank: list[dict]) -> str:
     medalhas = ["🥇", "🥈", "🥉"]
     linhas = ["🏆 <b>Ranking do Bolao</b>", ""]
     for i, e in enumerate(rank):
-        pos = medalhas[i] if i < 3 else f"{i + 1}º"
+        pos = medalhas[i] if i < 3 else f"{i + 1}º "
+        pts_1 = e['acertos'] - e['exatos']
         linhas.append(
-            f"{pos} <b>{e['nome']}</b> — {e['pontos']} pts "
-            f"({e['exatos']} exatos · {e['acertos']}/{e['jogos']})")
+            f"{pos} <b>{e['nome']}</b> — {e['pontos']} pts"
+            f"  🎯{e['exatos']}  ✅{pts_1}  📋{e['jogos']}")
     return "\n".join(linhas)
