@@ -1,18 +1,10 @@
-"""Big Bolão — entry point for BigBase deploy: only runs the Telegram bot.
-
-Static files (Vue SPA) are served by Caddy. API calls are proxied to BigBase
-by Caddy. The bot runs long-polling in this process.
-
-Env vars are loaded from (in order of precedence):
-  1. /opt/bolao/.env          (production, BigBase deploy)
-  2. .env in current dir      (local dev)
-  3. shell environment        (fallback)
-"""
+"""Big Bolão — BigBase entry point: serves web/dist/ via HTTP + runs the bot."""
 from __future__ import annotations
 
 import logging
 import os
 import sys
+import threading
 from pathlib import Path
 
 logging.basicConfig(
@@ -21,33 +13,58 @@ logging.basicConfig(
 )
 log = logging.getLogger("bolao.app")
 
-# Load project-specific .env (production path first, then local)
+# Load env
 from dotenv import load_dotenv
 BOLAO_ENV = Path("/opt/bolao/.env")
 LOCAL_ENV = Path(__file__).resolve().parent / ".env"
 
 if BOLAO_ENV.exists():
     load_dotenv(dotenv_path=str(BOLAO_ENV), override=True)
-    log.info("Loaded env from %s", BOLAO_ENV)
 elif LOCAL_ENV.exists():
     load_dotenv(dotenv_path=str(LOCAL_ENV), override=True)
-    log.info("Loaded env from %s", LOCAL_ENV)
 else:
-    load_dotenv(override=True)  # try cwd .env as last resort
-    log.info("No .env found — using shell env")
+    load_dotenv(override=True)
 
-# Load config — will fail with helpful error if env vars missing
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bolao.config import validate_config, TELEGRAM_TOKEN
 
-try:
-    validate_config()
-except RuntimeError as e:
-    log.warning("Config: %s", e)
+# Start Telegram bot in background thread
+def run_bot():
+    try:
+        from bolao.config import validate_config, TELEGRAM_TOKEN
+        validate_config()
+        log.info("Bot starting with token %s…", TELEGRAM_TOKEN[:8] + "...")
+        from bolao.bot import build_app
+        bot_app = build_app()
+        bot_app.run_polling(allowed_updates=["message", "callback_query"])
+    except Exception as e:
+        log.error("Bot failed: %s", e)
 
-log.info("Starting bot with TELEGRAM_TOKEN=%s…", TELEGRAM_TOKEN[:8] + "...")
+threading.Thread(target=run_bot, daemon=True).start()
 
-from bolao.bot import build_app
-app = build_app()
-log.info("Bot iniciando (long polling)...")
-app.run_polling(allowed_updates=["message", "callback_query"])
+# Serve web/dist/ as SPA on $PORT (BigBase health-checks this)
+import http.server, socketserver
+
+PORT = int(os.environ.get('PORT', 3000))
+DIST = Path(__file__).resolve().parent / 'web' / 'dist'
+log.info("Serving %s on :%d", DIST, PORT)
+
+
+class SPAHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(DIST), **kwargs)
+
+    def do_GET(self):
+        path = self.path.split('?')[0].lstrip('/')
+        full = DIST / path
+        if not full.exists() or full.is_dir():
+            self.path = '/index.html'
+        super().do_GET()
+
+    def log_message(self, fmt, *args):
+        pass
+
+
+socketserver.TCPServer.allow_reuse_address = True
+with socketserver.TCPServer(('0.0.0.0', PORT), SPAHandler) as httpd:
+    log.info("HTTP server ready on :%d", PORT)
+    httpd.serve_forever()
