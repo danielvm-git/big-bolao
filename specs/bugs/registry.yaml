@@ -253,3 +253,28 @@ bugs:
   - parse_result() testável independentemente via import
   - _FINISHED como frozenset compartilhado
   commit_message: 'refactor(bot): extract shared _FINISHED + parse_result from results.py into fixtures.py'
+- bug_id: BUG-2026-06-20-200300
+  date: '2026-06-20'
+  severity: low
+  priority: low
+  scope: bot-architecture
+  type: tech-debt
+  summary: bigbase.py expõe superfície de interface morta (sql/_hydrate) — nunca
+    chamados; docstring anuncia /api/sql como capacidade ativa
+  file: specs/bugs/BUG-2026-06-20-200300-bigbase-dead-interface-surface.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: sql()/_hydrate() sobreviveram à troca de estratégia SQL→list+filter
+    sem serem removidos; zero callers (deletion test confirmado)
+  approach: Remover sql() e _hydrate(); atualizar docstring para refletir filtragem
+    em processo sobre list_records(); documentar O(n)
+  risk_level: low
+  files_changed:
+  - bolao/bigbase.py
+  tests_added:
+  - (none — zero callers, 79 existing tests pass)
+  hardening:
+  - Superfície de interface reflete apenas contratos vivos
+  - Docstring não menciona mais /api/sql
+  - O(n) documentado em list_records()
+  commit_message: 'refactor(bot): remove dead sql()/_hydrate() from bigbase.py — zero callers'

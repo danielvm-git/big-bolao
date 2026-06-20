@@ -43,7 +43,15 @@ pode tentar usar `sql()` e reencontrar o 403 já resolvido por BUG-2026-06-19-18
 
 ## Acceptance Criteria
 
-- [ ] `sql()` e `_hydrate()` removidos
-- [ ] Docstring reflete o caminho de leitura real (list+filter em processo)
-- [ ] Nenhum caller quebra (já são zero)
-- [ ] Testes Python continuam passando
+- [x] `sql()` e `_hydrate()` removidos
+- [x] Docstring reflete o caminho de leitura real (list+filter em processo)
+- [x] Nenhum caller quebra (já são zero)
+- [x] Testes Python continuam passando
+
+## Resolution
+
+**Fixed:** 2026-06-20
+**Root cause confirmed:** sql()/_hydrate() survived the SQL→list+filter strategy change without being removed. Zero callers.
+**Fix applied:** Removed BigBase.sql() method and module-level _hydrate() function. Updated module docstring: no mention of /api/sql, filtering is in-process O(n) over list_records(). Added O(n) note to list_records() docstring. Removed stale comment in ensure_setup() about /api/sql.
+**Hardening added:** No dead interface surface. Future contributors see only the real data path.
+**Evidence:** 79/79 tests pass.

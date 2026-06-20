@@ -1,8 +1,7 @@
 """Camada de dados sobre a API de Coleches do BigBase.
 
 BigBase expoe coleches schema-less em /api/collections/{nome} (cada registro e um
-JSON no campo `data`, com `id` autoincremento) e leitura via /api/sql
-(SELECT read-only, single-statement). Rotas sao protegidas por JWT (Bearer),
+JSON no campo `data`, com `id` autoincremento). Rotas sao protegidas por JWT (Bearer),
 obtido em /api/auth/login.
 
 Coleches usadas:
@@ -10,7 +9,8 @@ Coleches usadas:
 - jogos:         match_id, rodada, kickoff, casa, fora, gols_casa, gols_fora, status
 - palpites:      match_id, telegram_id, nome, gols_casa, gols_fora, atualizado_em
 
-Filtragem e feita via /api/sql com json_extract(data,'$.campo').
+Filtragem e feita em processo (O(n) sobre list_records()). /api/sql nao esta
+ativo para a service account (ver BUG-2026-06-19-180800).
 Escritas (POST/PATCH/DELETE) usam o id do registro retornado pela leitura.
 """
 from __future__ import annotations
@@ -75,29 +75,21 @@ class BigBase:
             raise BigBaseError(f"patch {collection}/{rec_id} ({r.status_code}): {r.text}")
 
     async def list_records(self, collection: str, limit: int = 1000) -> list[dict]:
-        """Lista todos os registros via REST (auto-cria a tabela se faltar)."""
+        """Lista todos os registros via REST (auto-cria a tabela se faltar).
+
+        Nota: scan completo O(n) — filtragem e feita em processo pelo caller.
+        """
         r = await self._request(
             "GET", f"/api/collections/{collection}", params={"limit": limit})
         if r.status_code != 200:
             raise BigBaseError(f"list {collection} ({r.status_code}): {r.text}")
         return r.json().get("data", [])
 
-    async def sql(self, query: str) -> list[dict]:
-        r = await self._request("POST", "/api/sql", json={"query": query})
-        if r.status_code != 200:
-            raise BigBaseError(f"sql ({r.status_code}): {r.text} | {query}")
-        body = r.json()
-        cols, rows = body.get("columns", []), body.get("rows", [])
-        return rows if rows and isinstance(rows[0], dict) else [
-            dict(zip(cols, row)) for row in rows
-        ]
-
     # ---------- setup / seed ----------
 
     async def ensure_setup(self) -> None:
         """Garante que as coleches existem e popula a agenda das rodadas."""
-        # GET em cada colecao forca a criacao da tabela no servidor, pre-requisito
-        # pras consultas /api/sql com filtro (que falham em tabela inexistente).
+        # GET em cada colecao forca a criacao da tabela no servidor.
         existentes = {j.get("match_id") for j in await self.list_records(JOGOS)}
         await self.list_records(PARTICIPANTES)
         await self.list_records(PALPITES)
@@ -226,10 +218,4 @@ class BigBase:
         return await self.list_records(PALPITES)
 
 
-def _hydrate(row: dict) -> dict:
-    """Normaliza uma linha {id, data:'<json>'} do /api/sql num dict plano."""
-    import json
-    data = row.get("data")
-    parsed = json.loads(data) if isinstance(data, str) else (data or {})
-    parsed["id"] = row.get("id")
-    return parsed
+
