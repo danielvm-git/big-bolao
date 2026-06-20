@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/danielvm-git/big-bolao/compare/v1.4.2...v1.5.0) (2026-06-20)
+
+
+### Bug Fixes
+
+* **web:** add missing country flags + punctuation-robust lookup ([dd803e8](https://github.com/danielvm-git/big-bolao/commit/dd803e8015836b3d7deb9da9913bef0e3ff98d4f))
+
+
+### Features
+
+* **iv:** serve static HTML to Telegram Instant View bot ([27f10b2](https://github.com/danielvm-git/big-bolao/commit/27f10b23fb75dcf454a302ec432df04904f0048c))
+
 ## [1.4.2](https://github.com/danielvm-git/big-bolao/compare/v1.4.1...v1.4.2) (2026-06-20)
 
 
