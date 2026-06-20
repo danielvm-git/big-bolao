@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/danielvm-git/big-bolao/compare/v1.0.0...v1.0.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* **ci:** add required env vars for pytest in CI ([150b7ea](https://github.com/danielvm-git/big-bolao/commit/150b7eacd4558053dfd3190373d6c530949b6ac7))
+
 # 1.0.0 (2026-06-20)
 
 
