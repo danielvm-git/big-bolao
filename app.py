@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import threading
+import time
 from pathlib import Path
 
 logging.basicConfig(
@@ -41,10 +42,25 @@ def run_bot():
         from bolao.bot import build_app
         bot_app = build_app()
         # stop_signals=[] evita set_wakeup_fd (so funciona na main thread)
-        bot_app.run_polling(
-            allowed_updates=["message", "callback_query"],
-            stop_signals=[],
-        )
+        # Retry loop: durante deploy, a instancia antiga ainda segura o token.
+        # Esperamos com backoff (5s, 10s, 15s…) ate a antiga ser desligada.
+        from telegram.error import Conflict
+        max_retries = 12
+        for attempt in range(max_retries):
+            try:
+                bot_app.run_polling(
+                    allowed_updates=["message", "callback_query"],
+                    stop_signals=[],
+                )
+                break  # sucesso
+            except Conflict:
+                if attempt < max_retries - 1:
+                    wait = (attempt + 1) * 5
+                    log.info("Bot conflict (old instance still alive), retry in %ds… (%d/%d)",
+                             wait, attempt + 1, max_retries)
+                    time.sleep(wait)
+                else:
+                    raise
     except Exception as e:
         log.error("Bot failed: %s", e)
 
