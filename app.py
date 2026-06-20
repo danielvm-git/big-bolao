@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
-import subprocess
 import sys
 import threading
 import time
@@ -66,23 +64,15 @@ def run_bot():
 
 threading.Thread(target=run_bot, daemon=True).start()
 
-# Get version from git
-def get_version():
-    try:
-        short_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'],
-                                            cwd=Path(__file__).resolve().parent,
-                                            text=True).strip()
-        return short_hash
-    except Exception:
-        return 'unknown'
-
-# Serve web/dist/ as SPA on $PORT (BigBase health-checks this)
+# Serve web/dist/ as SPA on $PORT (BigBase health-checks this).
+# Version is baked into the JS bundle at build time (see web/vite.config.js) —
+# BigBase's CSP `default-src 'self'` blocks inline scripts and intercepts
+# /api/* routes, so a runtime version endpoint here would never reach the front.
 import http.server, socketserver
 
 PORT = int(os.environ.get('PORT', 3000))
 DIST = Path(__file__).resolve().parent / 'web' / 'dist'
-VERSION = get_version()
-log.info("Serving %s on :%d (version %s)", DIST, PORT, VERSION)
+log.info("Serving %s on :%d", DIST, PORT)
 
 
 class SPAHandler(http.server.SimpleHTTPRequestHandler):

@@ -5,7 +5,8 @@ import { loadAll, initUser, loaded, finalizados, total, user } from './store.js'
 
 const route = useRoute()
 const router = useRouter()
-const version = ref(window.__APP_VERSION__ || '—')
+// __APP_VERSION__ is replaced at build time by Vite's define (CSP-safe).
+const version = ref(__APP_VERSION__)
 
 onMounted(async () => {
   // Pick up ?uid= from bot link
