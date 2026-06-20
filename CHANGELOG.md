@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/danielvm-git/big-bolao/compare/v1.0.2...v1.0.3) (2026-06-20)
+
+
+### Bug Fixes
+
+* add .npmrc to skip puppeteer Chrome download in CI/BigBase ([f37a9d2](https://github.com/danielvm-git/big-bolao/commit/f37a9d212459017a24aed59bf19617c6515361a3))
+
 ## [1.0.2](https://github.com/danielvm-git/big-bolao/compare/v1.0.1...v1.0.2) (2026-06-20)
 
 
