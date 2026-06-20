@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/danielvm-git/big-bolao/compare/v1.3.1...v1.3.2) (2026-06-20)
+
+
+### Bug Fixes
+
+* **version:** use static VERSION file instead of API endpoint ([465a3cc](https://github.com/danielvm-git/big-bolao/commit/465a3ccec33f4a376362953cf50bb15bfe491ea8))
+
 ## [1.3.1](https://github.com/danielvm-git/big-bolao/compare/v1.3.0...v1.3.1) (2026-06-20)
 
 
