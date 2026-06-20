@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { loadAll, initUser, loaded, finalizados, total, user } from './store.js'
 
 const route = useRoute()
 const router = useRouter()
+const version = ref('—')
 
 onMounted(async () => {
   // Pick up ?uid= from bot link
@@ -15,6 +16,12 @@ onMounted(async () => {
     router.replace({ path: route.path, hash: '' })
   }
   loadAll()
+
+  // Fetch version
+  fetch('/api/version')
+    .then(r => r.json())
+    .then(data => { version.value = data.version })
+    .catch(() => {})
 })
 
 const TABS = [
@@ -55,4 +62,8 @@ const TABS = [
       <span>{{ t.label }}</span>
     </button>
   </nav>
+
+  <footer class="app-footer">
+    <span class="footer-version">v{{ version }}</span>
+  </footer>
 </template>
