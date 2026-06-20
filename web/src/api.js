@@ -137,8 +137,10 @@ export function calcPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
 // ─── Ranking (client-side mirror of bolao/ranking.py) ─────────
 
 export function calcRanking(jogos, palpites, participantes) {
+  // Only active participants with real telegram_ids
+  const ativos = participantes.filter(p => p.ativo !== false && Number(p.telegram_id) > 0)
   const nomes = {}
-  for (const p of participantes) {
+  for (const p of ativos) {
     nomes[Number(p.telegram_id)] = p.nome || '?'
   }
 
@@ -153,6 +155,7 @@ export function calcRanking(jogos, palpites, participantes) {
   for (const p of palpites) {
     if (!encerrados[p.match_id]) continue
     const tid = Number(p.telegram_id)
+    if (!nomes[tid]) continue  // skip palpites from inactive/unknown participants
     const [rc, rf] = encerrados[p.match_id]
     const pts = calcPontos(Number(p.gols_casa), Number(p.gols_fora), rc, rf)
     const e = acc[tid] || (acc[tid] = { telegram_id: tid, pontos: 0, exatos: 0, acertos: 0, jogos: 0 })
@@ -162,8 +165,8 @@ export function calcRanking(jogos, palpites, participantes) {
     if (pts >= 1) e.acertos++
   }
 
-  // Ensure all participants appear
-  for (const [tid, nome] of Object.entries(nomes)) {
+  // Ensure all active participants appear
+  for (const [tid] of Object.entries(nomes)) {
     if (!acc[tid]) acc[tid] = { telegram_id: Number(tid), pontos: 0, exatos: 0, acertos: 0, jogos: 0 }
   }
 

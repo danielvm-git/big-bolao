@@ -8,12 +8,14 @@ const router = useRouter()
 // Public data — loaded on mount, no auth required
 const jogos = ref([])
 const rankingData = ref([])
+const allPalpites = ref([])  // raw palpites for cross-table
 
 onMounted(async () => {
   try {
     const [rawJogos, palpites, participantes] = await Promise.all([
       fetchJogos(), fetchAllPalpites(), fetchParticipantes(),
     ])
+    allPalpites.value = palpites
     jogos.value = rawJogos.map(g => ({
       ...g,
       id: g.id || g.match_id,
@@ -32,6 +34,16 @@ onMounted(async () => {
   } catch (e) {
     console.warn('Dashboard fetch failed:', e.message)
   }
+})
+
+// Real palpites indexed by match_id -> telegram_id -> {a, b}
+const palpitesMap = computed(() => {
+  const map = {}
+  for (const p of allPalpites.value) {
+    if (!map[p.match_id]) map[p.match_id] = {}
+    map[p.match_id][Number(p.telegram_id)] = { a: Number(p.gols_casa), b: Number(p.gols_fora), nome: p.nome }
+  }
+  return map
 })
 
 const rankingList = computed(() =>
@@ -278,14 +290,15 @@ const proximosJogos = computed(() =>
     statusBadge: g.isBloqueado ? '● Em andamento' : '● Aberto',
     statusColor: g.isBloqueado ? 'var(--accent-orange)' : 'var(--accent-green)',
     statusBg: g.isBloqueado ? 'rgba(251,146,60,0.12)' : 'rgba(0,220,130,0.1)',
-    guesses: generateGuesses(g),
+    guesses: realGuesses(g),
   }))
 )
 
 // ── Helpers ──
 const FLAGS = {
-  'brasil': '🇧🇷', 'argentina': '🇦🇷', 'méxico': '🇲🇽', 'estados unidos': '🇺🇸', 'canadá': '🇨🇦',
-  'alemanha': '🇩🇪', 'espanha': '🇪🇸', 'frança': '🇫🇷', 'inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'portugal': '🇵🇹',
+  // Portuguese
+  'brasil': '🇧🇷', 'argentina': '🇦🇷', 'mexico': '🇲🇽', 'estados unidos': '🇺🇸', 'canada': '🇨🇦',
+  'alemanha': '🇩🇪', 'espanha': '🇪🇸', 'franca': '🇫🇷', 'inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'portugal': '🇵🇹',
   'paises baixos': '🇳🇱', 'belgica': '🇧🇪', 'italia': '🇮🇹', 'croacia': '🇭🇷',
   'uruguai': '🇺🇾', 'colombia': '🇨🇴', 'equador': '🇪🇨', 'paraguai': '🇵🇾', 'chile': '🇨🇱',
   'marrocos': '🇲🇦', 'senegal': '🇸🇳', 'argelia': '🇩🇿', 'tunisia': '🇹🇳', 'egito': '🇪🇬',
@@ -294,8 +307,21 @@ const FLAGS = {
   'nova zelandia': '🇳🇿', 'catar': '🇶🇦', 'uzbequistao': '🇺🇿', 'iraque': '🇮🇶', 'jordania': '🇯🇴',
   'suecia': '🇸🇪', 'noruega': '🇳🇴', 'suica': '🇨🇭', 'austria': '🇦🇹', 'turquia': '🇹🇷',
   'republica tcheca': '🇨🇿', 'escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'bosnia e herzegovina': '🇧🇦',
-  'curacao': '🇨🇼', 'haiti': '🇭🇹', 'panama': '🇵🇦',
-  'republica democratica do congo': '🇨🇩', 'usa': '🇺🇸',
+  'curacao': '🇨🇼', 'haiti': '🇭🇹', 'panama': '🇵🇦', 'republica democratica do congo': '🇨🇩',
+  // English
+  'brazil': '🇧🇷', 'mexico': '🇲🇽', 'united states': '🇺🇸', 'usa': '🇺🇸',
+  'germany': '🇩🇪', 'spain': '🇪🇸', 'france': '🇫🇷', 'england': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  'netherlands': '🇳🇱', 'belgium': '🇧🇪', 'italy': '🇮🇹', 'croatia': '🇭🇷',
+  'uruguay': '🇺🇾', 'ecuador': '🇪🇨', 'paraguay': '🇵🇾',
+  'morocco': '🇲🇦', 'algeria': '🇩🇿', 'tunisia': '🇹🇳', 'egypt': '🇪🇬',
+  'ivory coast': '🇨🇮', 'ghana': '🇬🇭', 'cape verde': '🇨🇻', 'south africa': '🇿🇦',
+  'japan': '🇯🇵', 'south korea': '🇰🇷', 'saudi arabia': '🇸🇦', 'iran': '🇮🇷',
+  'new zealand': '🇳🇿', 'qatar': '🇶🇦', 'uzbekistan': '🇺🇿', 'iraq': '🇮🇶', 'jordan': '🇯🇴',
+  'sweden': '🇸🇪', 'norway': '🇳🇴', 'switzerland': '🇨🇭', 'austria': '🇦🇹', 'turkey': '🇹🇷',
+  'czech republic': '🇨🇿', 'scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'bosnia and herzegovina': '🇧🇦',
+  'curacao': '🇨🇼', 'panama': '🇵🇦', 'democratic republic of congo': '🇨🇩',
+  'dr congo': '🇨🇩', 'colombia': '🇨🇴', 'chile': '🇨🇱', 'senegal': '🇸🇳',
+  'portugal': '🇵🇹', 'canada': '🇨🇦', 'argentina': '🇦🇷', 'haiti': '🇭🇹',
 }
 function flag(team) {
   if (!team) return '🏳️'
@@ -309,6 +335,20 @@ function formatDate(iso) {
 function formatTime(iso) {
   if (!iso) return ''
   try { return iso.split('T')[1]?.slice(0, 5) || '' } catch { return '' }
+}
+
+function realGuesses(game) {
+  const gameMap = palpitesMap.value[game.match_id] || {}
+  return rankingList.value.map((r, i) => {
+    const pal = gameMap[Number(r.id)]
+    return {
+      name: r.name,
+      initial: r.initial,
+      avatarBg: r.avatarColor,
+      label: pal ? `${pal.a}-${pal.b}` : '—',
+      labelColor: pal ? '#EBF0F5' : '#2A3D52',
+    }
+  })
 }
 
 function goHome() {
