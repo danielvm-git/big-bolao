@@ -239,7 +239,7 @@ jobs:
             esac
           done
           echo ""
-          echo "⏱  Timeout (${MAX_ATTEMPTS * INTERVAL}s) — deploy still running"
+          echo "TIMEOUT ($((MAX_ATTEMPTS * INTERVAL))s) - deploy still running"
           exit 1
 
       # -----------------------------------------------------------------------
