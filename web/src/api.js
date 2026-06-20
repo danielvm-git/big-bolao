@@ -1,49 +1,7 @@
 // Re-export pure modules for backward compatibility
 // New code should import directly from transport.js, queries.js, or scoring.js
 export { calcPontos, calcRanking, flag, fmtDate, fmtTime, avatarColor } from './scoring.js'
-
-// BigBase API client — auto-authenticates with service account
-const BB = {
-  _token: null,
-
-  async _auth() {
-    if (BB._token) return
-    const r = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'bolao-bot@bigbase.local', password: 'bolao-bot-secure-password-2026' }),
-    })
-    if (r.ok) BB._token = (await r.json()).token
-  },
-
-  async get(path) {
-    await BB._auth()
-    const r = await fetch(path, { headers: { Authorization: `Bearer ${BB._token}` } })
-    if (!r.ok) throw new Error(`${r.status} ${path}`)
-    return r.json()
-  },
-
-  async post(path, body) {
-    await BB._auth()
-    const r = await fetch(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BB._token}` },
-      body: JSON.stringify(body),
-    })
-    if (!r.ok) throw new Error(`${r.status} ${path}`)
-    return r.json()
-  },
-
-  async patch(path, body) {
-    await BB._auth()
-    const r = await fetch(path, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BB._token}` },
-      body: JSON.stringify(body),
-    })
-    if (!r.ok) throw new Error(`${r.status} ${path}`)
-  },
-}
+export { BB } from './transport.js'
 
 async function list(col) {
   const d = await BB.get(`/api/collections/${col}?limit=1000`)
