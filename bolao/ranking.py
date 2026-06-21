@@ -71,17 +71,20 @@ def formatar(rank: list[dict]) -> str:
     w_ac = max(len(str(e['acertos'] - e['exatos'])) for e in rank)
     w_jg = max(len(str(e['jogos'])) for e in rank)
 
+    indent = " " * 4  # alinha com o inicio do nome (pos "N.  ")
     linhas = []
     for i, e in enumerate(rank):
         pos = f"{i + 1}."
         pts_1 = e['acertos'] - e['exatos']
         nome = e['nome'].ljust(w_nome)
         pts_str = f"{str(e['pontos']).rjust(w_pts)}pts"
-        linhas.append(
-            f"{pos}  {nome}  {pts_str}"
-            f"  🎯{str(e['exatos']).rjust(w_ex)}"
+        linha1 = f"{pos}  {nome}  {pts_str}"
+        linha2 = (
+            f"{indent}🎯{str(e['exatos']).rjust(w_ex)}"
             f"  ✅{str(pts_1).rjust(w_ac)}"
-            f"  📋{str(e['jogos']).rjust(w_jg)}")
+            f"  📋{str(e['jogos']).rjust(w_jg)}"
+        )
+        linhas.append(f"{linha1}\n{linha2}")
 
-    sep = "─" * (w_nome + 26)
+    sep = "─" * (w_nome + 9)
     return f"<pre>🏆 Ranking do Bolao\n{sep}\n" + "\n".join(linhas) + "</pre>"
