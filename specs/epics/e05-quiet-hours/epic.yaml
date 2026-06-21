@@ -1,0 +1,102 @@
+id: e05
+slug: quiet-hours
+title: "Quiet Hours — sem mensagens automáticas ao grupo entre 22h e 8h BRT"
+status: done
+wsjf: 9.0
+wsjf_rationale: |
+  BV=7 (impede pings noturnos — qualidade de vida alta),
+  TC=8 (Copa 2026 já em andamento; jogos noturnos acontecem agora),
+  RR=3, Size=2 → (7+8+3)/2 = 9.0. Supera e02 (4.5).
+
+goal: |
+  O bot nunca envia mensagens AUTOMÁTICAS para o grupo entre 22:00 e 07:59 no fuso
+  BRT (GMT-3). O job periódico (job_sync, a cada 30 min) enfileira resultados e
+  rankings pendentes e os dispara em lote às 08:00 BRT do dia seguinte.
+
+  EXCEÇÃO — gatilho manual: quando um admin roda /sync ou /resultado direto no
+  Telegram, a publicação sai IMEDIATAMENTE no grupo, mesmo durante quiet hours,
+  porque foi uma ação humana explícita. O silêncio vale só para o caminho
+  automático/agendado.
+
+call_paths:
+  manual:
+    - "cmd_resultado → _publicar_resultado"
+    - "cmd_sync → _sync_resultados → _publicar_resultado / _publicar_ranking"
+  automatic_gated:
+    - "job_sync → _sync_resultados → _publicar_resultado / _publicar_ranking"
+
+affected_files:
+  - bolao/util.py            # is_quiet_hours() helper
+  - bolao/handlers.py        # flag manual em _sync_resultados/_publicar_*; job_morning_flush
+  - bolao/bot.py             # registrar job_morning_flush às 08:00 BRT
+
+stories:
+  - id: e05-s01
+    title: "util.py — is_quiet_hours() e constantes QUIET_START / QUIET_END"
+    bcp: 0.5
+    depends: []
+    status: done
+    tasks:
+      - id: e05-s01-t01
+        title: "Adicionar constantes QUIET_START=22, QUIET_END=8 em util.py"
+        verify: "grep -n 'QUIET_START' bolao/util.py"
+      - id: e05-s01-t02
+        title: "Implementar is_quiet_hours(ref=None) que retorna True se hora BRT ∈ [22, 8)"
+        verify: "python -c \"from bolao.util import is_quiet_hours; print(is_quiet_hours)\""
+      - id: e05-s01-t03
+        title: "Testes unitários: is_quiet_hours() para 21:59, 22:00, 00:00, 07:59, 08:00"
+        verify: "python -m pytest tests/test_quiet_hours.py -v"
+
+  - id: e05-s02
+    title: "bot_data queue — inicializar 'pending_results' na startup"
+    bcp: 0.5
+    depends: [e05-s01]
+    status: done
+    tasks:
+      - id: e05-s02-t01
+        title: "Em bot.py post_init, inicializar bot_data['pending_results'] = []"
+        verify: "grep -n 'pending_results' bolao/bot.py"
+      - id: e05-s02-t02
+        title: "Cada item da fila é dict com keys: texto, parse_mode"
+        verify: "grep -n 'pending_results' bolao/handlers.py"
+
+  - id: e05-s03
+    title: "handlers.py — gate automático com bypass manual"
+    bcp: 1.0
+    depends: [e05-s02]
+    status: done
+    tasks:
+      - id: e05-s03-t01
+        title: "Adicionar param manual=False a _publicar_resultado e _publicar_ranking"
+        verify: "grep -n 'manual' bolao/handlers.py"
+      - id: e05-s03-t02
+        title: "Threadar manual através de _sync_resultados(context, manual=False)"
+        verify: "grep -n 'def _sync_resultados' bolao/handlers.py | grep manual"
+      - id: e05-s03-t03
+        title: "cmd_sync e cmd_resultado passam manual=True"
+        verify: "grep -n 'manual=True' bolao/handlers.py"
+      - id: e05-s03-t04
+        title: "job_sync chama sem manual (default False = gated)"
+        verify: "grep -A3 'async def job_sync' bolao/handlers.py | grep '_sync_resultados(context)'"
+      - id: e05-s03-t05
+        title: "Log INFO quando mensagem é enfileirada"
+        verify: "grep -n 'enfileirada' bolao/handlers.py"
+
+  - id: e05-s04
+    title: "job_morning_flush — dispara às 08:00 BRT e drena a fila"
+    bcp: 1.0
+    depends: [e05-s02, e05-s03]
+    status: done
+    tasks:
+      - id: e05-s04-t01
+        title: "Implementar async job_morning_flush(context)"
+        verify: "grep -n 'job_morning_flush' bolao/handlers.py"
+      - id: e05-s04-t02
+        title: "Registrar job_morning_flush em bot.py"
+        verify: "grep -n 'job_morning_flush' bolao/bot.py"
+      - id: e05-s04-t03
+        title: "Teste: morning_flush drena fila e envia 2"
+        verify: "python -m pytest tests/test_quiet_hours.py::TestMorningFlush -v"
+      - id: e05-s04-t04
+        title: "Teste: manual=True durante quiet hours envia imediatamente"
+        verify: "python -m pytest tests/test_quiet_hours.py::TestManualBypass -v"

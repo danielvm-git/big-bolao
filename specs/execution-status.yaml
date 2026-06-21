@@ -29,4 +29,8 @@ e04-s05: done (Trigger de deploy configurado via API key)
 e04-s06: done (Status polling de deploy implementado)
 e04-s07: done (Health check de deploy implementado)
 e04-s08: done (Notificação de falhas no CI/CD configurada)
+e05-s01: done (is_quiet_hours() + QUIET_START/QUIET_END em util.py)
+e05-s02: done (bot_data['pending_results'] inicializado no _post_init)
+e05-s03: done (gate automático com bypass manual; cmd_sync/cmd_resultado usam manual=True)
+e05-s04: done (job_morning_flush registrado às 08:00 BRT, drena a fila)
 

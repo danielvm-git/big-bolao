@@ -1,16 +1,24 @@
 # Orchestrate state
 phase: build
-active_flow: build_epic
-active_epic_id: e04-github-actions
-last_step_completed: gap-analysis
-next_skill: survey-context
+active_flow: done
+active_epic_id: e05-quiet-hours
+last_step_completed: validate-fix
+next_skill: commit-message
 
 epic_cycle:
-  epic: e04-github-actions
+  epic: e05-quiet-hours
   step: 8
-  story: e04-s08
-  story_bcps: 4
+  story: e05-s01..s04
+  story_bcps: 3
   next_story: done
+
+completed_epics:
+  - id: e05
+    title: "Quiet Hours — sem mensagens automáticas ao grupo entre 22h e 8h BRT"
+    bcps: 3
+    date: "2026-06-21"
+    tests: 14 (all pass)
+    full_suite: 102 (all pass)
 
 environment:
   node: v24.15.0

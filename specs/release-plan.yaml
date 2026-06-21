@@ -5,6 +5,14 @@ product: Big Bolão Site
 status: in_progress
 
 epics:
+  - id: e05
+    slug: quiet-hours
+    title: "Quiet Hours — sem mensagens automáticas ao grupo entre 22h e 8h BRT"
+    bcp: 3
+    priority: 1
+    status: done
+    wsjf: 9.0
+
   - id: e01
     slug: bolao-site
     title: "Site Big Bolão Mobile (Vite + Vue 3)"
@@ -38,6 +46,31 @@ epics:
     wsjf: 9.0
 
 stories:
+  # ── e05 — Quiet Hours (TOP PRIORITY) ───────────────────────────
+  - id: e05-s01
+    title: "util.py — is_quiet_hours() e constantes QUIET_START / QUIET_END"
+    bcp: 0.5
+    depends: []
+    status: done
+
+  - id: e05-s02
+    title: "bot_data queue — inicializar 'pending_results' na startup"
+    bcp: 0.5
+    depends: [e05-s01]
+    status: done
+
+  - id: e05-s03
+    title: "handlers.py — gate em _publicar_resultado e _publicar_ranking"
+    bcp: 1.0
+    depends: [e05-s02]
+    status: done
+
+  - id: e05-s04
+    title: "job_morning_flush — dispara às 08:00 BRT e drena a fila"
+    bcp: 1.0
+    depends: [e05-s02, e05-s03]
+    status: done
+
   # ── e01 — Mobile SPA (DONE) ─────────────────────────────────────
   - id: e01-s01
     title: Scaffold Vite + Vue 3 + vue-router + estrutura de views

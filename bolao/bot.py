@@ -8,6 +8,7 @@ from telegram import BotCommand
 from telegram.ext import (Application, CallbackQueryHandler, CommandHandler)
 
 from bolao import config, handlers
+from bolao import util
 from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
 
@@ -20,6 +21,7 @@ log = logging.getLogger("bolao")
 async def _post_init(app: Application) -> None:
     db = BigBase()
     app.bot_data["db"] = db
+    app.bot_data["pending_results"] = []
     log.info("Garantindo setup das coleches no BigBase...")
     await db.ensure_setup()
     # menu de comandos nativo do Telegram (aparece no botao "/" do chat)
@@ -30,8 +32,9 @@ async def _post_init(app: Application) -> None:
         BotCommand("sou", "Vincular meus palpites antigos (ex: /sou Ricardo)"),
         BotCommand("start", "Começar / ajuda"),
     ])
-    log.info("Bolao pronto. Provider de resultados: %s",
-             config.RESULTS_PROVIDER or "manual")
+    log.info("Bolao pronto. Provider de resultados: %s, quiet hours %02d:00-%02d:00 BRT",
+             config.RESULTS_PROVIDER or "manual",
+             util.QUIET_START, util.QUIET_END)
 
 
 async def _post_shutdown(app: Application) -> None:
@@ -74,6 +77,8 @@ def build_app() -> Application:
         jq.run_repeating(handlers.job_sync, interval=1800, first=30)  # 30 min
     # lembrete diario as 12:00 BRT
     jq.run_daily(handlers.job_lembrete, time=dtime(12, 0, tzinfo=config.TZ))
+    # morning flush: drena mensagens enfileiradas durante quiet hours
+    jq.run_daily(handlers.job_morning_flush, time=dtime(8, 0, tzinfo=config.TZ))
     return app
 
 

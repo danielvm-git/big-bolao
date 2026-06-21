@@ -17,7 +17,7 @@ from bolao import config, results as results_mod
 from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
 from bolao.group_publisher import format_lembrete, format_ranking, format_resultado
-from bolao.util import (aberto_para_palpite, agora, label_jogo, label_placar)
+from bolao.util import (aberto_para_palpite, agora, is_quiet_hours, label_jogo, label_placar)
 
 MAX_GOLS = 7  # 0..7 no seletor
 
@@ -253,14 +253,14 @@ async def cmd_resultado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     jogo = await db(context).get_jogo(mid)
     await update.message.reply_text(f"✅ Resultado salvo: {label_placar(jogo)}")
-    await _publicar_resultado(context, jogo)
+    await _publicar_resultado(context, jogo, manual=True)
 
 
 async def cmd_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not config.is_admin(update.effective_user.id):
         return
     await update.message.reply_text("🔄 Buscando resultados...")
-    novos = await _sync_resultados(context)
+    novos = await _sync_resultados(context, manual=True)
     await update.message.reply_text(
         f"{novos} novo(s) resultado(s) aplicado(s)." if novos
         else "Nenhum resultado novo encontrado.")
@@ -275,7 +275,7 @@ async def cmd_lembrete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 # ---------------- jobs / publicacoes no grupo ----------------
 
-async def _sync_resultados(context: ContextTypes.DEFAULT_TYPE) -> int:
+async def _sync_resultados(context: ContextTypes.DEFAULT_TYPE, manual: bool = False) -> int:
     d = db(context)
     jogos_list = await d.get_jogos()
     novos = 0
@@ -283,34 +283,46 @@ async def _sync_resultados(context: ContextTypes.DEFAULT_TYPE) -> int:
         await d.set_resultado(res.match_id, res.gols_casa, res.gols_fora)
         j2 = await d.get_jogo(res.match_id)
         try:
-            await _publicar_resultado(context, j2)
+            await _publicar_resultado(context, j2, manual=manual)
         except Exception:
             logging.getLogger("bolao").warning(
                 "Falha ao publicar resultado %s no grupo", res.match_id, exc_info=True)
         novos += 1
     if novos:
         try:
-            await _publicar_ranking(context)
+            await _publicar_ranking(context, manual=manual)
         except Exception:
             logging.getLogger("bolao").warning("Falha ao publicar ranking no grupo", exc_info=True)
     return novos
 
 
-async def _publicar_resultado(context: ContextTypes.DEFAULT_TYPE, jogo: dict) -> None:
+async def _publicar_resultado(context: ContextTypes.DEFAULT_TYPE, jogo: dict,
+                              manual: bool = False) -> None:
     if not config.GRUPO_CHAT_ID:
         return
     d = db(context)
     palp = [p for p in await d.get_palpites() if p["match_id"] == jogo["match_id"]]
     texto = format_resultado(jogo, palp)
+    if not manual and is_quiet_hours():
+        context.bot_data.setdefault("pending_results", []).append(
+            {"texto": texto, "parse_mode": ParseMode.HTML})
+        logging.getLogger("bolao").info("Publicação enfileirada (quiet hours)")
+        return
     await context.bot.send_message(config.GRUPO_CHAT_ID, texto, parse_mode=ParseMode.HTML)
 
 
-async def _publicar_ranking(context: ContextTypes.DEFAULT_TYPE) -> None:
+async def _publicar_ranking(context: ContextTypes.DEFAULT_TYPE,
+                            manual: bool = False) -> None:
     if not config.GRUPO_CHAT_ID:
         return
     d = db(context)
     texto = format_ranking(await d.get_jogos(), await d.get_palpites(),
                            await d.listar_participantes())
+    if not manual and is_quiet_hours():
+        context.bot_data.setdefault("pending_results", []).append(
+            {"texto": texto, "parse_mode": ParseMode.HTML})
+        logging.getLogger("bolao").info("Publicação enfileirada (quiet hours)")
+        return
     await context.bot.send_message(config.GRUPO_CHAT_ID, texto,
                                    parse_mode=ParseMode.HTML)
 
@@ -345,3 +357,23 @@ async def job_sync(context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def job_lembrete(context: ContextTypes.DEFAULT_TYPE) -> None:
     await _postar_lembrete(context)
+
+
+async def job_morning_flush(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Dispara às 08:00 BRT: drena mensagens enfileiradas durante quiet hours."""
+    import asyncio
+    fila = context.bot_data.get("pending_results", [])
+    if not fila or not config.GRUPO_CHAT_ID:
+        context.bot_data["pending_results"] = []
+        return
+    log = logging.getLogger("bolao")
+    log.info("Morning flush: enviando %d publicação(ões) enfileirada(s)", len(fila))
+    for i, item in enumerate(fila):
+        try:
+            await context.bot.send_message(
+                config.GRUPO_CHAT_ID, item["texto"], parse_mode=item["parse_mode"])
+        except Exception:
+            log.warning("Falha ao enviar publicação enfileirada", exc_info=True)
+        if i < len(fila) - 1:
+            await asyncio.sleep(2)
+    context.bot_data["pending_results"] = []

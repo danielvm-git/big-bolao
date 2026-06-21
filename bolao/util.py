@@ -7,9 +7,18 @@ from bolao import config
 
 _DIAS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
+QUIET_START = 22  # 22:00 BRT
+QUIET_END = 8     # 08:00 BRT
+
 
 def agora() -> datetime:
     return datetime.now(config.TZ)
+
+
+def is_quiet_hours(ref: datetime | None = None) -> bool:
+    """True se a hora local (BRT) está em [22:00, 08:00). Janela cruza meia-noite."""
+    hour = (ref or agora()).hour
+    return hour >= QUIET_START or hour < QUIET_END
 
 
 def kickoff_dt(jogo: dict) -> datetime:
