@@ -71,7 +71,10 @@ def formatar(rank: list[dict]) -> str:
     w_ac = max(len(str(e['acertos'] - e['exatos'])) for e in rank)
     w_jg = max(len(str(e['jogos'])) for e in rank)
 
-    indent = " " * 4  # alinha com o inicio do nome (pos "N.  ")
+    # 🎯 ✅ 📋 each render 2 cells wide in Telegram monospace but len()=1
+    _EMOJI_IN_LINE2 = 3
+    line1_width = 2 + 2 + w_nome + 2 + w_pts + 3  # "N.  <nome>  <pts>pts"
+
     linhas = []
     for i, e in enumerate(rank):
         pos = f"{i + 1}."
@@ -79,12 +82,15 @@ def formatar(rank: list[dict]) -> str:
         nome = e['nome'].ljust(w_nome)
         pts_str = f"{str(e['pontos']).rjust(w_pts)}pts"
         linha1 = f"{pos}  {nome}  {pts_str}"
-        linha2 = (
-            f"{indent}🎯{str(e['exatos']).rjust(w_ex)}"
+        linha2_content = (
+            f"🎯{str(e['exatos']).rjust(w_ex)}"
             f"  ✅{str(pts_1).rjust(w_ac)}"
             f"  📋{str(e['jogos']).rjust(w_jg)}"
         )
+        padding = line1_width - len(linha2_content) - _EMOJI_IN_LINE2
+        linha2 = " " * padding + linha2_content
         linhas.append(f"{linha1}\n{linha2}")
 
-    sep = "─" * (w_nome + 9)
-    return f"<pre>🏆 Ranking do Bolao\n{sep}\n" + "\n".join(linhas) + "</pre>"
+    sep = "─" * line1_width
+    footer = '\nVeja mais em <a href="https://bolao.bigbase.click">bolao.bigbase.click</a>'
+    return f"<pre>🏆 Ranking do Bolao\n{sep}\n" + "\n".join(linhas) + f"</pre>{footer}"
