@@ -75,7 +75,7 @@ def formatar(rank: list[dict]) -> str:
 
     linhas = []
     for i, e in enumerate(rank):
-        pos = medalhas[i] if i < 3 else f"{i + 1}º"
+        pos = medalhas[i] + " " if i < 3 else f"{i + 1}º"
         pts_1 = e['acertos'] - e['exatos']
         nome = e['nome'].ljust(w_nome)
         pts_str = f"{str(e['pontos']).rjust(w_pts)}pts"
