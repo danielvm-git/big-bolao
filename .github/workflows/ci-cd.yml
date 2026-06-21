@@ -181,7 +181,7 @@ jobs:
             "${{ env.BIGBASE_URL }}/api/sites/${{ env.BIGBASE_REPO_ID }}/deploy" \
             -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
             -H "Content-Type: application/json" \
-            -d '{"branch": "main", "passthrough_paths": ["/api/version"]}')
+            -d '{"branch": "main", "app_type": "python", "passthrough_paths": ["/api/version"]}')
           echo "Deploy triggered: ${RESPONSE}"
           DEPLOY_ID=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
           echo "deployment_id=${DEPLOY_ID}" >> "$GITHUB_OUTPUT"

@@ -11,7 +11,7 @@ token = r.json()['token']
 
 r2 = httpx.post(
     'https://bigbase.click/api/sites/04c58b9df51405ee33378c2539f9ea68/deploy',
-    json={'branch': 'main', 'passthrough_paths': ['/api/version']},
+    json={'branch': 'main', 'app_type': 'python', 'passthrough_paths': ['/api/version']},
     headers={'Authorization': f'Bearer {token}'},
     timeout=15,
 )
