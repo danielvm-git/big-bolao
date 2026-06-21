@@ -26,9 +26,9 @@ call_paths:
     - "job_sync → _sync_resultados → _publicar_resultado / _publicar_ranking"
 
 affected_files:
-  - bolao/util.py            # is_quiet_hours() helper
-  - bolao/handlers.py        # flag manual em _sync_resultados/_publicar_*; job_morning_flush
-  - bolao/bot.py             # registrar job_morning_flush às 08:00 BRT
+  - bolao/util.py # is_quiet_hours() helper
+  - bolao/handlers.py # flag manual em _sync_resultados/_publicar_*; job_morning_flush
+  - bolao/bot.py # registrar job_morning_flush às 08:00 BRT
 
 stories:
   - id: e05-s01
@@ -42,7 +42,7 @@ stories:
         verify: "grep -n 'QUIET_START' bolao/util.py"
       - id: e05-s01-t02
         title: "Implementar is_quiet_hours(ref=None) que retorna True se hora BRT ∈ [22, 8)"
-        verify: "python -c \"from bolao.util import is_quiet_hours; print(is_quiet_hours)\""
+        verify: 'python -c "from bolao.util import is_quiet_hours; print(is_quiet_hours)"'
       - id: e05-s01-t03
         title: "Testes unitários: is_quiet_hours() para 21:59, 22:00, 00:00, 07:59, 08:00"
         verify: "python -m pytest tests/test_quiet_hours.py -v"
