@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/danielvm-git/big-bolao/compare/v1.12.0...v1.12.1) (2026-06-21)
+
+
+### Bug Fixes
+
+* **deploy:** add start script so BigBase runs app.py after npm build ([d3e6a22](https://github.com/danielvm-git/big-bolao/commit/d3e6a22711042b51041d163e547c5e5cb15dc0db))
+
 # [1.12.0](https://github.com/danielvm-git/big-bolao/compare/v1.11.0...v1.12.0) (2026-06-21)
 
 
