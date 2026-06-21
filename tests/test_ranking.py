@@ -91,14 +91,15 @@ def test_formatar_empty_ranking():
     assert "<pre>" not in result  # sem tags de formatacao quando vazio
 
 
-def test_formatar_has_monospace_tags():
-    """Ranking com dados usa <pre><code> para alinhamento monospace."""
+def test_formatar_uses_bold_not_code_tags():
+    """Ranking usa bold HTML sem <pre><code> para emojis renderizarem no Telegram."""
     rank = [
         {"nome": "Ricardo", "telegram_id": 1, "pontos": 5, "exatos": 1, "acertos": 3, "jogos": 10},
     ]
     result = formatar(rank)
-    assert result.startswith("<pre><code>") or "<pre><code>" in result
-    assert result.endswith("</code></pre>") or "</code></pre>" in result
+    assert "<b>" in result
+    assert "<pre><code>" not in result
+    assert "🏆" in result
 
 
 def test_formatar_top3_get_medals():
@@ -116,14 +117,10 @@ def test_formatar_top3_get_medals():
     assert "4º" in result
 
 
-def test_formatar_column_widths():
-    """Nomes sao truncados em 13 chars e colunas alinhadas."""
+def test_formatar_shows_full_name():
+    """Nome completo aparece sem truncamento."""
     rank = [
         {"nome": "Nome Muito Longo Demais", "telegram_id": 1, "pontos": 5, "exatos": 1, "acertos": 3, "jogos": 10},
     ]
     result = formatar(rank)
-    # Nome truncado em 13 chars justificado a esquerda
-    assert "Nome Muito Lo" in result
-    assert "Nome Muito Longo Demais" not in result
-    # Separador horizontal presente
-    assert "━" in result
+    assert "Nome Muito Longo Demais" in result

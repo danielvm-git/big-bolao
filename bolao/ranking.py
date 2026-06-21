@@ -41,7 +41,7 @@ def calcular(jogos: list[dict], palpites: list[dict],
             e["acertos"] += 1
 
     # garante que todo participante aparece, mesmo zerado
-    for tid, nome in nomes.items():
+    for tid in nomes:
         acc.setdefault(tid, {"telegram_id": tid, "pontos": 0,
                              "exatos": 0, "acertos": 0, "jogos": 0})
 
