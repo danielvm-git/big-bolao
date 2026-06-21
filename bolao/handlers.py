@@ -17,7 +17,8 @@ from bolao import config, results as results_mod
 from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
 from bolao.group_publisher import format_lembrete, format_ranking, format_resultado
-from bolao.util import (aberto_para_palpite, agora, is_quiet_hours, label_jogo, label_placar)
+from bolao.util import (aberto_para_palpite, agora, is_quiet_hours, label_jogo, label_placar,
+                        version)
 
 MAX_GOLS = 7  # 0..7 no seletor
 
@@ -84,6 +85,15 @@ async def cmd_sou(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def cmd_chatid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(f"chat_id: {update.effective_chat.id}")
+
+
+async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Reporta a versao do build em execucao — diagnostico de instancia zumbi.
+
+    Se /version nao responder ou mostrar versao antiga, ha um processo
+    desatualizado fazendo long polling do mesmo token.
+    """
+    await update.message.reply_text(f"🤖 Big Bolao v{version()}")
 
 
 async def cmd_web(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

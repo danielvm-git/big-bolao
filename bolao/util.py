@@ -2,10 +2,28 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 
 from bolao import config
 
 _DIAS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
+
+# VERSION fica na raiz do repo (um nivel acima de bolao/); o semantic-release
+# escreve a versao do release aqui. E a fonte unica consumida por /version.
+_VERSION_FILE = Path(__file__).resolve().parent.parent / "VERSION"
+
+
+def version() -> str:
+    """Versao do release em execucao (conteudo do arquivo VERSION na raiz).
+
+    Permite identificar qual build respondeu um comando — uma instancia
+    desatualizada (zumbi) reporta uma versao antiga ou nao tem /version.
+    """
+    try:
+        return _VERSION_FILE.read_text(encoding="utf-8").strip() or "desconhecida"
+    except OSError:
+        return "desconhecida"
+
 
 QUIET_START = 22  # 22:00 BRT
 QUIET_END = 8     # 08:00 BRT

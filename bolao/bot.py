@@ -54,6 +54,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("ajuda", handlers.cmd_start))
     app.add_handler(CommandHandler("sou", handlers.cmd_sou))
     app.add_handler(CommandHandler("chatid", handlers.cmd_chatid))
+    app.add_handler(CommandHandler("version", handlers.cmd_version))
     app.add_handler(CommandHandler("web", handlers.cmd_web))
     app.add_handler(CommandHandler("jogos", handlers.cmd_jogos))
     app.add_handler(CommandHandler("palpitar", handlers.cmd_jogos))
