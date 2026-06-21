@@ -1,3 +1,10 @@
+## [1.12.2](https://github.com/danielvm-git/big-bolao/compare/v1.12.1...v1.12.2) (2026-06-21)
+
+
+### Bug Fixes
+
+* **deploy:** pass app_type=python in deploy requests; revert start-script hack ([556f633](https://github.com/danielvm-git/big-bolao/commit/556f63318821248388f9ea32dd46a248c94607ea))
+
 ## [1.12.1](https://github.com/danielvm-git/big-bolao/compare/v1.12.0...v1.12.1) (2026-06-21)
 
 
