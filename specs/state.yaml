@@ -39,13 +39,12 @@ handoff:
   current_phase: build
   next_skill: survey-context
   notes: >
-    Gaps 3, 5, 6, 7 closed. e03 and e04 archived. Root package.json workaround added.
-    BUG-2026-06-20-100000 (duplicate participants) fixed: placeholder scan with fuzzy
-    name matching + unicode normalization. 6 regression tests added. 88/88 all green.
+    e05-quiet-hours released. Husky pre-commit hooks + preflight pipeline installed.
+    CI verified. All tests passing. feat/quiet-hours branch deleted.
 
 git:
   branch: main
-  hash: bba0a8f
+  hash: 94abc5a
 
 metrics:
   - id: story_start
@@ -66,4 +65,23 @@ metrics:
     end: "2026-06-20T18:52:00-03:00"
     cycle_minutes: 22
     bcp_per_hour: 16.4
+  - id: e05-quiet-hours
+    bcps: 3
+    start: "2026-06-21T10:00:00-03:00"
+    end: "2026-06-21T10:42:20-03:00"
+    cycle_minutes: 42
+    bcp_per_hour: 4.3
+  - id: pre-commit-hooks
+    bcps: 0
+    start: "2026-06-21T10:42:00-03:00"
+    end: "2026-06-21T10:48:00-03:00"
+    cycle_minutes: 6
+    bcp_per_hour: 0.0
 
+release:
+  branch: main
+  hash: 94abc5a
+  mode: solo-local
+  ci_verified: true
+  commits:
+    - 94abc5a chore: add pre-commit hooks and preflight pipeline
