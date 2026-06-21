@@ -1,3 +1,10 @@
+## [1.12.6](https://github.com/danielvm-git/big-bolao/compare/v1.12.5...v1.12.6) (2026-06-21)
+
+
+### Bug Fixes
+
+* **ranking:** split each row into 2 intentional lines for mobile ([263f1ea](https://github.com/danielvm-git/big-bolao/commit/263f1ea42f404aaf62480f52308d1643bf754bb2))
+
 ## [1.12.5](https://github.com/danielvm-git/big-bolao/compare/v1.12.4...v1.12.5) (2026-06-21)
 
 
