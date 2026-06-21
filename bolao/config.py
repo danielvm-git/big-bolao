@@ -24,6 +24,7 @@ APIFOOTBALL_KEY = os.environ.get("APIFOOTBALL_KEY", "")
 APIFOOTBALL_LEAGUE_ID = os.environ.get("APIFOOTBALL_LEAGUE_ID", "")
 APIFOOTBALL_SEASON = os.environ.get("APIFOOTBALL_SEASON", "2026")
 
+
 def validate_config(
     provider: str = RESULTS_PROVIDER,
     key: str = APIFOOTBALL_KEY,

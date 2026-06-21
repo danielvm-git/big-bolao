@@ -10,3 +10,4 @@ big-bolao-handoff.zip
 .ruff_cache/
 .pytest_cache/
 prototype/
+node_modules/
