@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/danielvm-git/big-bolao/compare/v1.9.1...v1.10.0) (2026-06-21)
+
+
+### Features
+
+* **admin:** add /fundir command to merge duplicate participant records ([5358ca4](https://github.com/danielvm-git/big-bolao/commit/5358ca4de76ab703c2bef29970a72914b56e8a37))
+
 ## [1.9.1](https://github.com/danielvm-git/big-bolao/compare/v1.9.0...v1.9.1) (2026-06-21)
 
 
