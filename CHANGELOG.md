@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/danielvm-git/big-bolao/compare/v1.10.0...v1.11.0) (2026-06-21)
+
+
+### Features
+
+* **bot:** silence automatic group messages during quiet hours (22h–8h BRT) ([7f9708e](https://github.com/danielvm-git/big-bolao/commit/7f9708eb9297965e26578fc140d0c8d705eab2ea))
+
+
+### Reverts
+
+* **admin:** remove /fundir command — data fixed directly in DB ([f71bc0a](https://github.com/danielvm-git/big-bolao/commit/f71bc0a0fc34af3a57720688adb6baeff5903b3d))
+
 # [1.10.0](https://github.com/danielvm-git/big-bolao/compare/v1.9.1...v1.10.0) (2026-06-21)
 
 
