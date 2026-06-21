@@ -66,11 +66,24 @@ def formatar(rank: list[dict]) -> str:
     if not rank:
         return "Ainda nao ha pontos computados."
     medalhas = ["🥇", "🥈", "🥉"]
-    linhas = ["🏆 <b>Ranking do Bolao</b>", ""]
+
+    w_nome = max(len(e['nome']) for e in rank)
+    w_pts = max(len(str(e['pontos'])) for e in rank)
+    w_ex = max(len(str(e['exatos'])) for e in rank)
+    w_ac = max(len(str(e['acertos'] - e['exatos'])) for e in rank)
+    w_jg = max(len(str(e['jogos'])) for e in rank)
+
+    linhas = []
     for i, e in enumerate(rank):
-        pos = medalhas[i] if i < 3 else f"{i + 1}º "
+        pos = medalhas[i] if i < 3 else f"{i + 1}º"
         pts_1 = e['acertos'] - e['exatos']
+        nome = e['nome'].ljust(w_nome)
+        pts_str = f"{str(e['pontos']).rjust(w_pts)}pts"
         linhas.append(
-            f"{pos} <b>{e['nome']}</b> — {e['pontos']} pts"
-            f"  🎯{e['exatos']}  ✅{pts_1}  📋{e['jogos']}")
-    return "\n".join(linhas)
+            f"{pos}  {nome}  {pts_str}"
+            f"  🎯{str(e['exatos']).rjust(w_ex)}"
+            f"  ✅{str(pts_1).rjust(w_ac)}"
+            f"  📋{str(e['jogos']).rjust(w_jg)}")
+
+    sep = "─" * (w_nome + 26)
+    return f"<pre>🏆 Ranking do Bolao\n{sep}\n" + "\n".join(linhas) + "</pre>"

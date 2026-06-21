@@ -88,18 +88,19 @@ def test_formatar_empty_ranking():
     """Ranking vazio retorna mensagem apropriada."""
     result = formatar([])
     assert "Ainda nao" in result
-    assert "<pre>" not in result  # sem tags de formatacao quando vazio
+    assert "<pre>" not in result
 
 
-def test_formatar_uses_bold_not_code_tags():
-    """Ranking usa bold HTML sem <pre><code> para emojis renderizarem no Telegram."""
+def test_formatar_uses_pre_aligned_table():
+    """Ranking usa <pre> para tabela alinhada em fonte monoespaco no Telegram."""
     rank = [
         {"nome": "Ricardo", "telegram_id": 1, "pontos": 5, "exatos": 1, "acertos": 3, "jogos": 10},
     ]
     result = formatar(rank)
-    assert "<b>" in result
-    assert "<pre><code>" not in result
+    assert "<pre>" in result
+    assert "</pre>" in result
     assert "🏆" in result
+    assert "pts" in result
 
 
 def test_formatar_top3_get_medals():
