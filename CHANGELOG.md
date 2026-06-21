@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/danielvm-git/big-bolao/compare/v1.11.0...v1.12.0) (2026-06-21)
+
+
+### Features
+
+* **bot:** add /version command to expose running build ([e125fd8](https://github.com/danielvm-git/big-bolao/commit/e125fd8009fb439f61bc36b658570bc6f01f448f))
+
 # [1.11.0](https://github.com/danielvm-git/big-bolao/compare/v1.10.0...v1.11.0) (2026-06-21)
 
 
