@@ -31,21 +31,31 @@ handoff:
   current_phase: build
   next_skill: survey-context
   notes: >
-    Branch released: Gaps 3, 5, 6, 7 closed. e03 and e04 archived. Root package.json workaround added.
+    Gaps 3, 5, 6, 7 closed. e03 and e04 archived. Root package.json workaround added.
+    BUG-2026-06-20-100000 (duplicate participants) fixed: placeholder scan with fuzzy
+    name matching + unicode normalization. 6 regression tests added. 88/88 all green.
 
 git:
   branch: main
-  hash: e740c54
+  hash: bba0a8f
 
 metrics:
-  story_start: "2026-06-19T21:10:00-03:00"
-  story_end: "2026-06-20T18:50:33-03:00"
-  cycle_minutes: 1300
-  bcp_per_hour: 0.18
+  - id: story_start
+    bcps: 0
+    start: "2026-06-19T21:10:00-03:00"
+    end: "2026-06-20T18:50:33-03:00"
+    cycle_minutes: 1300
+    bcp_per_hour: 0.18
   - id: bot-refactor
     bcps: 35
     start: "2026-06-20T14:00:00-03:00"
     end: "2026-06-20T14:25:00-03:00"
     cycle_minutes: 25
     bcp_per_hour: 84.0
+  - id: bug-duplicate-participants
+    bcps: 6
+    start: "2026-06-20T18:30:00-03:00"
+    end: "2026-06-20T18:52:00-03:00"
+    cycle_minutes: 22
+    bcp_per_hour: 16.4
 

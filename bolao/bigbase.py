@@ -179,9 +179,10 @@ class BigBase:
         return await self.list_records(PARTICIPANTES)
 
     async def _participante_por_nome_exato(self, nome: str) -> dict | None:
-        """Busca participante por nome exato (case-insensitive)."""
+        """Busca participante por nome exato (case e acento insensitive)."""
+        alvo = self._normalizar(nome)
         for p in await self.listar_participantes():
-            if p.get("nome", "").strip().lower() == nome.strip().lower():
+            if self._normalizar(p.get("nome", "")) == alvo:
                 return p
         return None
 

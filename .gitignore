@@ -1,11 +1,12 @@
 .env
 credentials.json
 __pycache__
-prototype-mobile.html/
 *.pyc
 .venv/
 venv/
 .DS_Store
 big-bolao-handoff.zip
-prototype-mobile.html
 /dist/
+.ruff_cache/
+.pytest_cache/
+prototype/
