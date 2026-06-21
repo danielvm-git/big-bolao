@@ -1,3 +1,10 @@
+## [1.12.3](https://github.com/danielvm-git/big-bolao/compare/v1.12.2...v1.12.3) (2026-06-21)
+
+
+### Bug Fixes
+
+* **ranking:** restore aligned monospace table in <pre> block ([ec6ca0b](https://github.com/danielvm-git/big-bolao/commit/ec6ca0b74a3f93371ff810995242cdd36f088bf8))
+
 ## [1.12.2](https://github.com/danielvm-git/big-bolao/compare/v1.12.1...v1.12.2) (2026-06-21)
 
 
