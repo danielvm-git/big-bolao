@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/danielvm-git/big-bolao/compare/v1.12.6...v1.13.0) (2026-06-21)
+
+
+### Features
+
+* **ranking:** right-align stats row and add site link footer ([aadc99a](https://github.com/danielvm-git/big-bolao/commit/aadc99a77537a3824c3ef209ff429419d3225a9f))
+
 ## [1.12.6](https://github.com/danielvm-git/big-bolao/compare/v1.12.5...v1.12.6) (2026-06-21)
 
 
