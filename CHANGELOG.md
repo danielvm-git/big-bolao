@@ -1,3 +1,10 @@
+## [1.12.4](https://github.com/danielvm-git/big-bolao/compare/v1.12.3...v1.12.4) (2026-06-21)
+
+
+### Bug Fixes
+
+* **ranking:** pad medal emoji with space to align position column ([207668a](https://github.com/danielvm-git/big-bolao/commit/207668afdd787084dc00de48780032912433c305))
+
 ## [1.12.3](https://github.com/danielvm-git/big-bolao/compare/v1.12.2...v1.12.3) (2026-06-21)
 
 
