@@ -103,8 +103,8 @@ def test_formatar_uses_pre_aligned_table():
     assert "pts" in result
 
 
-def test_formatar_top3_get_medals():
-    """Top 3 recebem medalhas; demais recebem numero."""
+def test_formatar_positions_use_ascii():
+    """Todas as posições usam numeração ASCII (sem emoji) para alinhamento monospace."""
     rank = [
         {"nome": "A", "telegram_id": 1, "pontos": 9, "exatos": 2, "acertos": 5, "jogos": 10},
         {"nome": "B", "telegram_id": 2, "pontos": 6, "exatos": 1, "acertos": 3, "jogos": 10},
@@ -112,10 +112,10 @@ def test_formatar_top3_get_medals():
         {"nome": "D", "telegram_id": 4, "pontos": 1, "exatos": 0, "acertos": 1, "jogos": 10},
     ]
     result = formatar(rank)
-    assert "🥇" in result
-    assert "🥈" in result
-    assert "🥉" in result
-    assert "4º" in result
+    assert "1." in result
+    assert "2." in result
+    assert "3." in result
+    assert "4." in result
 
 
 def test_formatar_shows_full_name():

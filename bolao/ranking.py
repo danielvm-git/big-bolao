@@ -65,8 +65,6 @@ def p_nome_fallback(palpites: list[dict], tid: int) -> str:
 def formatar(rank: list[dict]) -> str:
     if not rank:
         return "Ainda nao ha pontos computados."
-    medalhas = ["🥇", "🥈", "🥉"]
-
     w_nome = max(len(e['nome']) for e in rank)
     w_pts = max(len(str(e['pontos'])) for e in rank)
     w_ex = max(len(str(e['exatos'])) for e in rank)
@@ -75,7 +73,7 @@ def formatar(rank: list[dict]) -> str:
 
     linhas = []
     for i, e in enumerate(rank):
-        pos = medalhas[i] + " " if i < 3 else f"{i + 1}º"
+        pos = f"{i + 1}."
         pts_1 = e['acertos'] - e['exatos']
         nome = e['nome'].ljust(w_nome)
         pts_str = f"{str(e['pontos']).rjust(w_pts)}pts"
