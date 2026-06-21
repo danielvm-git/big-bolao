@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "start": "python3 app.py",
     "build": "cd web && npm install && npm run build && cd .. && rm -rf dist && cp -r web/dist dist",
     "preflight": "echo '=== Python Tests ===' && python -m pytest tests/ -q && echo '\n=== Python Lint ===' && python -m flake8 bolao/ && echo '\n=== Web Tests ===' && cd web && npm test && echo '\n✅ PREFLIGHT PASSED'",
     "prepare": "husky"
