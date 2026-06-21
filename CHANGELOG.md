@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/danielvm-git/big-bolao/compare/v1.9.0...v1.9.1) (2026-06-21)
+
+
+### Bug Fixes
+
+* **ranking:** update tests for bold format and remove unused loop variable ([295ac42](https://github.com/danielvm-git/big-bolao/commit/295ac4293175322baceff0b4e7b37862e7e7812f))
+
 # [1.9.0](https://github.com/danielvm-git/big-bolao/compare/v1.8.0...v1.9.0) (2026-06-20)
 
 
