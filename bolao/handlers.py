@@ -239,24 +239,6 @@ async def cb_gols_fora(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 # ---------------- admin ----------------
 
-async def cmd_fundir(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not config.is_admin(update.effective_user.id):
-        return
-    nome = " ".join(context.args).strip()
-    if not nome:
-        await update.message.reply_text("Uso: /fundir &lt;nome&gt;", parse_mode=ParseMode.HTML)
-        return
-    n = await db(context).fundir_participante(nome)
-    if n == 0:
-        await update.message.reply_text(f"Nenhuma duplicata encontrada para <b>{nome}</b>.",
-                                        parse_mode=ParseMode.HTML)
-    else:
-        await update.message.reply_text(
-            f"✅ {n} registro(s) fundido(s) em um só para <b>{nome}</b>.\n"
-            "Os palpites foram migrados para o registro com mais histórico.",
-            parse_mode=ParseMode.HTML)
-
-
 async def cmd_resultado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not config.is_admin(update.effective_user.id):
         return

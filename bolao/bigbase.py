@@ -178,37 +178,6 @@ class BigBase:
     async def listar_participantes(self) -> list[dict]:
         return await self.list_records(PARTICIPANTES)
 
-    async def fundir_participante(self, nome: str) -> int:
-        """Funde duplicatas do mesmo participante em um registro canonical.
-
-        Mantém o registro com mais palpites; migra palpites dos demais e
-        marca-os como ativo=False. Retorna quantos registros foram fundidos.
-        """
-        alvo = self._normalizar(nome)
-        ativos = [
-            p for p in await self.listar_participantes()
-            if self._normalizar(p.get("nome", "")) == alvo and p.get("ativo", True)
-        ]
-        if len(ativos) <= 1:
-            return 0
-
-        palpites = await self.list_records(PALPITES)
-
-        def _n_palpites(tid: int) -> int:
-            return sum(1 for p in palpites if int(p.get("telegram_id", 0)) == tid)
-
-        ativos.sort(key=lambda p: _n_palpites(int(p.get("telegram_id", 0))), reverse=True)
-        canonical_tid = int(ativos[0]["telegram_id"])
-
-        for dup in ativos[1:]:
-            dup_tid = int(dup["telegram_id"])
-            for p in palpites:
-                if int(p.get("telegram_id", 0)) == dup_tid:
-                    await self.patch(PALPITES, p["id"], {"telegram_id": canonical_tid})
-            await self.patch(PARTICIPANTES, dup["id"], {"ativo": False})
-
-        return len(ativos) - 1
-
     async def _participante_por_nome_exato(self, nome: str) -> dict | None:
         """Busca participante por nome exato (case e acento insensitive)."""
         alvo = self._normalizar(nome)
