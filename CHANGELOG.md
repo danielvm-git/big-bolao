@@ -1,3 +1,10 @@
+## [1.12.5](https://github.com/danielvm-git/big-bolao/compare/v1.12.4...v1.12.5) (2026-06-21)
+
+
+### Bug Fixes
+
+* **ranking:** use plain ASCII position numbers to fix monospace alignment ([290eeee](https://github.com/danielvm-git/big-bolao/commit/290eeeefa5aa31d6b40342a287a15def72a4d510))
+
 ## [1.12.4](https://github.com/danielvm-git/big-bolao/compare/v1.12.3...v1.12.4) (2026-06-21)
 
 
