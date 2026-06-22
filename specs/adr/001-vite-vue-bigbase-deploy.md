@@ -6,8 +6,9 @@ Accepted
 
 ## Context
 
-Precisamos de um site para o Big Bolão. O protótipo existe em HTML/JS (dc-runtime). 
+Precisamos de um site para o Big Bolão. O protótipo existe em HTML/JS (dc-runtime).
 Precisamos escolher stack que:
+
 1. Produza output que o BigBase Deploy consiga servir (detecta `package.json` → build → `dist/`)
 2. Seja rápida de implementar (app pequeno, 4 telas)
 3. Funcione com as APIs REST existentes do BigBase
@@ -16,8 +17,8 @@ Precisamos escolher stack que:
 
 - **Vue 3** com Composition API para o frontend
 - **Vite 8** como bundler (produz `dist/` por padrão)
-- Comunicação direta com `/api/collections/*` e `/api/sql` do BigBase
-- Autenticação via BigBase Functions (JS runtime goja)
+- Comunicação direta com `/api/collections/*` do BigBase (sem SQL, filtragem O(n) em processo)
+- Autenticação via service account JWT (email/password) — bot e site compartilham a mesma conta
 - Deploy via BigBase Sites (conecta GitHub, builda, serve)
 
 ## Consequências
@@ -29,15 +30,15 @@ Precisamos escolher stack que:
   - Site e bot compartilham o mesmo banco
 
 - Negativas:
-  - Precisa de uma Function JS no BigBase para validar magic tokens
+  - Service account JWT fica exposto no frontend (contornado via uid-based auth — `/web` envia link com `?uid=`)
   - Precisa adicionar rota no Caddy para o subdomínio
   - Vue 3 não é a stack do admin UI do BigBase (React), mas isso é irrelevante
 
 ## Alternativas consideradas
 
-| Alternativa | Motivo da rejeição |
-|-------------|-------------------|
-| React | Mais boilerplate para app pequeno, protótipo é HTML puro |
+| Alternativa                | Motivo da rejeição                                               |
+| -------------------------- | ---------------------------------------------------------------- |
+| React                      | Mais boilerplate para app pequeno, protótipo é HTML puro         |
 | SvelteKit (adapter-static) | Output `build/` precisa config pra `dist/`, gotcha desnecessário |
-| FastAPI + templates | Perde toda a interatividade mobile do protótipo |
-| HTML puro + jQuery | Manutenção de longo prazo pior, estado global complexo |
+| FastAPI + templates        | Perde toda a interatividade mobile do protótipo                  |
+| HTML puro + jQuery         | Manutenção de longo prazo pior, estado global complexo           |

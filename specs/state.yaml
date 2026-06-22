@@ -12,19 +12,41 @@ bug_cycle:
   completed_steps: [1, 2]
 
 epic_cycle:
-  epic: e05-quiet-hours
-  step: 8
-  story: e05-s01..s04
-  story_bcps: 3
-  next_story: done
+  epic: e02-api-integration
+  step: 0
+  story: pending
+  story_bcps: 0
+  next_story: e02-s03
 
 completed_epics:
+  - id: e01
+    title: "Site Big Bolão Mobile (Vite + Vue 3)"
+    bcps: 7
+    date: "2026-06-20"
+    status: done
+  - id: e03
+    title: "Web Dashboard — grade, detalhes e navegação interativa"
+    bcps: 8
+    date: "2026-06-20"
+    status: done
+  - id: e04
+    title: "GitHub Actions CI/CD — build, test, deploy automático no BigBase"
+    bcps: 4
+    date: "2026-06-20"
+    status: done
   - id: e05
     title: "Quiet Hours — sem mensagens automáticas ao grupo entre 22h e 8h BRT"
     bcps: 3
     date: "2026-06-21"
     tests: 14 (all pass)
     full_suite: 102 (all pass)
+
+pending_epics:
+  - id: e02
+    title: "Live API Integration (Copa 2026 fixtures)"
+    bcps: 2
+    status: partial (2/6 stories done)
+    next_story: e02-s03 "BigBase.ensure_setup — upsert from API"
 
 environment:
   node: v24.15.0
@@ -33,16 +55,19 @@ environment:
   framework: Vite 8 + Vue 3
   project_dir: web/
   build_output: web/dist/
+  version: 1.12.6
 
 open_decisions:
-  - "Confirmar subdomínio: bolao.bigbase.click?"
+  - "Confirmar subdomínio: bolao.bigbase.click? ✓ (confirmado)"
+  - "BigBase.ensure_setup: fazer upsert da API com fallback para MATCHES hardcoded"
 required_reading:
   - specs/product/SCOPE_LATEST.yaml
   - specs/adr/001-vite-vue-bigbase-deploy.md
-  - prototype/project/Big\ Bolão.dc.html
+  - specs/IMPACT.md (gap 4 — e02 status)
+  - specs/release-plan.yaml
 
 handoff:
-  current_phase: build
+  current_phase: sustain
   next_skill: survey-context
   notes: >
     BUG-2026-06-28-003000 fixed — committed bolao/logger.py (was untracked). All 110 Python
@@ -98,4 +123,10 @@ metrics:
     start: "2026-06-28T03:10:00-03:00"
     end: "2026-06-28T03:14:00-03:00"
     cycle_minutes: 4
+    bcp_per_hour: 0.0
+  - id: doc-review
+    bcps: 0
+    start: "2026-06-21T15:00:00-03:00"
+    end: "2026-06-21T16:00:00-03:00"
+    cycle_minutes: 60
     bcp_per_hour: 0.0

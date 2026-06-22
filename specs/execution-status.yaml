@@ -1,4 +1,4 @@
-# Execution Status — Big Bolão Site v0.1.0
+# Execution Status — Big Bolão Site v1.12.6
 e01-s01: done
 e01-s02: done
 e01-s03: done
@@ -9,11 +9,17 @@ e01-s07: done
 e01-s08: done
 e01-s09: done (LoginView usa uid-based auth; magic token Function é otimização pós-deploy)
 e01-s10: done
-e01-s11: done (Workaround package.json adicionado, pronto para BigBase deploy)
-e01-s12: done (Implementado em e03-s06)
-e01-s13: planned
-e01-s14: done (Implementado em e03-s04)
-e03-s01: done (DashboardView scaffold, sticky header, rota /dashboard)
+e01-s11: done (Workaround package.json adicionado, deploy via redeploy.py)
+e01-s12: done (Implementado em e03-s06 — Country Detail)
+e01-s13: planned (Timeline de eventos — gols + cartões)
+e01-s14: done (Implementado em e03-s04 — Grade de Palpites)
+e02-s01: done (fixtures.py — normalise, parse_result, fetch_from_api, FINISHED_STATUSES)
+e02-s02: done (APIFOOTBALL_KEY/LEAGUE_ID/SEASON em config.py, validate_config)
+e02-s03: pending (ensure_setup ainda usa MATCHES hardcoded — não upsert da API)
+e02-s04: done (results.py — apifootball provider com match por api_fixture_id)
+e02-s05: pending (/sync_jogos NÃO implementado — apenas /sync para resultados)
+e02-s06: done (.env.example + README documentam APIFOOTBALL_* vars)
+e03-s01: done (DashboardView scaffold, sticky header, rota /)
 e03-s02: done (Hero section with stats + leader card)
 e03-s03: done (Two-column layout with games + ranking sidebar)
 e03-s04: done (Cross-table matrix with color-coded cells)
@@ -33,4 +39,3 @@ e05-s01: done (is_quiet_hours() + QUIET_START/QUIET_END em util.py)
 e05-s02: done (bot_data['pending_results'] inicializado no _post_init)
 e05-s03: done (gate automático com bypass manual; cmd_sync/cmd_resultado usam manual=True)
 e05-s04: done (job_morning_flush registrado às 08:00 BRT, drena a fila)
-

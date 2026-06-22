@@ -26,7 +26,7 @@ epics:
     title: "Live API Integration (Copa 2026 fixtures)"
     bcp: 4
     priority: 1
-    status: in_progress
+    status: partial
     wsjf: 4.5
 
   - id: e03
@@ -156,42 +156,48 @@ stories:
     depends: [e01-s08]
     status: done
 
-  # ── e02 — API Integration ───────────────────────────────────────
+  # ── e02 — API Integration (PARTIAL: 2/6 done) ──────────────────
   - id: e02-s01
     title: "fixtures.py — fetch & normalise fixtures from apifootball.com"
     bcp: 1
     depends: []
-    status: planned
+    status: done
+    notes: "fixtures.py exists with 14 tests — normalise, parse_result, fetch_from_api, FINISHED_STATUSES"
 
   - id: e02-s02
     title: "Config: add FIXTURES_PROVIDER env var"
     bcp: 0.5
     depends: []
-    status: planned
+    status: done
+    notes: "APIFOOTBALL_KEY/LEAGUE_ID/SEASON in config.py; RESULTS_PROVIDER=apifootball; validate_config() guards"
 
   - id: e02-s03
     title: "BigBase.ensure_setup — upsert from API, store api_fixture_id"
     bcp: 1
     depends: [e02-s01]
-    status: planned
+    status: pending
+    notes: "NOT STARTED — ensure_setup still seeds from hardcoded MATCHES"
 
   - id: e02-s04
     title: "results.py — match results by api_fixture_id"
     bcp: 0.5
     depends: [e02-s03]
-    status: planned
+    status: done
+    notes: "Apifootball provider exists, matches by api_fixture_id with name fallback; 7 tests"
 
   - id: e02-s05
     title: "/sync_jogos admin command + job_sync_fixtures (24h)"
     bcp: 0.5
     depends: [e02-s04]
-    status: planned
+    status: pending
+    notes: "NOT STARTED — /sync exists for results sync but not fixture sync"
 
   - id: e02-s06
     title: ".env.example + README docs"
     bcp: 0.5
     depends: []
-    status: planned
+    status: done
+    notes: "APIFOOTBALL_* vars documented in .env.example and README"
 
   # ── e03 — Web Dashboard ────────────────────────────────────────
   - id: e03-s01
