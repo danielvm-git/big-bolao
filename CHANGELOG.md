@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/danielvm-git/big-bolao/compare/v1.14.0...v1.14.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* **bot:** commit missing bolao/logger.py — bot failed to start with ModuleNotFoundError ([85bf2b7](https://github.com/danielvm-git/big-bolao/commit/85bf2b7942d40c7886429306b916c27dda1110d3))
+
 # [1.14.0](https://github.com/danielvm-git/big-bolao/compare/v1.13.0...v1.14.0) (2026-06-28)
 
 
