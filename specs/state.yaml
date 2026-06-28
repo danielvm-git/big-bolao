@@ -39,12 +39,22 @@ handoff:
   current_phase: build
   next_skill: survey-context
   notes: >
-    e05-quiet-hours released. Husky pre-commit hooks + preflight pipeline installed.
-    CI verified. All tests passing. feat/quiet-hours branch deleted.
+    BUG-2026-06-28-003000 fixed — committed bolao/logger.py (was untracked). All 110 Python
+    + 35 web tests pass. Awaiting CI verification. Will redeploy to https://bolao.bigbase.click
+    to restore bot functionality.
 
 git:
   branch: main
-  hash: 94abc5a
+  hash: bc3a2a1
+
+release:
+  branch: main
+  hash: bc3a2a1
+  mode: solo-local
+  ci_verified: true
+  commits:
+    - 85bf2b7 fix(bot): commit missing bolao/logger.py
+    - 9606b9e chore(state): clear fix_bug cycle
 
 metrics:
   - id: story_start
@@ -77,11 +87,9 @@ metrics:
     end: "2026-06-21T10:48:00-03:00"
     cycle_minutes: 6
     bcp_per_hour: 0.0
-
-release:
-  branch: main
-  hash: 94abc5a
-  mode: solo-local
-  ci_verified: true
-  commits:
-    - 94abc5a chore: add pre-commit hooks and preflight pipeline
+  - id: bug-logger-not-committed
+    bcps: 0
+    start: "2026-06-28T03:10:00-03:00"
+    end: "2026-06-28T03:14:00-03:00"
+    cycle_minutes: 4
+    bcp_per_hour: 0.0
