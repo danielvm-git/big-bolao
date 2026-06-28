@@ -1,9 +1,14 @@
 # Orchestrate state
 phase: build
-active_flow: done
+active_flow: fix_bug
 active_epic_id: e05-quiet-hours
 last_step_completed: validate-fix
 next_skill: commit-message
+
+bug_cycle:
+  bug_id: BUG-2026-06-28-003000
+  current_step: 5
+  completed_steps: [1, 2, 3, 4]
 
 epic_cycle:
   epic: e05-quiet-hours

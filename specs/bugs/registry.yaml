@@ -350,3 +350,27 @@ bugs:
       add version accessor + diagnostic command + drop_pending_updates/409 logging to
       make stale instances self-announcing
     risk_level: medium
+  - bug_id: BUG-2026-06-28-003000
+    date: "2026-06-28"
+    severity: high
+    priority: critical
+    scope: bot-startup
+    type: regression
+    summary:
+      bot fails to start — bot.py imports bolao.logger.get_logger but logger.py
+      was never committed; all Telegram commands down after v1.14.0 deploy
+    file: specs/bugs/BUG-2026-06-28-003000-logger-not-committed.md
+    status: fixed
+    fixed_date: "2026-06-28"
+    root_cause:
+      feat(scoring) commit staged a stash-modified bot.py that replaced stdlib
+      logging with bolao.logger; logger.py existed only as an untracked local
+      file and was not staged, so the deployed server gets ModuleNotFoundError
+    approach: commit bolao/logger.py
+    risk_level: high
+    files_changed:
+      - bolao/logger.py (new)
+      - tests/test_logger.py (new)
+    tests_added:
+      - tests/test_logger.py (5 tests)
+    commit_message: "fix(bot): commit missing bolao/logger.py — bot failed to start with ModuleNotFoundError"
