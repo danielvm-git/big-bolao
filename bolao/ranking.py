@@ -1,7 +1,7 @@
 """Calculo do ranking a partir de jogos encerrados e palpites."""
 from __future__ import annotations
 
-from bolao.scoring import pontos
+from bolao.scoring import acertou_exato, pontos
 
 # Telegram user IDs are always positive. Negative IDs are seed placeholders.
 _VALID_TG_MIN = 0
@@ -30,14 +30,15 @@ def calcular(jogos: list[dict], palpites: list[dict],
             continue
         tid = int(p["telegram_id"])
         rc, rf = encerrados[mid]
-        pts = pontos(int(p["gols_casa"]), int(p["gols_fora"]), rc, rf)
+        pc, pf = int(p["gols_casa"]), int(p["gols_fora"])
+        pts = pontos(pc, pf, rc, rf, mid)
         e = acc.setdefault(tid, {"telegram_id": tid, "pontos": 0,
                                  "exatos": 0, "acertos": 0, "jogos": 0})
         e["pontos"] += pts
         e["jogos"] += 1
-        if pts == 3:
+        if acertou_exato(pc, pf, rc, rf):
             e["exatos"] += 1
-        if pts >= 1:
+        if pts > 0:
             e["acertos"] += 1
 
     # garante que todo participante aparece, mesmo zerado

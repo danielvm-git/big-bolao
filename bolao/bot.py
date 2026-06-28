@@ -1,7 +1,6 @@
 """Ponto de entrada do bot do bolao (long polling)."""
 from __future__ import annotations
 
-import logging
 from datetime import time as dtime
 
 from telegram import BotCommand
@@ -11,18 +10,16 @@ from bolao import config, handlers
 from bolao import util
 from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
+from bolao.logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s | %(message)s")
-log = logging.getLogger("bolao")
+log = get_logger("bolao.bot")
 
 
 async def _post_init(app: Application) -> None:
     db = BigBase()
     app.bot_data["db"] = db
     app.bot_data["pending_results"] = []
-    log.info("Garantindo setup das coleches no BigBase...")
+    log.info("Setting up BigBase collections")
     await db.ensure_setup()
     # menu de comandos nativo do Telegram (aparece no botao "/" do chat)
     await app.bot.set_my_commands([
@@ -32,9 +29,11 @@ async def _post_init(app: Application) -> None:
         BotCommand("sou", "Vincular meus palpites antigos (ex: /sou Ricardo)"),
         BotCommand("start", "Começar / ajuda"),
     ])
-    log.info("Bolao pronto. Provider de resultados: %s, quiet hours %02d:00-%02d:00 BRT",
-             config.RESULTS_PROVIDER or "manual",
-             util.QUIET_START, util.QUIET_END)
+    log.info("Bot ready", extra={
+        "provider": config.RESULTS_PROVIDER or "manual",
+        "quiet_hours_start": util.QUIET_START,
+        "quiet_hours_end": util.QUIET_END,
+    })
 
 
 async def _post_shutdown(app: Application) -> None:
@@ -75,7 +74,8 @@ def build_app() -> Application:
     # jobs periodicos
     jq = app.job_queue
     if config.RESULTS_PROVIDER:
-        jq.run_repeating(handlers.job_sync, interval=1800, first=30)  # 30 min
+        jq.run_repeating(handlers.job_sync, interval=1800, first=30)   # 30 min
+    jq.run_repeating(handlers.job_sync_fixtures, interval=3600, first=60)  # 1h
     # lembrete diario as 12:00 BRT
     jq.run_daily(handlers.job_lembrete, time=dtime(12, 0, tzinfo=config.TZ))
     # morning flush: drena mensagens enfileiradas durante quiet hours
@@ -85,7 +85,7 @@ def build_app() -> Application:
 
 def main() -> None:
     app = build_app()
-    log.info("Iniciando long polling...")
+    log.info("Starting long polling")
     app.run_polling(allowed_updates=["message", "callback_query"])
 
 

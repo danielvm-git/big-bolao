@@ -15,7 +15,7 @@ from telegram.ext import ContextTypes
 
 from bolao import config, results as results_mod
 from bolao.betting_flow import BettingFlow, Step
-from bolao.bigbase import BigBase
+from bolao.bigbase import JOGOS, BigBase
 from bolao.group_publisher import format_lembrete, format_ranking, format_resultado
 from bolao.util import (aberto_para_palpite, agora, is_quiet_hours, label_jogo, label_placar,
                         version)
@@ -363,6 +363,40 @@ async def job_sync(context: ContextTypes.DEFAULT_TYPE) -> None:
         await _sync_resultados(context)
     except Exception:  # noqa: BLE001
         logging.getLogger("bolao").warning("job_sync falhou", exc_info=True)
+
+
+async def job_sync_fixtures(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Job horario: detecta novos jogos da API (knockouts) e cria no BigBase."""
+    from bolao.fixtures import fetch_from_api
+    _log = logging.getLogger("bolao.handlers")
+    try:
+        d = db(context)
+        existentes = await d.get_jogos()
+        ids_existentes = {str(j["api_fixture_id"]) for j in existentes if j.get("api_fixture_id")}
+        match_ids_usados = {j["match_id"] for j in existentes if j.get("match_id")}
+
+        fixtures = await fetch_from_api(from_date="2026-06-28", to_date="2026-07-21")
+        criados = 0
+        for fx in fixtures:
+            if fx["api_fixture_id"] in ids_existentes:
+                continue
+            # Garante match_id unico se houver colisao
+            mid, orig, n = fx["match_id"], fx["match_id"], 0
+            while mid in match_ids_usados:
+                n += 1
+                mid = f"{orig}-{n}"
+            fx["match_id"] = mid
+            match_ids_usados.add(mid)
+            await d.create(JOGOS, {k: fx[k] for k in (
+                "match_id", "api_fixture_id", "rodada", "kickoff",
+                "casa", "fora", "gols_casa", "gols_fora", "status")})
+            criados += 1
+            _log.info("Novo jogo adicionado: %s  %s x %s  (%s)",
+                      fx["match_id"], fx["casa"], fx["fora"], fx["kickoff"])
+        if criados:
+            _log.info("job_sync_fixtures: %d novo(s) jogo(s) adicionado(s)", criados)
+    except Exception:  # noqa: BLE001
+        logging.getLogger("bolao.handlers").warning("job_sync_fixtures falhou", exc_info=True)
 
 
 async def job_lembrete(context: ContextTypes.DEFAULT_TYPE) -> None:

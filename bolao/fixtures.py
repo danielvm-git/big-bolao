@@ -6,6 +6,7 @@ rodar de novo so cria o que ainda nao existe e atualiza o que mudou.
 
 Fases suportadas (match_round da API → phase_id interno):
   "Group Stage - 1/2/3" → R1/R2/R3
+  "Round of 32"         → R32
   "Round of 16"         → R16
   "Quarter-finals"      → QF
   "Semi-finals"         → SF
@@ -34,6 +35,17 @@ FINISHED_STATUSES = frozenset({
     "FT", "AET", "PEN", "Finished AET", "Finished PEN",
 })
 
+# Copa 2026 knockout date windows (BRT) — fallback when match_round is empty.
+# The API sometimes publishes fixtures before assigning match_round.
+_DATE_PHASE_MAP: list[tuple[str, str, str, int]] = [
+    ("2026-06-28", "2026-07-03", "R32", 4),
+    ("2026-07-04", "2026-07-08", "R16", 5),
+    ("2026-07-09", "2026-07-12", "QF",  6),
+    ("2026-07-13", "2026-07-16", "SF",  7),
+    ("2026-07-16", "2026-07-18", "3P",  8),
+    ("2026-07-18", "2026-07-21", "FIN", 9),
+]
+
 # match_round → (phase_id, rodada)
 # A API retorna numeros simples ("1","2","3") na fase de grupos e strings
 # descritivas nos knockouts ("Round of 16", "Quarter-finals", etc.).
@@ -43,11 +55,13 @@ _NUMERIC_PHASE_MAP: dict[str, tuple[str, int]] = {
     "2": ("R2",  2),
     "3": ("R3",  3),
     # Knockouts tambem podem vir como numeros dependendo da API
-    "4": ("R16", 4),
-    "5": ("QF",  5),
-    "6": ("SF",  6),
-    "7": ("3P",  7),
-    "8": ("FIN", 8),
+    # Copa 2026 tem 48 selecoes → fase extra Round of 32 antes do R16
+    "4": ("R32", 4),
+    "5": ("R16", 5),
+    "6": ("QF",  6),
+    "7": ("SF",  7),
+    "8": ("3P",  8),
+    "9": ("FIN", 9),
 }
 
 # Fallback para quando a API usar strings descritivas (knockouts)
@@ -55,11 +69,12 @@ _STRING_PHASE_MAP: list[tuple[str, str, int]] = [
     ("group stage - 1",  "R1",  1),
     ("group stage - 2",  "R2",  2),
     ("group stage - 3",  "R3",  3),
-    ("round of 16",      "R16", 4),
-    ("quarter-final",    "QF",  5),
-    ("semi-final",       "SF",  6),
-    ("3rd place",        "3P",  7),
-    ("final",            "FIN", 8),
+    ("round of 32",      "R32", 4),
+    ("round of 16",      "R16", 5),
+    ("quarter-final",    "QF",  6),
+    ("semi-final",       "SF",  7),
+    ("3rd place",        "3P",  8),
+    ("final",            "FIN", 9),
 ]
 
 
@@ -80,8 +95,12 @@ def parse_result(fixture: dict) -> tuple[int, int] | None:
         return None
 
 
-def _parse_phase(round_str: str) -> tuple[str, int] | None:
-    """Devolve (phase_id, rodada) ou None se a rodada nao for reconhecida."""
+def _parse_phase(round_str: str, date_str: str = "") -> tuple[str, int] | None:
+    """Devolve (phase_id, rodada) ou None se a rodada nao for reconhecida.
+
+    date_str (YYYY-MM-DD) e usado como fallback quando match_round esta vazio —
+    a API publica fixtures antes de definir a fase nos knockouts.
+    """
     s = (round_str or "").strip()
     # Tenta mapa numerico primeiro (formato atual da API)
     if s in _NUMERIC_PHASE_MAP:
@@ -91,6 +110,12 @@ def _parse_phase(round_str: str) -> tuple[str, int] | None:
     for keyword, phase_id, rodada in _STRING_PHASE_MAP:
         if keyword in sl:
             return phase_id, rodada
+    # Ultimo recurso: inferir pelo intervalo de datas (knockouts sem match_round)
+    if date_str:
+        for from_d, to_d, phase_id, rodada in _DATE_PHASE_MAP:
+            if from_d <= date_str <= to_d:
+                log.debug("Fase inferida por data %s → %s", date_str, phase_id)
+                return phase_id, rodada
     return None
 
 
@@ -117,7 +142,7 @@ def normalise(raw_fixtures: list[dict]) -> list[dict]:
 
     for fx in raw_fixtures:
         round_str = fx.get("match_round", "")
-        parsed = _parse_phase(round_str)
+        parsed = _parse_phase(round_str, fx.get("match_date", ""))
         if parsed is None:
             log.debug("Rodada ignorada: %r", round_str)
             continue

@@ -11,11 +11,12 @@ class TestParsePhase:
         assert _parse_phase("3") == ("R3", 3)
 
     def test_numeric_knockout_rounds(self):
-        assert _parse_phase("4") == ("R16", 4)
-        assert _parse_phase("5") == ("QF",  5)
-        assert _parse_phase("6") == ("SF",  6)
-        assert _parse_phase("7") == ("3P",  7)
-        assert _parse_phase("8") == ("FIN", 8)
+        assert _parse_phase("4") == ("R32", 4)
+        assert _parse_phase("5") == ("R16", 5)
+        assert _parse_phase("6") == ("QF",  6)
+        assert _parse_phase("7") == ("SF",  7)
+        assert _parse_phase("8") == ("3P",  8)
+        assert _parse_phase("9") == ("FIN", 9)
 
     def test_string_group_rounds(self):
         assert _parse_phase("Group Stage - 1") == ("R1", 1)
@@ -23,11 +24,12 @@ class TestParsePhase:
         assert _parse_phase("Group Stage - 3") == ("R3", 3)
 
     def test_string_knockout_rounds(self):
-        assert _parse_phase("Round of 16")   == ("R16", 4)
-        assert _parse_phase("Quarter-finals") == ("QF",  5)
-        assert _parse_phase("Semi-finals")    == ("SF",  6)
-        assert _parse_phase("3rd Place Final") == ("3P", 7)
-        assert _parse_phase("Final")          == ("FIN", 8)
+        assert _parse_phase("Round of 32")    == ("R32", 4)
+        assert _parse_phase("Round of 16")    == ("R16", 5)
+        assert _parse_phase("Quarter-finals") == ("QF",  6)
+        assert _parse_phase("Semi-finals")    == ("SF",  7)
+        assert _parse_phase("3rd Place Final") == ("3P", 8)
+        assert _parse_phase("Final")          == ("FIN", 9)
 
     def test_unknown_returns_none(self):
         assert _parse_phase("Friendly") is None
@@ -97,7 +99,7 @@ class TestNormalise:
     def test_finished_match_uses_ft_score(self):
         result = normalise(_MOCK)
         m = next(r for r in result if r["api_fixture_id"] == "9002")
-        assert m["match_id"] == "R16-01"
+        assert m["match_id"] == "R32-01"
         assert m["status"] == "encerrado"
         assert m["gols_casa"] == 2
         assert m["gols_fora"] == 1
