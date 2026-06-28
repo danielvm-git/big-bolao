@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/danielvm-git/big-bolao/compare/v1.13.0...v1.14.0) (2026-06-28)
+
+
+### Features
+
+* **scoring:** progressive Fibonacci knockout scoring (R32-FIN) ([65d4058](https://github.com/danielvm-git/big-bolao/commit/65d40581ee2cc84d980153ebada2063af391d758))
+
 # [1.13.0](https://github.com/danielvm-git/big-bolao/compare/v1.12.6...v1.13.0) (2026-06-21)
 
 
