@@ -116,16 +116,16 @@ async def test_returns_empty_when_no_provider():
 
 
 @pytest.mark.asyncio
-async def test_uses_ft_score_not_total_score():
-    """Scoring uses ft_score (90 min), ignoring ET score in match_*_score."""
+async def test_uses_et_score_not_ft_score():
+    """Scoring uses match_*_score (120 min/ET), ignoring ft_score (90 min)."""
     api_with_et = [{
         "match_id": "710281",
         "match_status": "After ET",
         "match_hometeam_name": "Mexico",
         "match_awayteam_name": "South Africa",
-        "match_hometeam_ft_score": "1",   # 90-min score — must be used
+        "match_hometeam_ft_score": "1",   # 90-min score — must NOT be used
         "match_awayteam_ft_score": "1",
-        "match_hometeam_score": "2",       # ET score — must NOT be used
+        "match_hometeam_score": "2",       # ET score — must be used
         "match_awayteam_score": "1",
     }]
 
@@ -136,7 +136,7 @@ async def test_uses_ft_score_not_total_score():
         results = await buscar_encerrados([_JOGOS[0]])
 
     assert len(results) == 1
-    assert results[0].gols_casa == 1   # ft_score, NOT 2 (ET total)
+    assert results[0].gols_casa == 2   # ET score, NOT 1 (ft only)
     assert results[0].gols_fora == 1
 
 

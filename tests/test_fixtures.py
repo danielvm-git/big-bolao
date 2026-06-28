@@ -96,7 +96,7 @@ class TestNormalise:
         assert m["gols_casa"] is None
         assert m["gols_fora"] is None
 
-    def test_finished_match_uses_ft_score(self):
+    def test_finished_match_uses_et_score(self):
         result = normalise(_MOCK)
         m = next(r for r in result if r["api_fixture_id"] == "9002")
         assert m["match_id"] == "R32-01"
@@ -104,9 +104,9 @@ class TestNormalise:
         assert m["gols_casa"] == 2
         assert m["gols_fora"] == 1
 
-    def test_ft_score_fallback(self):
-        """When ft_score absent, falls back to match_*_score."""
-        fx = {**_MOCK[1], "match_hometeam_ft_score": "", "match_awayteam_ft_score": ""}
+    def test_et_score_fallback_to_ft(self):
+        """When match_*_score absent, falls back to ft_score (90 min)."""
+        fx = {**_MOCK[1], "match_hometeam_score": "", "match_awayteam_score": ""}
         result = normalise([fx])
         assert result[0]["gols_casa"] == 2
 

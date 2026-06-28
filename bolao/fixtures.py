@@ -81,12 +81,12 @@ _STRING_PHASE_MAP: list[tuple[str, str, int]] = [
 def parse_result(fixture: dict) -> tuple[int, int] | None:
     """Extrai placar de 90 minutos de um fixture bruto da API.
 
-    Retorna (gols_casa, gols_fora) usando match_hometeam_ft_score (90min),
-    com fallback para match_hometeam_score (prorrogação). Retorna None
+    Retorna (gols_casa, gols_fora) usando match_hometeam_score (120min/ET),
+    com fallback para match_hometeam_ft_score (90min). Retorna None
     se o placar nao estiver disponivel ou for invalido.
     """
-    gh = fixture.get("match_hometeam_ft_score") or fixture.get("match_hometeam_score")
-    ga = fixture.get("match_awayteam_ft_score") or fixture.get("match_awayteam_score")
+    gh = fixture.get("match_hometeam_score") or fixture.get("match_hometeam_ft_score")
+    ga = fixture.get("match_awayteam_score") or fixture.get("match_awayteam_ft_score")
     if gh in (None, "", "-") or ga in (None, "", "-"):
         return None
     try:
