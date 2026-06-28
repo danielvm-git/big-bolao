@@ -1,3 +1,10 @@
+## [1.14.2](https://github.com/danielvm-git/big-bolao/compare/v1.14.1...v1.14.2) (2026-06-28)
+
+
+### Bug Fixes
+
+* **scoring:** count 120-minute result instead of 90-minute for knockout rounds ([d684eff](https://github.com/danielvm-git/big-bolao/commit/d684eff6e4c7fa50970cc0353efcd5cf4507f7ba))
+
 ## [1.14.1](https://github.com/danielvm-git/big-bolao/compare/v1.14.0...v1.14.1) (2026-06-28)
 
 
