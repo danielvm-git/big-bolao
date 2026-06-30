@@ -374,3 +374,31 @@ bugs:
     tests_added:
       - tests/test_logger.py (5 tests)
     commit_message: "fix(bot): commit missing bolao/logger.py — bot failed to start with ModuleNotFoundError"
+  - bug_id: BUG-2026-06-30-140000
+    date: "2026-06-30"
+    severity: high
+    priority: critical
+    scope: bot-scoring
+    type: regression
+    summary:
+      Wrong score posted for penalty-decided knockout match — parse_result()
+      status-blind after d684eff; apifootball match_hometeam_score unreliable for
+      "After Pen." matches, causing inflated score to be stored and announced
+    file: specs/bugs/BUG-2026-06-30-140000-wrong-score-after-pen.md
+    root_cause:
+      d684eff changed parse_result() to prefer match_hometeam_score (ET total)
+      over match_hometeam_ft_score (90-min) for all finished matches. For "After Pen."
+      matches the apifootball API may return a wrong value for match_*_score while
+      match_*_ft_score is correct. Fix must be status-aware.
+    approach:
+      Make parse_result() check match_status — use ft_score for penalty statuses
+      ("After Pen.", "PEN", "Finished PEN"), keep ET-first logic for "After ET" / "AET"
+    risk_level: high
+    status: fixed
+    fixed_date: "2026-06-30"
+    files_changed:
+      - bolao/fixtures.py
+      - tests/test_fixtures.py
+    tests_added:
+      - tests/test_fixtures.py (5 new — TestParseResultPenStatus)
+    commit_message: "fix(scoring): use ft_score for penalty-decided matches — parse_result status-aware"

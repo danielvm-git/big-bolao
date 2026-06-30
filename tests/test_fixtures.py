@@ -1,5 +1,6 @@
 """Tests for bolao/fixtures.py — phase parsing, time conversion, normalise()."""
-from bolao.fixtures import _parse_phase, _to_brt_iso, normalise
+import pytest
+from bolao.fixtures import _parse_phase, _to_brt_iso, normalise, parse_result
 
 
 # ── _parse_phase ────────────────────────────────────────────────────────────
@@ -120,3 +121,35 @@ class TestNormalise:
         result = normalise(_MOCK)
         kickoffs = [r["kickoff"] for r in result]
         assert kickoffs == sorted(kickoffs)
+
+
+# ── parse_result — penalty status uses ft_score ─────────────────────────────
+
+class TestParseResultPenStatus:
+    """For penalty-decided matches, match_*_score may be wrong; use ft_score."""
+
+    def test_after_pen_uses_ft_score_not_match_score(self):
+        fx = {
+            "match_status": "After Pen.",
+            "match_hometeam_score": "1", "match_awayteam_score": "2",
+            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
+        }
+        assert parse_result(fx) == (1, 1)
+
+    @pytest.mark.parametrize("status", ["After Pen.", "PEN", "Finished PEN"])
+    def test_all_pen_statuses_use_ft_score(self, status):
+        fx = {
+            "match_status": status,
+            "match_hometeam_score": "99", "match_awayteam_score": "99",
+            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
+        }
+        assert parse_result(fx) == (1, 1)
+
+    def test_after_et_still_uses_match_score(self):
+        """ET goals count — match_*_score must still be preferred for After ET."""
+        fx = {
+            "match_status": "After ET",
+            "match_hometeam_score": "2", "match_awayteam_score": "1",
+            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
+        }
+        assert parse_result(fx) == (2, 1)

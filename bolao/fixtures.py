@@ -78,15 +78,25 @@ _STRING_PHASE_MAP: list[tuple[str, str, int]] = [
 ]
 
 
-def parse_result(fixture: dict) -> tuple[int, int] | None:
-    """Extrai placar de 90 minutos de um fixture bruto da API.
+_PEN_STATUSES = frozenset({"After Pen.", "PEN", "Finished PEN"})
 
-    Retorna (gols_casa, gols_fora) usando match_hometeam_score (120min/ET),
-    com fallback para match_hometeam_ft_score (90min). Retorna None
-    se o placar nao estiver disponivel ou for invalido.
+
+def parse_result(fixture: dict) -> tuple[int, int] | None:
+    """Extrai placar de um fixture bruto da API, ciente do status.
+
+    - "After ET" / "AET" / "Finished AET": usa match_*_score (total com prorrogacao).
+    - "After Pen." / "PEN" / "Finished PEN": usa match_*_ft_score (gols em jogo;
+      a API pode devolver match_*_score incorreto para prorrogacao+penaltis).
+    - Demais statuses encerrados: ambos os campos devem ser iguais; usa ft_score.
+    Retorna None se o placar nao estiver disponivel ou for invalido.
     """
-    gh = fixture.get("match_hometeam_score") or fixture.get("match_hometeam_ft_score")
-    ga = fixture.get("match_awayteam_score") or fixture.get("match_awayteam_ft_score")
+    status = (fixture.get("match_status") or "").strip()
+    if status in _PEN_STATUSES:
+        gh = fixture.get("match_hometeam_ft_score") or fixture.get("match_hometeam_score")
+        ga = fixture.get("match_awayteam_ft_score") or fixture.get("match_awayteam_score")
+    else:
+        gh = fixture.get("match_hometeam_score") or fixture.get("match_hometeam_ft_score")
+        ga = fixture.get("match_awayteam_score") or fixture.get("match_awayteam_ft_score")
     if gh in (None, "", "-") or ga in (None, "", "-"):
         return None
     try:

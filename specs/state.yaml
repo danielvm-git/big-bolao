@@ -1,9 +1,15 @@
 # Orchestrate state
 phase: build
-active_flow: done
+active_flow: fix_bug
 active_epic_id: e05-quiet-hours
-last_step_completed: validate-fix
-next_skill: commit-message
+last_step_completed: investigate-bug
+next_skill: develop-tdd
+
+bug_cycle:
+  bug_id: BUG-2026-06-30-140000
+  bug_file: specs/bugs/BUG-2026-06-30-140000-wrong-score-after-pen.md
+  current_step: 3
+  completed_steps: [1, 2]
 
 epic_cycle:
   epic: e05-quiet-hours
