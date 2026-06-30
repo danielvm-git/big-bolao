@@ -4,7 +4,8 @@ from __future__ import annotations
 from datetime import time as dtime
 
 from telegram import BotCommand
-from telegram.ext import (Application, CallbackQueryHandler, CommandHandler)
+from telegram.error import Conflict
+from telegram.ext import (Application, CallbackQueryHandler, CommandHandler, ContextTypes)
 
 from bolao import config, handlers
 from bolao import util
@@ -42,6 +43,19 @@ async def _post_shutdown(app: Application) -> None:
         await db.close()
 
 
+async def _handle_error(update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Log polling errors, especially 409 Conflict (another instance is polling)."""
+    error = context.error
+    if isinstance(error, Conflict):
+        log.error(
+            "Conflict detected: another instance is polling this token. "
+            "Ensure only one bot instance is running.",
+            exc_info=error
+        )
+    else:
+        log.error(f"Unhandled error: {error}", exc_info=error)
+
+
 def build_app() -> Application:
     app = (Application.builder()
            .token(config.TELEGRAM_TOKEN)
@@ -70,6 +84,9 @@ def build_app() -> Application:
         handlers.cb_gols_casa, pattern=BettingFlow.pattern_for(Step.GOLS_CASA)))
     app.add_handler(CallbackQueryHandler(
         handlers.cb_gols_fora, pattern=BettingFlow.pattern_for(Step.GOLS_FORA)))
+
+    # error handler for polling conflicts and other errors
+    app.add_error_handler(_handle_error)
 
     # jobs periodicos
     jq = app.job_queue
