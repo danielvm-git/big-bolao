@@ -1,3 +1,10 @@
+## [1.14.3](https://github.com/danielvm-git/big-bolao/compare/v1.14.2...v1.14.3) (2026-06-30)
+
+
+### Bug Fixes
+
+* **scoring:** use ft_score for penalty-decided matches — parse_result status-aware ([15b8c8d](https://github.com/danielvm-git/big-bolao/commit/15b8c8d45e817d6594ea86781771014d53923ecd))
+
 ## [1.14.2](https://github.com/danielvm-git/big-bolao/compare/v1.14.1...v1.14.2) (2026-06-28)
 
 
