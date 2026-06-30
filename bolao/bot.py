@@ -12,11 +12,13 @@ from bolao import util
 from bolao.betting_flow import BettingFlow, Step
 from bolao.bigbase import BigBase
 from bolao.logger import get_logger
+from bolao.util import version
 
 log = get_logger("bolao.bot")
 
 
 async def _post_init(app: Application) -> None:
+    log.info(f"Starting Big Bolao {version()}")
     db = BigBase()
     app.bot_data["db"] = db
     app.bot_data["pending_results"] = []

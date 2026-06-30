@@ -77,3 +77,31 @@ def test_build_app_registers_error_handler():
         assert app is not None
         # The real test is that build_app() completes without error,
         # which means add_error_handler() was called successfully
+
+
+@pytest.mark.asyncio
+async def test_post_init_logs_version_at_startup():
+    """Test that _post_init logs the running version so VPS logs can identify which build started."""
+    from bolao import bot
+    from unittest.mock import AsyncMock
+
+    mock_logger = Mock(spec=logging.Logger)
+    mock_app = AsyncMock()
+    mock_app.bot_data = {}
+    mock_app.bot.set_my_commands = AsyncMock()
+
+    mock_db = AsyncMock()
+    mock_db.ensure_setup = AsyncMock()
+
+    with patch('bolao.bot.log', mock_logger):
+        with patch('bolao.bot.BigBase', return_value=mock_db):
+            await bot._post_init(mock_app)
+
+    # Assert that log.info was called to record the version
+    info_calls = mock_logger.info.call_args_list
+    assert len(info_calls) > 0, "_post_init should log at info level"
+
+    # Check that the first log call includes version info (it logs "Starting Big Bolao X.Y.Z")
+    first_call_msg = info_calls[0][0][0] if info_calls[0][0] else ""
+    assert "Big Bolao" in first_call_msg and any(c.isdigit() for c in first_call_msg), \
+        f"_post_init should log the running version in first call, got: {first_call_msg}"
