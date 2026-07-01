@@ -1,3 +1,10 @@
+## [1.14.4](https://github.com/danielvm-git/big-bolao/compare/v1.14.3...v1.14.4) (2026-07-01)
+
+
+### Bug Fixes
+
+* **web:** phase-aware scoring in calcPontos — web ranking now matches bot ([5e80a88](https://github.com/danielvm-git/big-bolao/commit/5e80a88a216015e3f039c58f92604a8a930e8dbd))
+
 ## [1.14.3](https://github.com/danielvm-git/big-bolao/compare/v1.14.2...v1.14.3) (2026-06-30)
 
 ### Bug Fixes
