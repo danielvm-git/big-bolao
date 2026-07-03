@@ -129,7 +129,7 @@ def parse_result(fixture: dict) -> tuple[int, int] | None:
                         ms_home, ms_away, fs_home, fs_away, status,
                     )
             except (TypeError, ValueError):
-                pass
+                log.debug("parse_result: could not compare match_score vs ft_score", exc_info=True)
 
     return gc, gf
 

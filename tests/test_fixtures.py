@@ -170,3 +170,13 @@ class TestParseResultFieldSelection:
             "match_hometeam_ft_score": "", "match_awayteam_ft_score": "",
         }
         assert parse_result(fx) == (3, 0)
+
+    def test_discrepancy_check_survives_non_numeric_fields(self):
+        """Hardening log must not crash when match_score fields are non-numeric."""
+        fx = {
+            "match_status": "Finished",
+            "match_hometeam_score": "n/a", "match_awayteam_score": "n/a",
+            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
+        }
+        # Must still return correct ft_score without raising
+        assert parse_result(fx) == (1, 1)
