@@ -1,3 +1,18 @@
+# [1.15.0](https://github.com/danielvm-git/big-bolao/compare/v1.14.4...v1.15.0) (2026-07-03)
+
+
+### Bug Fixes
+
+* **scoring:** add debug log in parse_result discrepancy check ([54ac16c](https://github.com/danielvm-git/big-bolao/commit/54ac16c7aea1cef12997c4b2ce587a031b6cb0fd))
+* **scoring:** default parse_result to ft_score — only ET statuses use match_score ([35ccc6e](https://github.com/danielvm-git/big-bolao/commit/35ccc6e3d7f6e19e8822698e8111c0613eeb37ad))
+
+
+### Features
+
+* **bot:** add error handler for 409 Conflict with ERROR-level logging ([b0f21b8](https://github.com/danielvm-git/big-bolao/commit/b0f21b8d5453fee94b0576817c9cbe3231b21233))
+* **bot:** log running version at startup for operational visibility ([54606e0](https://github.com/danielvm-git/big-bolao/commit/54606e0a085da5e21ff27285841e0bdd2478b821))
+* **bot:** pass drop_pending_updates=True to run_polling to detect duplicate pollers ([ea105ef](https://github.com/danielvm-git/big-bolao/commit/ea105efb48ba513e0b5704a34de2482d5b4b2deb))
+
 ## [1.14.4](https://github.com/danielvm-git/big-bolao/compare/v1.14.3...v1.14.4) (2026-07-01)
 
 
