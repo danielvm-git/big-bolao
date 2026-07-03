@@ -402,3 +402,33 @@ bugs:
     tests_added:
       - tests/test_fixtures.py (5 new — TestParseResultPenStatus)
     commit_message: "fix(scoring): use ft_score for penalty-decided matches — parse_result status-aware"
+  - bug_id: BUG-2026-07-03-191600
+    date: "2026-07-03"
+    severity: high
+    priority: critical
+    scope: bot-scoring
+    type: regression-recurrence
+    summary: >-
+      Wrong score posted for penalty-decided knockout match (Australia vs Egypt).
+      Recurrence of BUG-2026-06-30-140000 — whitelist-based _PEN_STATUSES missed
+      the API's status string for this match, falling through to unreliable match_score.
+    file: specs/bugs/BUG-2026-07-03-191600-wrong-score-after-pen-recurrence.md
+    root_cause: >-
+      Previous fix (15b8c8d) used a whitelist (_PEN_STATUSES) to detect penalty
+      matches. If apifootball returns a status string not in that set, the code
+      defaults to match_score which is unreliable for penalty-decided matches.
+      Fix inverts to denylist: only ET statuses get match_score; everything else
+      defaults to ft_score.
+    approach: >-
+      Replace _PEN_STATUSES whitelist with _ET_STATUSES denylist. Default branch
+      now reads ft_score (safe). Unknown/unexpected statuses cannot cause wrong
+      scores.
+    risk_level: high
+    status: fixed
+    fixed_date: "2026-07-03"
+    files_changed:
+      - bolao/fixtures.py
+      - tests/test_fixtures.py
+    tests_added:
+      - tests/test_fixtures.py (7 new — TestParseResultFieldSelection)
+    commit_message: "fix(scoring): default parse_result to ft_score — only ET statuses use match_score"

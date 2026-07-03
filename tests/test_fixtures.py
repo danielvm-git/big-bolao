@@ -123,21 +123,38 @@ class TestNormalise:
         assert kickoffs == sorted(kickoffs)
 
 
-# ── parse_result — penalty status uses ft_score ─────────────────────────────
+# ── parse_result — status-aware field selection ──────────────────────────────
 
-class TestParseResultPenStatus:
-    """For penalty-decided matches, match_*_score may be wrong; use ft_score."""
+class TestParseResultFieldSelection:
+    """parse_result() defaults to ft_score (safe); only ET statuses use match_score."""
 
-    def test_after_pen_uses_ft_score_not_match_score(self):
+    # ── ET matches: use match_*_score (ET goals count) ─────────────────────
+
+    @pytest.mark.parametrize("status", ["After ET", "AET", "Finished AET"])
+    def test_et_statuses_use_match_score(self, status):
+        """ET goals count — match_*_score must be preferred for ET statuses."""
         fx = {
-            "match_status": "After Pen.",
-            "match_hometeam_score": "1", "match_awayteam_score": "2",
+            "match_status": status,
+            "match_hometeam_score": "2", "match_awayteam_score": "1",
             "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
         }
-        assert parse_result(fx) == (1, 1)
+        assert parse_result(fx) == (2, 1)
 
-    @pytest.mark.parametrize("status", ["After Pen.", "PEN", "Finished PEN"])
-    def test_all_pen_statuses_use_ft_score(self, status):
+    # ── Everyone else defaults to ft_score (safe) ──────────────────────────
+
+    @pytest.mark.parametrize("status", [
+        "After Pen.", "PEN", "Finished PEN",  # penalty variants
+        "Finished", "FT",                       # regular finish
+        "Half Time", "Not Started",             # not finished (shouldn't happen but safe)
+        "Some New Status",                      # unknown future status
+    ])
+    def test_non_et_statuses_use_ft_score(self, status):
+        """Any status NOT explicitly ET defaults to ft_score (safe).
+
+        This defends against API status-string drift — if the API adds a new
+        penalty status we haven't seen before, we still read the reliable
+        ft_score field instead of the potentially-inflated match_score.
+        """
         fx = {
             "match_status": status,
             "match_hometeam_score": "99", "match_awayteam_score": "99",
@@ -145,11 +162,11 @@ class TestParseResultPenStatus:
         }
         assert parse_result(fx) == (1, 1)
 
-    def test_after_et_still_uses_match_score(self):
-        """ET goals count — match_*_score must still be preferred for After ET."""
+    def test_non_et_falls_back_to_match_score_when_ft_missing(self):
+        """When ft_score is absent, fall back to match_score (graceful degradation)."""
         fx = {
-            "match_status": "After ET",
-            "match_hometeam_score": "2", "match_awayteam_score": "1",
-            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
+            "match_status": "Finished",
+            "match_hometeam_score": "3", "match_awayteam_score": "0",
+            "match_hometeam_ft_score": "", "match_awayteam_ft_score": "",
         }
-        assert parse_result(fx) == (2, 1)
+        assert parse_result(fx) == (3, 0)

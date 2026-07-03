@@ -78,31 +78,60 @@ _STRING_PHASE_MAP: list[tuple[str, str, int]] = [
 ]
 
 
-_PEN_STATUSES = frozenset({"After Pen.", "PEN", "Finished PEN"})
+# Statuses where ET goals count toward the final score.
+# Only these statuses read the match_*_score field (which includes ET goals).
+# Everything else defaults to ft_score — the safe, reliable field.
+#
+# DESIGN DECISION: we use a DENYLIST-like approach — only ET statuses get
+# match_score; everything else gets ft_score. This defends against API
+# status-string drift. If apifootball adds a new penalty status we haven't
+# seen, we still read ft_score (correct) instead of match_score (unreliable
+# for penalty-decided matches). See BUG-2026-06-30-140000 and its recurrence.
+_ET_STATUSES = frozenset({"After ET", "AET", "Finished AET"})
 
 
 def parse_result(fixture: dict) -> tuple[int, int] | None:
     """Extrai placar de um fixture bruto da API, ciente do status.
 
     - "After ET" / "AET" / "Finished AET": usa match_*_score (total com prorrogacao).
-    - "After Pen." / "PEN" / "Finished PEN": usa match_*_ft_score (gols em jogo;
-      a API pode devolver match_*_score incorreto para prorrogacao+penaltis).
-    - Demais statuses encerrados: ambos os campos devem ser iguais; usa ft_score.
+    - Todos os outros statuses: usa match_*_ft_score (seguro; a API pode devolver
+      match_*_score incorreto para partidas decididas nos penaltis).
     Retorna None se o placar nao estiver disponivel ou for invalido.
     """
     status = (fixture.get("match_status") or "").strip()
-    if status in _PEN_STATUSES:
-        gh = fixture.get("match_hometeam_ft_score") or fixture.get("match_hometeam_score")
-        ga = fixture.get("match_awayteam_ft_score") or fixture.get("match_awayteam_score")
-    else:
+    if status in _ET_STATUSES:
         gh = fixture.get("match_hometeam_score") or fixture.get("match_hometeam_ft_score")
         ga = fixture.get("match_awayteam_score") or fixture.get("match_awayteam_ft_score")
+    else:
+        gh = fixture.get("match_hometeam_ft_score") or fixture.get("match_hometeam_score")
+        ga = fixture.get("match_awayteam_ft_score") or fixture.get("match_awayteam_score")
     if gh in (None, "", "-") or ga in (None, "", "-"):
         return None
     try:
-        return int(gh), int(ga)
+        gc, gf = int(str(gh)), int(str(ga))
     except (TypeError, ValueError):
         return None
+
+    # Hardening: warn if match_score ≠ ft_score for non-ET statuses.
+    # This catches API status-string drift — a penalty match whose status wasn't
+    # recognised would show a discrepancy here. See BUG-2026-07-03-191600.
+    if status not in _ET_STATUSES:
+        ms_home = fixture.get("match_hometeam_score")
+        ms_away = fixture.get("match_awayteam_score")
+        fs_home = fixture.get("match_hometeam_ft_score")
+        fs_away = fixture.get("match_awayteam_ft_score")
+        if ms_home and fs_home and ms_away and fs_away:
+            try:
+                if (int(ms_home), int(ms_away)) != (int(fs_home), int(fs_away)):
+                    log.warning(
+                        "parse_result: match_score (%s, %s) ≠ ft_score (%s, %s) "
+                        "for status=%r — using ft_score",
+                        ms_home, ms_away, fs_home, fs_away, status,
+                    )
+            except (TypeError, ValueError):
+                pass
+
+    return gc, gf
 
 
 def _parse_phase(round_str: str, date_str: str = "") -> tuple[str, int] | None:
