@@ -97,7 +97,7 @@ class TestNormalise:
         assert m["gols_casa"] is None
         assert m["gols_fora"] is None
 
-    def test_finished_match_uses_et_score(self):
+    def test_finished_match_extracts_score(self):
         result = normalise(_MOCK)
         m = next(r for r in result if r["api_fixture_id"] == "9002")
         assert m["match_id"] == "R32-01"
