@@ -11,3 +11,9 @@ big-bolao-handoff.zip
 .pytest_cache/
 prototype/
 node_modules/
+
+# Tooling config (personal, not shared)
+.rtk/
+.pi/
+.bts.toml
+.envrc
