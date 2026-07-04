@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/danielvm-git/big-bolao/compare/v1.15.1...v1.16.0) (2026-07-04)
+
+
+### Features
+
+* **bigbase:** ensure_setup upsert from API with fallback to MATCHES ([8bf5349](https://github.com/danielvm-git/big-bolao/commit/8bf5349ecb4c8226b744e65b87d7de1eea5d784b))
+
 ## [1.15.1](https://github.com/danielvm-git/big-bolao/compare/v1.15.0...v1.15.1) (2026-07-04)
 
 
