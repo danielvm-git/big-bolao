@@ -221,6 +221,55 @@ stories:
     wsjf: 4.3
     wsjf_rationale: "BV=5 hardens a twice-fixed bug class + TC=3 flexible + RR=5 moderate mitigation / JS=3 2-3 days"
     depends: [e06-s01]
+    tasks:
+      - id: e06-s04-t01
+        title: "Create specs/test-strategy/parse-result-golden.json"
+        description: >
+          Write a golden fixture JSON file with ≥15 test cases covering all
+          parse_result() code paths: ET statuses (After ET, AET, Finished AET
+          → uses match_score), penalty variants (After Pen., PEN, Finished PEN
+          → uses ft_score), regular finish (Finished, FT → uses ft_score),
+          non-finished (Half Time, Not Started → ft_score safe fallback),
+          unknown future status → ft_score (defense against drift), FT missing
+          → fallback to match_score, non-numeric match_score → ft_score works,
+          both scores absent → null. Each case has: desc, match_status,
+          match_hometeam_score, match_awayteam_score, match_hometeam_ft_score,
+          match_awayteam_ft_score, expected_home, expected_away.
+        acceptance:
+          - "JSON file has ≥15 entries"
+          - "Covers ET, penalty, regular, non-finished, unknown, missing-FT edge cases"
+          - "All entries have expected_home and expected_away (or null)"
+          - "Loads as valid JSON"
+
+      - id: e06-s04-t02
+        title: "Re-source TestParseResultFieldSelection from golden file"
+        description: >
+          Remove the inline parametrized test groups in
+          tests/test_fixtures.py::TestParseResultFieldSelection. Replace with a
+          single parametrize that loads parse-result-golden.json relative to
+          the project root (same pattern as test_scoring.py::load_golden()),
+          iterates each case, calls parse_result() with the case fields, and
+          asserts result matches expected_home/expected_away. Keep the
+          parametrize structure to preserve test granularity (one assertion
+          per case).
+        acceptance:
+          - "TestParseResultFieldSelection no longer has inline fixture dicts"
+          - "Loads golden JSON from specs/test-strategy/parse-result-golden.json"
+          - "All golden cases pass through parametrized test"
+          - "Same number of test assertions as pre-refactor"
+
+      - id: e06-s04-t03
+        title: "Confirm bot poller coverage, document in test strategy"
+        description: >
+          Review tests/test_bot.py to confirm all zombie-poller failure-class
+          scenarios are covered: drop_pending_updates=True, allowed_updates
+          filter, 409 Conflict ERROR-level logging, error handler registration.
+          Add any missing test cases if gaps found. Update traceability.md
+          to reference the bot test file for the poller failure class.
+        acceptance:
+          - "Bot poller coverage confirmed — no gaps found"
+          - "traceability.md updated with bot poller test references"
+          - "test_bot.py passes all tests"
 
   - id: e06-s05
     title: "File-based CI governance gates (bug registry, scoring parity, coverage)"
