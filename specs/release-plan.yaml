@@ -50,8 +50,17 @@ epics:
     title: "Test Strategy & Architecture Overhaul (TEA-style)"
     bcp: 7.5
     priority: 1
-    status: in_progress
+    status: done
     wsjf: 6.8
+
+  - id: e07
+    slug: handlers-deepening
+    title: "handlers.py Deepening — GroupAnnouncer + ResultsPublisher + jobs.py"
+    bcp: 5.0
+    priority: 2
+    status: planned
+    wsjf: 5.5
+    depends_on: [e06]
 
 stories:
   # ── e05 — Quiet Hours (TOP PRIORITY) ───────────────────────────

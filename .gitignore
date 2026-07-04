@@ -9,6 +9,7 @@ big-bolao-handoff.zip
 /dist/
 .ruff_cache/
 .pytest_cache/
+.coverage
 prototype/
 node_modules/
 
