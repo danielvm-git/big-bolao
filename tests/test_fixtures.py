@@ -1,6 +1,6 @@
 """Tests for bolao/fixtures.py — phase parsing, time conversion, normalise()."""
 import pytest
-from bolao.fixtures import _parse_phase, _to_brt_iso, normalise, parse_result
+from bolao.fixtures import _parse_phase, _to_brt_iso, normalise, parse_result, fetch_from_api
 
 
 # ── _parse_phase ────────────────────────────────────────────────────────────
@@ -170,3 +170,61 @@ class TestParseResultFieldSelection:
             f"parse_result({c['desc']!r}): "
             f"got {result}, expected {expected}"
         )
+
+
+# ── fetch_from_api (mocked HTTP) ──────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_fetch_from_api_returns_normalised_fixtures():
+    """fetch_from_api() must call the API and return normalised fixtures."""
+    from unittest.mock import patch
+
+    class MockResponse:
+        def raise_for_status(self):
+            pass
+        def json(self):
+            return [{
+                "match_id": "12345",
+                "match_round": "4",
+                "match_date": "2026-07-02",
+                "match_time": "20:00",
+                "match_hometeam_name": "Brazil",
+                "match_awayteam_name": "Germany",
+                "match_hometeam_score": "2",
+                "match_awayteam_score": "1",
+                "match_hometeam_ft_score": "2",
+                "match_awayteam_ft_score": "1",
+                "match_status": "Finished",
+            }]
+
+    mock_response = MockResponse()
+
+    with patch("bolao.fixtures.config.APIFOOTBALL_KEY", "test-key-123"):
+        with patch("bolao.fixtures.config.APIFOOTBALL_LEAGUE_ID", "28"):
+            with patch("bolao.fixtures.httpx.AsyncClient") as MockClient:
+                instance = MockClient.return_value.__aenter__.return_value
+                instance.get.return_value = mock_response
+                result = await fetch_from_api()
+
+    assert len(result) == 1
+    assert result[0]["casa"] == "Brazil"
+    assert result[0]["fora"] == "Germany"
+    assert result[0]["match_id"] == "R32-01"
+    assert result[0]["status"] == "encerrado"
+
+
+# ── _parse_phase date inference edge case ──────────────────────────────────
+
+def test_parse_phase_date_fallback():
+    """Phase must be inferred from date when round_str is empty."""
+    # R16 range is 2026-07-04 to 2026-07-08
+    phase = _parse_phase("", "2026-07-04")
+    assert phase == ("R16", 5), f"Expected R16/5, got {phase}"
+
+    # QF range is 2026-07-09 to 2026-07-12
+    phase = _parse_phase("", "2026-07-10")
+    assert phase == ("QF", 6), f"Expected QF/6, got {phase}"
+
+    # Outside all ranges should return None
+    phase = _parse_phase("", "2026-05-01")
+    assert phase is None, f"Expected None, got {phase}"

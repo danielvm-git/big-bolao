@@ -1,434 +1,444 @@
 bugs:
-  - bug_id: BUG-2026-06-19-183500
-    date: "2026-06-19"
-    severity: medium
-    priority: high
-    scope: app-shell
-    summary:
-      Bottom navigation buttons unresponsive — router-view conditionally mounted
-      via v-if/v-else breaks router outlet
-    file: specs/bugs/BUG-2026-06-19-183500-nav-buttons.md
-    status: fixed
-    fixed_date: "2026-06-19"
-    root_cause:
-      <router-view v-slot> with <transition> fails to resolve lazy-loaded
-      route components in Vue Router 4; v-if/v-else conditional mounting broke outlet
-      registration
-    approach:
-      Replaced v-slot+transition router-view with plain <router-view />; LoginView
-      overlays via position:absolute
-    risk_level: low
-    files_changed:
-      - web/src/App.vue
-    tests_added:
-      - web/tests/router.test.js (4 unit tests)
-      - web/test-e2e.cjs (15 e2e tests)
-    hardening:
-      - Code comment in App.vue warning against v-slot on router-view
-      - Route config unit test prevents route definition errors
-    commit_message: "fix(web): bottom nav buttons unresponsive — removed v-slot on router-view"
-  - bug_id: BUG-2026-06-19-180800
-    date: "2026-06-19"
-    severity: high
-    priority: critical
-    scope: bot-sync
-    summary:
-      /sync returns 0 results — wrong APIFOOTBALL_LEAGUE_ID=1, SQL 403, Markdown
-      parse errors
-    file: specs/bugs/BUG-2026-06-19-180800-sync-misconfiguration.md
-    status: fixed
-    fixed_date: "2026-06-19"
-    root_cause:
-      "Three causes: APIFOOTBALL_LEAGUE_ID=1 in .env (was 28); BigBase /api/sql
-      returns 403 for service account; Telegram Markdown v1 crashes on underscores in
-      bot username"
-    approach:
-      Fixed league ID in .env; removed all sql() from bigbase.py (list_records+filter);
-      switched all messages to HTML parse mode
-    risk_level: low
-    files_changed:
-      - .env
-      - bolao/config.py
-      - bolao/bigbase.py
-      - bolao/handlers.py
-      - bolao/ranking.py
-      - bolao/results.py
-    tests_added:
-      - tests/test_config.py (5 tests)
-      - tests/test_fixtures.py (14 tests)
-      - tests/test_results.py (7 tests)
-    hardening:
-      - validate_config() in config.py raises RuntimeError on missing/wrong API config
-        at startup
-      - load_dotenv(override=True) prevents shell env vars from silently overriding .env
-      - 26-test suite covering all fixed code paths
-    commit_message:
-      "fix(bot): wrong league_id, SQL 403, Markdown parse errors — add
-      startup guard + test suite"
-  - bug_id: BUG-2026-06-19-215300
-    date: "2026-06-19"
-    severity: medium
-    priority: high
-    scope: web-dashboard
-    summary:
-      Dashboard shows 0/0 jogos finalizados — useJogos/useRanking gate on isLoggedIn,
-      never fetch for public view
-    file: specs/bugs/BUG-2026-06-19-215300-dashboard-zero-jogos.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      useJogos and useRanking only fetch when isLoggedIn fires; DashboardView
-      is public but data never loads without auth
-    approach:
-      DashboardView fetches jogos + ranking directly on onMounted, bypassing
-      auth gate; / → Dashboard (public), /home → HomeView (auth)
-    risk_level: low
-    files_changed:
-      - web/src/router/index.js
-      - web/src/App.vue
-      - web/src/views/DashboardView.vue
-      - web/src/views/LoginView.vue
-      - web/src/components/BottomNav.vue
-    commit_message: "feat(web): make dashboard the public landing page at /"
-  - bug_id: BUG-2026-06-19-190000
-    date: "2026-06-19"
-    severity: medium
-    priority: high
-    scope: deploy
-    summary:
-      Deploy falha — BigBase root_path não propagado ao DetectAppType; pip binário
-      não portátil
-    file: specs/bugs/BUG-2026-06-19-190000-deploy-fail.md
-    status: open
-    root_cause:
-      BigBase deploy/DetectAppType ignora o campo root_path da tabela sites
-      — sempre escaneia a raiz do clone. O repo tem requirements.txt na raiz (bot) e
-      package.json em web/ (site).
-    approach:
-      "Workaround: package.json na raiz delegando build para web/. Fix definitivo:
-      PR no BigBase propagando root_path para DetectAppType + python3 -m pip"
-    risk_level: medium
-  - bug_id: BUG-2026-06-20-100000
-    date: "2026-06-20"
-    severity: low
-    priority: medium
-    scope: bot-registration
-    summary:
-      Participantes duplicados via /start quando nome do Telegram difere do nome
-      histórico
-    file: specs/bugs/BUG-2026-06-20-100000-duplicate-participants.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      registrar_participante só verifica nome exato antes de criar — não varre
-      placeholders com telegram_id negativo cujo nome esteja contido no novo nome
-    approach:
-      Adicionar varredura de placeholders (telegram_id < 0) antes de criar,
-      vinculando por substring do nome com normalização de acentos
-    risk_level: low
-    files_changed:
-      - bolao/bigbase.py
-      - tests/test_participantes.py (new)
-    tests_added:
-      - "tests/test_participantes.py (6 tests: placeholder match, no-false-match, reivindicar
-        still works, reverse match, acentos, auto-link after reivindicar)"
-    hardening:
-      - Unicode normalization (NFKD) antes de substring match — "Flávia" casa com
-        "Ana Flavia Cernic Ramos" sem acento
-      - Ordem de precedência: match exato antes de fuzzy placeholder scan
-      - Métodos privados encapsulam a lógica de varredura (_placeholder_por_nome_parcial,
-        _vincular_placeholder)
-      - 6-test suite cobre match, no-match, casos inversos, acentos, e compat com
-        /sou
-    commit_message:
-      "fix(bot): duplicate participants on /start — add placeholder
-      scan with fuzzy name match"
-  - bug_id: BUG-2026-06-20-143237
-    date: "2026-06-20"
-    severity: low
-    priority: medium
-    scope: web-dashboard
-    summary:
-      Bandeiras de alguns países não aparecem (Iraq, Uzbekistan, Jordan, D.R.
-      Congo) — fallback de bandeira branca renderiza como documento em branco
-    file: specs/bugs/BUG-2026-06-20-143237-missing-country-flags.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      'Duas causas: (1) dicionário de bandeiras do frontend é cópia incompleta
-      do mapa do bot — faltam chaves (iraq, uzbekistan, jordan, etc.); (2) normalização
-      do lookup não remove pontuação, então "D.R. Congo" não casa com a chave "dr congo"'
-    approach:
-      Completar dicionário com todos os países do torneio + normalização resiliente
-      a pontuação/espaços; teste-guardião cobrindo todo o calendário
-    risk_level: low
-  - bug_id: BUG-2026-06-20-173500
-    date: "2026-06-20"
-    severity: medium
-    priority: high
-    scope: web-preview
-    summary:
-      Telegram link preview quebrado — og:image SVG nao suportado, convertido
-      para PNG
-    file: specs/bugs/BUG-2026-06-20-173500-instant-view-ogimage-svg.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      og:image apontava para SVG (image/svg+xml). Telegram so suporta JPEG/PNG/WEBP
-      para link previews.
-    approach:
-      Converter og-image.svg para PNG 1200x630 via rsvg-convert. Atualizar referencias
-      em web/index.html e web/dist/index.html.
-    risk_level: low
-  - bug_id: BUG-2026-06-20-190000
-    date: "2026-06-20"
-    severity: low
-    priority: medium
-    scope: web-dashboard
-    summary:
-      Bosnia & Herzegovina flag not showing — FLAGS missing ampersand-normalized
-      variant; normalization strips & but dictionary only has "and"/"e" forms
-    file: specs/bugs/BUG-2026-06-20-190000-bosnia-ampersand-flag.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      API returns "Bosnia & Herzegovina" (ampersand). _normTeam() strips
-      & → "bosnia herzegovina". FLAGS only had "bosnia and herzegovina" and "bosnia
-      e herzegovina" — neither matched the stripped form.
-    approach: Added 'bosnia herzegovina':'🇧🇦' to FLAGS dictionary; updated test
-      to include both ampersand and "and" forms in TOURNAMENT_EN coverage guard.
-    risk_level: low
-    files_changed:
-      - web/src/api.js
-      - web/tests/flags.test.js
-    tests_added:
-      - test for flag('Bosnia & Herzegovina') == 🇧🇦
-      - both forms added to coverage test TOURNAMENT_EN list
-    hardening: Coverage test validates both ampersand and "and" name forms; test
-      fails if either falls to white flag
-    commit_message:
-      "fix(web): bosnia & herzegovina flag not showing — add ampersand-normalized
-      form to FLAGS"
-  - bug_id: BUG-2026-06-20-200000
-    date: "2026-06-20"
-    severity: low
-    priority: medium
-    scope: bot-architecture
-    type: tech-debt
-    summary:
-      handlers.py é god-module raso (Depth 1) — callback_data espalhado por 3
-      handlers + _montar_ranking só testável com ContextTypes vivo
-    file: specs/bugs/BUG-2026-06-20-200000-handlers-god-module.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      callback_data serializado em 3 lugares com split() sem validação;
-      _montar_ranking acoplado a ContextTypes; formatação de grupo misturada com envio
-    approach:
-      Extrair BettingFlow (Step enum + serialize/deserialize + transition validation),
-      GroupPublisher (pure formatting), inline _montar_ranking
-    risk_level: low
-    files_changed:
-      - bolao/betting_flow.py (new)
-      - bolao/group_publisher.py (new)
-      - bolao/handlers.py
-      - bolao/bot.py
-    tests_added:
-      - tests/test_betting_flow.py (24 tests)
-      - tests/test_group_publisher.py (11 tests)
-    hardening:
-      - callback_data centralizado em BettingFlow — erro de formato retorna None
-      - Transições inválidas rejeitadas com ValueError
-      - Formatação de mensagens testável sem mock do Telegram
-    commit_message: "refactor(bot): extract BettingFlow + GroupPublisher from handlers.py god-module"
-  - bug_id: BUG-2026-06-20-200100
-    date: "2026-06-20"
-    severity: low
-    priority: medium
-    scope: web-architecture
-    type: tech-debt
-    summary: api.js concentra seis responsabilidades num único arquivo raso
-    file: specs/bugs/BUG-2026-06-20-200100-api-js-six-responsibilities.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause: api.js accumulated 6 responsibilities (auth, HTTP transport, domain queries, scoring, flags, formatting) in one shallow module — pure logic was untestable without network stubs
-    approach: Split into scoring.js (pure logic), transport.js (HTTP singleton), queries.js (domain queries). api.js became re-export barrel.
-    risk_level: low
-    files_changed:
-      - web/src/api.js
-      - web/src/scoring.js (new)
-      - web/src/transport.js (new)
-      - web/src/queries.js (new)
-      - web/tests/scoring.test.js (new)
-      - web/tests/transport.test.js (new)
-      - web/tests/queries.test.js (new)
-      - web/tests/flags.test.js (updated import)
-    tests_added:
-      - web/tests/scoring.test.js (20 tests)
-      - web/tests/transport.test.js (7 tests)
-      - web/tests/queries.test.js (8 tests)
-    hardening:
-      - Module boundaries enforce separation of pure logic from I/O
-      - Each module independently testable via public interface
-      - scoring.js mirrors Python scoring.py structure to prevent divergence
-      - api.js is a re-export barrel — no hidden logic
-    commit_message: "refactor(web): extract scoring.js, transport.js, queries.js from api.js god-module"
-  - bug_id: BUG-2026-06-20-200200
-    date: "2026-06-20"
-    severity: low
-    priority: medium
-    scope: bot-architecture
-    type: tech-debt
-    summary:
-      results.py duplica parsing de fixtures.py — _FINISHED, ft_score hierarchy,
-      _safe_int reimplementados em 2 lugares
-    file: specs/bugs/BUG-2026-06-20-200200-results-fixtures-duplicated-parsing.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      results.py reimplementou inline a extração de campos que fixtures.normalise()
-      já fazia — _FINISHED definido duas vezes, ft_score→score em 2 lugares
-    approach:
-      Extrair parse_result(fixture) + _FINISHED em fixtures.py; results.py
-      importa e consome em vez de reparsear
-    risk_level: low
-    files_changed:
-      - bolao/fixtures.py
-      - bolao/results.py
-    tests_added:
-      - (none — existing 21 tests cover both paths)
-    hardening:
-      - Adicionar status novo de "encerrado" é mudança em um único arquivo
-      - parse_result() testável independentemente via import
-      - _FINISHED como frozenset compartilhado
-    commit_message: "refactor(bot): extract shared _FINISHED + parse_result from results.py into fixtures.py"
-  - bug_id: BUG-2026-06-20-200300
-    date: "2026-06-20"
-    severity: low
-    priority: low
-    scope: bot-architecture
-    type: tech-debt
-    summary:
-      bigbase.py expõe superfície de interface morta (sql/_hydrate) — nunca
-      chamados; docstring anuncia /api/sql como capacidade ativa
-    file: specs/bugs/BUG-2026-06-20-200300-bigbase-dead-interface-surface.md
-    status: fixed
-    fixed_date: "2026-06-20"
-    root_cause:
-      sql()/_hydrate() sobreviveram à troca de estratégia SQL→list+filter
-      sem serem removidos; zero callers (deletion test confirmado)
-    approach:
-      Remover sql() e _hydrate(); atualizar docstring para refletir filtragem
-      em processo sobre list_records(); documentar O(n)
-    risk_level: low
-    files_changed:
-      - bolao/bigbase.py
-    tests_added:
-      - (none — zero callers, 79 existing tests pass)
-    hardening:
-      - Superfície de interface reflete apenas contratos vivos
-      - Docstring não menciona mais /api/sql
-      - O(n) documentado em list_records()
-    commit_message: "refactor(bot): remove dead sql()/_hydrate() from bigbase.py — zero callers"
-  - bug_id: BUG-2026-06-21-104800
-    date: "2026-06-21"
-    severity: medium
-    priority: high
-    scope: bot-ops
-    type: regression
-    summary:
-      /ranking renders pre-June-20 format intermittently — stale zombie bot
-      instance long-polling the same Telegram token answers some updates with old code
-    file: specs/bugs/BUG-2026-06-21-104800-stale-ranking-zombie-poller.md
-    status: open
-    root_cause:
-      A duplicate bot instance running code older than June 20 competes for
-      getUpdates (long polling, single-consumer + 409 conflict); repo and all releases
-      1.9.1–1.11.0 already contain the fix, so source is correct — this is operational
-    approach:
-      Kill/disable the duplicate poller (likely legacy /opt/bolao systemd unit);
-      add version accessor + diagnostic command + drop_pending_updates/409 logging to
-      make stale instances self-announcing
-    risk_level: medium
-  - bug_id: BUG-2026-06-28-003000
-    date: "2026-06-28"
-    severity: high
-    priority: critical
-    scope: bot-startup
-    type: regression
-    summary:
-      bot fails to start — bot.py imports bolao.logger.get_logger but logger.py
-      was never committed; all Telegram commands down after v1.14.0 deploy
-    file: specs/bugs/BUG-2026-06-28-003000-logger-not-committed.md
-    status: fixed
-    fixed_date: "2026-06-28"
-    root_cause:
-      feat(scoring) commit staged a stash-modified bot.py that replaced stdlib
-      logging with bolao.logger; logger.py existed only as an untracked local
-      file and was not staged, so the deployed server gets ModuleNotFoundError
-    approach: commit bolao/logger.py
-    risk_level: high
-    files_changed:
-      - bolao/logger.py (new)
-      - tests/test_logger.py (new)
-    tests_added:
-      - tests/test_logger.py (5 tests)
-    commit_message: "fix(bot): commit missing bolao/logger.py — bot failed to start with ModuleNotFoundError"
-  - bug_id: BUG-2026-06-30-140000
-    date: "2026-06-30"
-    severity: high
-    priority: critical
-    scope: bot-scoring
-    type: regression
-    summary:
-      Wrong score posted for penalty-decided knockout match — parse_result()
-      status-blind after d684eff; apifootball match_hometeam_score unreliable for
-      "After Pen." matches, causing inflated score to be stored and announced
-    file: specs/bugs/BUG-2026-06-30-140000-wrong-score-after-pen.md
-    root_cause:
-      d684eff changed parse_result() to prefer match_hometeam_score (ET total)
-      over match_hometeam_ft_score (90-min) for all finished matches. For "After Pen."
-      matches the apifootball API may return a wrong value for match_*_score while
-      match_*_ft_score is correct. Fix must be status-aware.
-    approach:
-      Make parse_result() check match_status — use ft_score for penalty statuses
-      ("After Pen.", "PEN", "Finished PEN"), keep ET-first logic for "After ET" / "AET"
-    risk_level: high
-    status: fixed
-    fixed_date: "2026-06-30"
-    files_changed:
-      - bolao/fixtures.py
-      - tests/test_fixtures.py
-    tests_added:
-      - tests/test_fixtures.py (5 new — TestParseResultPenStatus)
-    commit_message: "fix(scoring): use ft_score for penalty-decided matches — parse_result status-aware"
-  - bug_id: BUG-2026-07-03-191600
-    date: "2026-07-03"
-    severity: high
-    priority: critical
-    scope: bot-scoring
-    type: regression-recurrence
-    summary: >-
-      Wrong score posted for penalty-decided knockout match (Australia vs Egypt).
-      Recurrence of BUG-2026-06-30-140000 — whitelist-based _PEN_STATUSES missed
-      the API's status string for this match, falling through to unreliable match_score.
-    file: specs/bugs/BUG-2026-07-03-191600-wrong-score-after-pen-recurrence.md
-    root_cause: >-
-      Previous fix (15b8c8d) used a whitelist (_PEN_STATUSES) to detect penalty
-      matches. If apifootball returns a status string not in that set, the code
-      defaults to match_score which is unreliable for penalty-decided matches.
-      Fix inverts to denylist: only ET statuses get match_score; everything else
-      defaults to ft_score.
-    approach: >-
-      Replace _PEN_STATUSES whitelist with _ET_STATUSES denylist. Default branch
-      now reads ft_score (safe). Unknown/unexpected statuses cannot cause wrong
-      scores.
-    risk_level: high
-    status: fixed
-    fixed_date: "2026-07-03"
-    files_changed:
-      - bolao/fixtures.py
-      - tests/test_fixtures.py
-    tests_added:
-      - tests/test_fixtures.py (7 new — TestParseResultFieldSelection)
-    commit_message: "fix(scoring): default parse_result to ft_score — only ET statuses use match_score"
+- bug_id: BUG-2026-06-19-183500
+  date: '2026-06-19'
+  severity: medium
+  priority: high
+  scope: app-shell
+  summary: Bottom navigation buttons unresponsive — router-view conditionally mounted
+    via v-if/v-else breaks router outlet
+  file: specs/bugs/BUG-2026-06-19-183500-nav-buttons.md
+  status: fixed
+  fixed_date: '2026-06-19'
+  root_cause: <router-view v-slot> with <transition> fails to resolve lazy-loaded
+    route components in Vue Router 4; v-if/v-else conditional mounting broke outlet
+    registration
+  approach: Replaced v-slot+transition router-view with plain <router-view />; LoginView
+    overlays via position:absolute
+  risk_level: low
+  files_changed:
+  - web/src/App.vue
+  tests_added:
+  - web/tests/router.test.js (4 unit tests)
+  - web/test-e2e.cjs (15 e2e tests)
+  hardening:
+  - Code comment in App.vue warning against v-slot on router-view
+  - Route config unit test prevents route definition errors
+  commit_message: 'fix(web): bottom nav buttons unresponsive — removed v-slot on router-view'
+- bug_id: BUG-2026-06-19-180800
+  date: '2026-06-19'
+  severity: high
+  priority: critical
+  scope: bot-sync
+  summary: /sync returns 0 results — wrong APIFOOTBALL_LEAGUE_ID=1, SQL 403, Markdown
+    parse errors
+  file: specs/bugs/BUG-2026-06-19-180800-sync-misconfiguration.md
+  status: fixed
+  fixed_date: '2026-06-19'
+  root_cause: 'Three causes: APIFOOTBALL_LEAGUE_ID=1 in .env (was 28); BigBase /api/sql
+    returns 403 for service account; Telegram Markdown v1 crashes on underscores in
+    bot username'
+  approach: Fixed league ID in .env; removed all sql() from bigbase.py (list_records+filter);
+    switched all messages to HTML parse mode
+  risk_level: low
+  files_changed:
+  - .env
+  - bolao/config.py
+  - bolao/bigbase.py
+  - bolao/handlers.py
+  - bolao/ranking.py
+  - bolao/results.py
+  tests_added:
+  - tests/test_config.py (5 tests)
+  - tests/test_fixtures.py (14 tests)
+  - tests/test_results.py (7 tests)
+  hardening:
+  - validate_config() in config.py raises RuntimeError on missing/wrong API config
+    at startup
+  - load_dotenv(override=True) prevents shell env vars from silently overriding .env
+  - 26-test suite covering all fixed code paths
+  commit_message: 'fix(bot): wrong league_id, SQL 403, Markdown parse errors — add
+    startup guard + test suite'
+- bug_id: BUG-2026-06-19-215300
+  date: '2026-06-19'
+  severity: medium
+  priority: high
+  scope: web-dashboard
+  summary: Dashboard shows 0/0 jogos finalizados — useJogos/useRanking gate on isLoggedIn,
+    never fetch for public view
+  file: specs/bugs/BUG-2026-06-19-215300-dashboard-zero-jogos.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: useJogos and useRanking only fetch when isLoggedIn fires; DashboardView
+    is public but data never loads without auth
+  approach: DashboardView fetches jogos + ranking directly on onMounted, bypassing
+    auth gate; / → Dashboard (public), /home → HomeView (auth)
+  risk_level: low
+  files_changed:
+  - web/src/router/index.js
+  - web/src/App.vue
+  - web/src/views/DashboardView.vue
+  - web/src/views/LoginView.vue
+  - web/src/components/BottomNav.vue
+  commit_message: 'feat(web): make dashboard the public landing page at /'
+  tests_added: []
+- bug_id: BUG-2026-06-19-190000
+  date: '2026-06-19'
+  severity: medium
+  priority: high
+  scope: deploy
+  summary: Deploy falha — BigBase root_path não propagado ao DetectAppType; pip binário
+    não portátil
+  file: specs/bugs/BUG-2026-06-19-190000-deploy-fail.md
+  status: open
+  root_cause: BigBase deploy/DetectAppType ignora o campo root_path da tabela sites
+    — sempre escaneia a raiz do clone. O repo tem requirements.txt na raiz (bot) e
+    package.json em web/ (site).
+  approach: 'Workaround: package.json na raiz delegando build para web/. Fix definitivo:
+    PR no BigBase propagando root_path para DetectAppType + python3 -m pip'
+  risk_level: medium
+  tests_added: []
+- bug_id: BUG-2026-06-20-100000
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: bot-registration
+  summary: Participantes duplicados via /start quando nome do Telegram difere do nome
+    histórico
+  file: specs/bugs/BUG-2026-06-20-100000-duplicate-participants.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: registrar_participante só verifica nome exato antes de criar — não varre
+    placeholders com telegram_id negativo cujo nome esteja contido no novo nome
+  approach: Adicionar varredura de placeholders (telegram_id < 0) antes de criar,
+    vinculando por substring do nome com normalização de acentos
+  risk_level: low
+  files_changed:
+  - bolao/bigbase.py
+  - tests/test_participantes.py (new)
+  tests_added:
+  - 'tests/test_participantes.py (6 tests: placeholder match, no-false-match, reivindicar
+    still works, reverse match, acentos, auto-link after reivindicar)'
+  hardening:
+  - Unicode normalization (NFKD) antes de substring match — "Flávia" casa com "Ana
+    Flavia Cernic Ramos" sem acento
+  - Ordem de precedência: match exato antes de fuzzy placeholder scan
+  - Métodos privados encapsulam a lógica de varredura (_placeholder_por_nome_parcial,
+    _vincular_placeholder)
+  - 6-test suite cobre match, no-match, casos inversos, acentos, e compat com /sou
+  commit_message: 'fix(bot): duplicate participants on /start — add placeholder scan
+    with fuzzy name match'
+- bug_id: BUG-2026-06-20-143237
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: web-dashboard
+  summary: Bandeiras de alguns países não aparecem (Iraq, Uzbekistan, Jordan, D.R.
+    Congo) — fallback de bandeira branca renderiza como documento em branco
+  file: specs/bugs/BUG-2026-06-20-143237-missing-country-flags.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: 'Duas causas: (1) dicionário de bandeiras do frontend é cópia incompleta
+    do mapa do bot — faltam chaves (iraq, uzbekistan, jordan, etc.); (2) normalização
+    do lookup não remove pontuação, então "D.R. Congo" não casa com a chave "dr congo"'
+  approach: Completar dicionário com todos os países do torneio + normalização resiliente
+    a pontuação/espaços; teste-guardião cobrindo todo o calendário
+  risk_level: low
+  tests_added:
+  - web/tests/flags.test.js
+- bug_id: BUG-2026-06-20-173500
+  date: '2026-06-20'
+  severity: medium
+  priority: high
+  scope: web-preview
+  summary: Telegram link preview quebrado — og:image SVG nao suportado, convertido
+    para PNG
+  file: specs/bugs/BUG-2026-06-20-173500-instant-view-ogimage-svg.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: og:image apontava para SVG (image/svg+xml). Telegram so suporta JPEG/PNG/WEBP
+    para link previews.
+  approach: Converter og-image.svg para PNG 1200x630 via rsvg-convert. Atualizar referencias
+    em web/index.html e web/dist/index.html.
+  risk_level: low
+  tests_added: []
+- bug_id: BUG-2026-06-20-190000
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: web-dashboard
+  summary: Bosnia & Herzegovina flag not showing — FLAGS missing ampersand-normalized
+    variant; normalization strips & but dictionary only has "and"/"e" forms
+  file: specs/bugs/BUG-2026-06-20-190000-bosnia-ampersand-flag.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: API returns "Bosnia & Herzegovina" (ampersand). _normTeam() strips &
+    → "bosnia herzegovina". FLAGS only had "bosnia and herzegovina" and "bosnia e
+    herzegovina" — neither matched the stripped form.
+  approach: Added 'bosnia herzegovina':'🇧🇦' to FLAGS dictionary; updated test to include
+    both ampersand and "and" forms in TOURNAMENT_EN coverage guard.
+  risk_level: low
+  files_changed:
+  - web/src/api.js
+  - web/tests/flags.test.js
+  tests_added:
+  - test for flag('Bosnia & Herzegovina') == 🇧🇦
+  - both forms added to coverage test TOURNAMENT_EN list
+  hardening: Coverage test validates both ampersand and "and" name forms; test fails
+    if either falls to white flag
+  commit_message: 'fix(web): bosnia & herzegovina flag not showing — add ampersand-normalized
+    form to FLAGS'
+- bug_id: BUG-2026-06-20-200000
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: bot-architecture
+  type: tech-debt
+  summary: handlers.py é god-module raso (Depth 1) — callback_data espalhado por 3
+    handlers + _montar_ranking só testável com ContextTypes vivo
+  file: specs/bugs/BUG-2026-06-20-200000-handlers-god-module.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: callback_data serializado em 3 lugares com split() sem validação; _montar_ranking
+    acoplado a ContextTypes; formatação de grupo misturada com envio
+  approach: Extrair BettingFlow (Step enum + serialize/deserialize + transition validation),
+    GroupPublisher (pure formatting), inline _montar_ranking
+  risk_level: low
+  files_changed:
+  - bolao/betting_flow.py (new)
+  - bolao/group_publisher.py (new)
+  - bolao/handlers.py
+  - bolao/bot.py
+  tests_added:
+  - tests/test_betting_flow.py (24 tests)
+  - tests/test_group_publisher.py (11 tests)
+  hardening:
+  - callback_data centralizado em BettingFlow — erro de formato retorna None
+  - Transições inválidas rejeitadas com ValueError
+  - Formatação de mensagens testável sem mock do Telegram
+  commit_message: 'refactor(bot): extract BettingFlow + GroupPublisher from handlers.py
+    god-module'
+- bug_id: BUG-2026-06-20-200100
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: web-architecture
+  type: tech-debt
+  summary: api.js concentra seis responsabilidades num único arquivo raso
+  file: specs/bugs/BUG-2026-06-20-200100-api-js-six-responsibilities.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: api.js accumulated 6 responsibilities (auth, HTTP transport, domain
+    queries, scoring, flags, formatting) in one shallow module — pure logic was untestable
+    without network stubs
+  approach: Split into scoring.js (pure logic), transport.js (HTTP singleton), queries.js
+    (domain queries). api.js became re-export barrel.
+  risk_level: low
+  files_changed:
+  - web/src/api.js
+  - web/src/scoring.js (new)
+  - web/src/transport.js (new)
+  - web/src/queries.js (new)
+  - web/tests/scoring.test.js (new)
+  - web/tests/transport.test.js (new)
+  - web/tests/queries.test.js (new)
+  - web/tests/flags.test.js (updated import)
+  tests_added:
+  - web/tests/scoring.test.js (20 tests)
+  - web/tests/transport.test.js (7 tests)
+  - web/tests/queries.test.js (8 tests)
+  hardening:
+  - Module boundaries enforce separation of pure logic from I/O
+  - Each module independently testable via public interface
+  - scoring.js mirrors Python scoring.py structure to prevent divergence
+  - api.js is a re-export barrel — no hidden logic
+  commit_message: 'refactor(web): extract scoring.js, transport.js, queries.js from
+    api.js god-module'
+- bug_id: BUG-2026-06-20-200200
+  date: '2026-06-20'
+  severity: low
+  priority: medium
+  scope: bot-architecture
+  type: tech-debt
+  summary: results.py duplica parsing de fixtures.py — _FINISHED, ft_score hierarchy,
+    _safe_int reimplementados em 2 lugares
+  file: specs/bugs/BUG-2026-06-20-200200-results-fixtures-duplicated-parsing.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: results.py reimplementou inline a extração de campos que fixtures.normalise()
+    já fazia — _FINISHED definido duas vezes, ft_score→score em 2 lugares
+  approach: Extrair parse_result(fixture) + _FINISHED em fixtures.py; results.py importa
+    e consome em vez de reparsear
+  risk_level: low
+  files_changed:
+  - bolao/fixtures.py
+  - bolao/results.py
+  tests_added:
+  - (none — existing 21 tests cover both paths)
+  hardening:
+  - Adicionar status novo de "encerrado" é mudança em um único arquivo
+  - parse_result() testável independentemente via import
+  - _FINISHED como frozenset compartilhado
+  commit_message: 'refactor(bot): extract shared _FINISHED + parse_result from results.py
+    into fixtures.py'
+- bug_id: BUG-2026-06-20-200300
+  date: '2026-06-20'
+  severity: low
+  priority: low
+  scope: bot-architecture
+  type: tech-debt
+  summary: bigbase.py expõe superfície de interface morta (sql/_hydrate) — nunca chamados;
+    docstring anuncia /api/sql como capacidade ativa
+  file: specs/bugs/BUG-2026-06-20-200300-bigbase-dead-interface-surface.md
+  status: fixed
+  fixed_date: '2026-06-20'
+  root_cause: sql()/_hydrate() sobreviveram à troca de estratégia SQL→list+filter
+    sem serem removidos; zero callers (deletion test confirmado)
+  approach: Remover sql() e _hydrate(); atualizar docstring para refletir filtragem
+    em processo sobre list_records(); documentar O(n)
+  risk_level: low
+  files_changed:
+  - bolao/bigbase.py
+  tests_added:
+  - (none — zero callers, 79 existing tests pass)
+  hardening:
+  - Superfície de interface reflete apenas contratos vivos
+  - Docstring não menciona mais /api/sql
+  - O(n) documentado em list_records()
+  commit_message: 'refactor(bot): remove dead sql()/_hydrate() from bigbase.py — zero
+    callers'
+- bug_id: BUG-2026-06-21-104800
+  date: '2026-06-21'
+  severity: medium
+  priority: high
+  scope: bot-ops
+  type: regression
+  summary: /ranking renders pre-June-20 format intermittently — stale zombie bot instance
+    long-polling the same Telegram token answers some updates with old code
+  file: specs/bugs/BUG-2026-06-21-104800-stale-ranking-zombie-poller.md
+  status: open
+  root_cause: A duplicate bot instance running code older than June 20 competes for
+    getUpdates (long polling, single-consumer + 409 conflict); repo and all releases
+    1.9.1–1.11.0 already contain the fix, so source is correct — this is operational
+  approach: Kill/disable the duplicate poller (likely legacy /opt/bolao systemd unit);
+    add version accessor + diagnostic command + drop_pending_updates/409 logging to
+    make stale instances self-announcing
+  risk_level: medium
+  tests_added:
+  - 'tests/test_bot.py (5 tests: drop_pending, allowed_updates, 409 conflict, error
+    handler, version log)'
+- bug_id: BUG-2026-06-28-003000
+  date: '2026-06-28'
+  severity: high
+  priority: critical
+  scope: bot-startup
+  type: regression
+  summary: bot fails to start — bot.py imports bolao.logger.get_logger but logger.py
+    was never committed; all Telegram commands down after v1.14.0 deploy
+  file: specs/bugs/BUG-2026-06-28-003000-logger-not-committed.md
+  status: fixed
+  fixed_date: '2026-06-28'
+  root_cause: feat(scoring) commit staged a stash-modified bot.py that replaced stdlib
+    logging with bolao.logger; logger.py existed only as an untracked local file and
+    was not staged, so the deployed server gets ModuleNotFoundError
+  approach: commit bolao/logger.py
+  risk_level: high
+  files_changed:
+  - bolao/logger.py (new)
+  - tests/test_logger.py (new)
+  tests_added:
+  - tests/test_logger.py (5 tests)
+  commit_message: 'fix(bot): commit missing bolao/logger.py — bot failed to start
+    with ModuleNotFoundError'
+- bug_id: BUG-2026-06-30-140000
+  date: '2026-06-30'
+  severity: high
+  priority: critical
+  scope: bot-scoring
+  type: regression
+  summary: Wrong score posted for penalty-decided knockout match — parse_result()
+    status-blind after d684eff; apifootball match_hometeam_score unreliable for "After
+    Pen." matches, causing inflated score to be stored and announced
+  file: specs/bugs/BUG-2026-06-30-140000-wrong-score-after-pen.md
+  root_cause: d684eff changed parse_result() to prefer match_hometeam_score (ET total)
+    over match_hometeam_ft_score (90-min) for all finished matches. For "After Pen."
+    matches the apifootball API may return a wrong value for match_*_score while match_*_ft_score
+    is correct. Fix must be status-aware.
+  approach: Make parse_result() check match_status — use ft_score for penalty statuses
+    ("After Pen.", "PEN", "Finished PEN"), keep ET-first logic for "After ET" / "AET"
+  risk_level: high
+  status: fixed
+  fixed_date: '2026-06-30'
+  files_changed:
+  - bolao/fixtures.py
+  - tests/test_fixtures.py
+  tests_added:
+  - tests/test_fixtures.py (5 new — TestParseResultPenStatus)
+  commit_message: 'fix(scoring): use ft_score for penalty-decided matches — parse_result
+    status-aware'
+- bug_id: BUG-2026-07-03-191600
+  date: '2026-07-03'
+  severity: high
+  priority: critical
+  scope: bot-scoring
+  type: regression-recurrence
+  summary: Wrong score posted for penalty-decided knockout match (Australia vs Egypt).
+    Recurrence of BUG-2026-06-30-140000 — whitelist-based _PEN_STATUSES missed the
+    API's status string for this match, falling through to unreliable match_score.
+  file: specs/bugs/BUG-2026-07-03-191600-wrong-score-after-pen-recurrence.md
+  root_cause: 'Previous fix (15b8c8d) used a whitelist (_PEN_STATUSES) to detect penalty
+    matches. If apifootball returns a status string not in that set, the code defaults
+    to match_score which is unreliable for penalty-decided matches. Fix inverts to
+    denylist: only ET statuses get match_score; everything else defaults to ft_score.'
+  approach: Replace _PEN_STATUSES whitelist with _ET_STATUSES denylist. Default branch
+    now reads ft_score (safe). Unknown/unexpected statuses cannot cause wrong scores.
+  risk_level: high
+  status: fixed
+  fixed_date: '2026-07-03'
+  files_changed:
+  - bolao/fixtures.py
+  - tests/test_fixtures.py
+  tests_added:
+  - tests/test_fixtures.py (7 new — TestParseResultFieldSelection)
+  commit_message: 'fix(scoring): default parse_result to ft_score — only ET statuses
+    use match_score'
+- bug_id: BUG-2026-06-21-124200
+  date: '2026-06-21'
+  severity: medium
+  priority: high
+  scope: bot-ranking
+  summary: /ranking lost aligned monospace table format after emoji fix
+  file: specs/bugs/BUG-2026-06-21-124200-ranking-format-regression.md
+  status: fixed
+  fixed_date: '2026-06-21'
+  tests_added:
+  - tests/test_ranking.py
+  - tests/test_group_publisher.py
+  root_cause: Prior fix removed <pre> block to work around emoji rendering; left ranking
+    unaligned
+- bug_id: BUG-2026-06-30-150000
+  date: '2026-06-30'
+  severity: high
+  priority: critical
+  scope: web-scoring
+  summary: Web ranking uses flat 3/1 scoring — missing knockout phase multipliers
+  file: specs/bugs/BUG-2026-06-30-150000-web-scoring-not-phase-aware.md
+  status: fixed
+  fixed_date: '2026-06-30'
+  tests_added:
+  - web/tests/scoring.test.js (phase-aware calcPontos tests)
+  - web/tests/scoring-golden.test.js (24 golden fixture cases)
+  root_cause: Commit 65d4058 added FASE_PONTOS to Python but did not update web/src/scoring.js
+- bug_id: BUG-2026-07-04-170000
+  date: '2026-07-04'
+  severity: medium
+  priority: high
+  scope: web-scoring
+  summary: Knockout exact bets mislabeled as 'acertei' instead of 'exato'
+  file: specs/bugs/BUG-2026-07-04-170000-knockout-exact-bets-mislabeled.md
+  status: fixed
+  fixed_date: '2026-07-04'
+  tests_added:
+  - specs/test-strategy/scoring-golden.json (expected_label field on 24 cases)
+  - web/tests/scoring-golden.test.js (scoreLabelFor assertions, 24 tests)
+  root_cause: store.js::scoreLabel() called calcPontos() without matchId — knockout
+    exact bets scored 5-50 but label checked pts === 3
