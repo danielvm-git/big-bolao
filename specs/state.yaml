@@ -9,18 +9,18 @@ bug_cycle: {} # cleared — switching to build_epic for e06
 
 epic_cycle:
   epic: e06-test-strategy
-  step: 0
-  story: e06-s05
-  story_bcps: 0
-  next_story: e06-s04
+  step: 7
+  story: e06-s06
+  story_bcps: 1
+  next_story: e06-s06
   fast_mode: true
   done_stories:
     - e06-s01
     - e06-s02
     - e06-s03
     - e06-s04
-    - e06-s03
-audit_result: pending
+    - e06-s05
+  audit_result: done
 
 completed_epics:
   - id: e01
@@ -54,9 +54,9 @@ pending_epics:
   - id: e06
     title: "Test Strategy & Architecture Overhaul (TEA-style)"
     bcps: 7.5
-    bcps_delivered: 4.5
-    status: partial (4/6 stories done)
-    next_story: e06-s05 "File-based CI governance gates"
+    bcps_delivered: 5.5
+    status: partial (5/6 stories done)
+    next_story: e06-s06 "Remaining quality gates & hardening"
 
 environment:
   node: v24.15.0
@@ -77,25 +77,24 @@ required_reading:
   - specs/release-plan.yaml
 
 handoff:
-  current_phase: sustain
-  next_skill: survey-context
+  current_phase: build
+  next_skill: build-epic
   notes: >
-    BUG-2026-06-28-003000 fixed — committed bolao/logger.py (was untracked). All 110 Python
-    + 35 web tests pass. Awaiting CI verification. Will redeploy to https://bolao.bigbase.click
-    to restore bot functionality.
+    e06-s05 (CI governance gates) squash-merged to main. Governance gates G1, G2, G3 all pass.
+    160 Python tests, 88 web tests pass. Next: e06-s06 remaining quality gates & hardening.
+    Clean worktree needed: run 'git worktree remove -f ../e06-s05-ci-governance && git branch -D e06-s05-ci-governance'.
 
 git:
   branch: main
-  hash: bc3a2a1
+  hash: 8e6f60c
 
 release:
   branch: main
-  hash: bc3a2a1
-  mode: solo-local
+  hash: 8e6f60c
+  mode: team-pr
   ci_verified: true
   commits:
-    - 85bf2b7 fix(bot): commit missing bolao/logger.py
-    - 9606b9e chore(state): clear fix_bug cycle
+    - 64b13d6 ci(ci): add governance gates for bug registry, scoring parity, and coverage
 
 metrics:
   - id: story_start
@@ -140,3 +139,9 @@ metrics:
     end: "2026-06-21T16:00:00-03:00"
     cycle_minutes: 60
     bcp_per_hour: 0.0
+  - id: e06-s05-ci-governance
+    bcps: 1
+    start: "2026-07-03T17:00:00-03:00"
+    end: "2026-07-04T10:30:00-03:00"
+    cycle_minutes: 1050
+    bcp_per_hour: 0.06
