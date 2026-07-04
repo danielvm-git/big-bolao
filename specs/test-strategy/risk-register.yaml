@@ -1,0 +1,164 @@
+# Risk Register — Big Bolão
+#
+# Probability × Impact = Risk Score (1-25, low → critical)
+# Each module gets a Priority Level:
+#   P0 — Must-test on every change (high risk, high bug density)
+#   P1 — Test on relevant changes (moderate risk)
+#   P2 — Smoke-test only (low risk, stable)
+#
+# Scoring: Probability (1-5) × Impact (1-5)
+#   1-4   Low
+#   5-9   Medium
+#   10-14 High
+#   15-25 Critical
+
+modules:
+  # ── Scoring (Python: bolao/scoring.py; JS: web/src/scoring.js) ──
+  - name: Scoring (Python+JS)
+    probability: 5 # Changed every release, two drift bugs already found
+    impact: 4 # Wrong scores displayed to all users, ranking incorrect
+    risk_score: 20 # CRITICAL
+    priority: P0
+    failure_classes:
+      - Python↔JS scoring drift (BUG-2026-06-30-150000, BUG-2026-07-04-170000)
+      - Phase table mismatch (group vs knockout Fibonacci)
+    bugs:
+      - BUG-2026-06-30-150000-web-scoring-not-phase-aware
+      - BUG-2026-07-04-170000-knockout-exact-bets-mislabeled
+    tests:
+      - web/tests/scoring.test.js
+    gap: "No Python scoring tests. No shared golden fixture. e06-s02 fixes this."
+    mitigation: "Shared golden fixture (e06-s02) + governance gate (e06-s05)"
+
+  # ── Fixture parsing (bolao/fixtures.py) ──
+  - name: Fixture parsing
+    probability: 4 # Two recurrences of the same bug class
+    impact: 4 # Wrong final scores shown, incorrect ranking
+    risk_score: 16 # CRITICAL
+    priority: P0
+    failure_classes:
+      - ET/penalty score field misselection (BUG-2026-06-30-140000, recurred as BUG-2026-07-03-191600)
+      - API status string drift
+    bugs:
+      - BUG-2026-06-30-140000-wrong-score-after-pen
+      - BUG-2026-07-03-191600-wrong-score-after-pen-recurrence
+    tests:
+      - tests/test_fixtures.py (TestParseResultFieldSelection)
+    gap: >
+      Parse result cases are split across inline code + test data. No single
+      golden fixture. e06-s04 fixes this.
+    mitigation: "Golden fixture for all status variants (e06-s04)"
+
+  # ── BigBase data layer (bolao/bigbase.py) ──
+  - name: BigBase data layer
+    probability: 3 # Stable but large interface surface
+    impact: 3 # Data loss/corruption affects all users
+    risk_score: 9 # HIGH
+    priority: P1
+    failure_classes:
+      - Participant dedup bugs (BUG-2026-06-20-100000)
+      - Login/auth refresh timing
+    bugs:
+      - BUG-2026-06-20-100000-duplicate-participants
+      - BUG-2026-06-20-200300-bigbase-dead-interface-surface
+    tests:
+      - tests/test_participantes.py
+      - tests/test_bot.py (mock-level)
+    gap: "No integration tests against real BigBase API"
+    mitigation: "Add integration test suite (out of scope for e06)"
+
+  # ── Ranking (bolao/ranking.py) ──
+  - name: Ranking
+    probability: 2 # Stable logic, rarely changed
+    impact: 4 # Published to group daily, public visibility
+    risk_score: 8 # HIGH
+    priority: P1
+    failure_classes:
+      - Inactive participant inclusion
+      - Formatted output alignment
+    bugs:
+      - BUG-2026-06-21-124200-ranking-format-regression
+    tests:
+      - tests/test_ranking.py
+    gap: "No golden fixture for ranking outputs"
+    mitigation: "Add ranking snapshot test (future)"
+
+  # ── Telegram bot handlers (bolao/handlers.py) ──
+  - name: Bot handlers
+    probability: 2 # Moderate change frequency, well-tested patterns
+    impact: 3 # Bot unresponsive or wrong replies visible to group
+    risk_score: 6 # MEDIUM
+    priority: P1
+    failure_classes:
+      - Zombie poller (409 Conflict, BUG-2026-06-21-104800)
+      - Module bloat / God object risk
+    bugs:
+      - BUG-2026-06-21-104800-stale-ranking-zombie-poller
+      - BUG-2026-06-20-200000-handlers-god-module
+    tests:
+      - tests/test_quiet_hours.py
+      - tests/test_bot.py
+    gap: "No handler-level integration tests with real Telegram API"
+    mitigation: "Accept (handlers testable through unit tests on sub-modules)"
+
+  # ── Results provider (bolao/results.py) ──
+  - name: Results sync
+    probability: 2 # Stable provider, API changes are handled
+    impact: 2 # Results delayed, manual override available
+    risk_score: 4 # MEDIUM
+    priority: P2
+    failure_classes:
+      - API name change (mismatch in team name dictionary)
+    bugs:
+      - BUG-2026-06-19-180800-sync-misconfiguration
+    tests:
+      - tests/test_results.py
+    gap: "No integration test against live API"
+    mitigation: "Mock-based coverage sufficient (e02-s04 already covered)"
+
+  # ── Bot betting flow (bolao/betting_flow.py) ──
+  - name: Betting state machine
+    probability: 1 # Very stable, extensive test coverage
+    impact: 3 # Users can't place bets
+    risk_score: 3 # LOW
+    priority: P2
+    failure_classes: []
+    bugs: []
+    tests:
+      - tests/test_betting_flow.py (36 tests, most comprehensive in suite)
+    gap: "None — best-covered module in the project"
+    mitigation: "Maintain current coverage"
+
+  # ── Web UI (Vue components) ──
+  - name: Web UI / Vue components
+    probability: 2 # Moderate; UI bugs are visible but limited
+    impact: 2 # Aesthetic / data display, no data loss
+    risk_score: 4 # MEDIUM
+    priority: P2
+    failure_classes:
+      - Missing country flags (BUG-2026-06-20-143237)
+      - Navigation issues (BUG-2026-06-19-183500)
+    bugs:
+      - BUG-2026-06-20-143237-missing-country-flags
+      - BUG-2026-06-19-183500-nav-buttons
+    tests:
+      - web/tests/flags.test.js
+      - web/tests/transport.test.js
+      - web/tests/queries.test.js
+    gap: "No component-level tests (Vue Test Utils); manual verification only"
+    mitigation: "Accept — UI components change frequently, low risk"
+
+  # ── Deploy/CI (scripts/, .github/) ──
+  - name: Deploy & CI
+    probability: 1 # Rarely changed, scripted
+    impact: 5 # Site goes down completely
+    risk_score: 5 # MEDIUM
+    priority: P2
+    failure_classes:
+      - Deploy to wrong site (known issue with MCP deploy_site)
+    bugs:
+      - BUG-2026-06-19-190000-deploy-fail
+    tests:
+      - .github/workflows/ci-cd.yml (workflow definition)
+    gap: "No local CI dry-run capability"
+    mitigation: "Accept — deploy follows defined pipeline with health check"

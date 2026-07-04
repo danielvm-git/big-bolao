@@ -1,0 +1,167 @@
+id: e06
+slug: test-strategy
+title: "Test Strategy & Architecture Overhaul (TEA-style)"
+status: planned
+bcp: 7.5
+wsjf: 6.8
+wsjf_rationale: "BV=8 prevents recurring production bugs + TC=5 active recurrence risk + RR=8 targets proven failure class / JS=3 ~1 week across 6 stories"
+
+description: >
+  Implements specs/REFACTOR_LATEST.md. Two failure classes have each caused
+  more than one production bug: Python↔JS scoring drift (BUG-2026-06-30-150000,
+  BUG-2026-07-04-170000) and penalty/ET score parsing (BUG-2026-06-30-140000,
+  recurred as BUG-2026-07-03-191600). This epic makes both classes structurally
+  impossible to reintroduce silently via a shared golden fixture (single source
+  of truth consumed by both test suites), a risk-based test strategy doc set,
+  and file-based CI governance gates that fail the build when a bug ships
+  without a registered regression test.
+
+  Source plan: specs/REFACTOR_LATEST.md (21 commits across 6 phases A–F).
+
+stories:
+  - id: e06-s01
+    title: "Test-strategy foundation — risk register + traceability matrix"
+    description: >
+      Create specs/test-strategy/ with README (how to run every suite),
+      risk-register.yaml (probability × impact score per module, P0/P1/P2),
+      and traceability.md (requirement/bug → guarding test, GAP where none
+      exists). Docs only, no behavior change. Corresponds to REFACTOR_LATEST.md
+      Phase A (commits 1-3).
+    verify: |
+      test -f specs/test-strategy/README.md && \
+      python3 -c "import yaml;yaml.safe_load(open('specs/test-strategy/risk-register.yaml'))" && \
+      test -f specs/test-strategy/traceability.md
+    bcp: 1
+    wsjf: 4.5
+    wsjf_rationale: "BV=3 groundwork only + TC=3 flexible + RR=3 low direct risk reduction / JS=2 1 day"
+    depends: []
+    tasks:
+      - id: e06-s01-t01
+        title: "Create specs/test-strategy/ directory and README.md"
+        description: >
+          Create specs/test-strategy/ directory. Write README.md documenting
+          every test suite in the project: how to run it, what it covers, and
+          any special setup required. Include sections for Python tests (pytest),
+          web tests (node --test), and CI suite.
+        acceptance:
+          - "specs/test-strategy/README.md exists and documents all test suites"
+          - "README references the golden fixture files and governance scripts"
+
+      - id: e06-s01-t02
+        title: "Create risk-register.yaml"
+        description: >
+          Write specs/test-strategy/risk-register.yaml as a structured YAML file
+          listing each module (bolao/scoring, bolao/fixtures, bolao/ranking,
+          bolao/bigbase, web/src/scoring.js, etc.) with probability × impact
+          scores, P0/P1/P2 priority, and notes on known failure modes. Draw
+          from BUG-*.md files and the REFACTOR_LATEST.md plan.
+        acceptance:
+          - "risk-register.yaml is valid YAML"
+          - "Covers scoring, fixtures, ranking, bigbase, and web scoring modules"
+          - "Assigns P0/P1/P2 priorities based on bug history"
+
+      - id: e06-s01-t03
+        title: "Create traceability.md"
+        description: >
+          Write specs/test-strategy/traceability.md mapping each known bug
+          (specs/bugs/BUG-*.md) and each requirement to its guarding test.
+          Mark GAP where no test exists. Reference the epic.yaml stories for
+          planned coverage.
+        acceptance:
+          - "traceability.md lists all bug files and their test coverage"
+          - "GAP entries are marked for stories e06-s02 through e06-05"
+          - "Traceability includes Python and web test suites"
+
+  - id: e06-s02
+    title: "Shared scoring golden fixture — Python↔JS parity, enforced"
+    description: >
+      Add specs/test-strategy/scoring-golden.json (group + R32/R16/QF/SF/3P/FIN,
+      exact/winner/miss cases). Add tests/test_scoring.py (loads fixture, asserts
+      bolao/scoring.py::pontos()). Add web/tests/scoring-golden.test.js (loads
+      THE SAME file, asserts web/src/scoring.js::calcPontos()). Remove now-stale
+      group-only assertions from web/tests/scoring.test.js. This is the core
+      invariant of the whole epic: any Python↔JS drift now fails both suites.
+      Corresponds to REFACTOR_LATEST.md Phase B (commits 4-7).
+    verify: |
+      python3 -c "import json;d=json.load(open('specs/test-strategy/scoring-golden.json'));assert len(d)>=21" && \
+      python -m pytest tests/test_scoring.py -q && \
+      cd web && node --test tests/scoring-golden.test.js
+    bcp: 1.5
+    wsjf: 9.3
+    wsjf_rationale: "BV=10 closes the top recurring failure class + TC=8 active risk + RR=10 eliminates drift structurally / JS=3 2-3 days"
+    depends: [e06-s01]
+
+  - id: e06-s03
+    title: "Fix BUG-2026-07-04-170000 TDD-style using the golden suite"
+    description: >
+      Write a failing golden-derived case asserting a knockout exact bet labels
+      as 'exato' (confirm RED). Extract scoreLabelFor(pa,pb,ra,rb,matchId) as a
+      pure function in web/src/scoring.js (calls calcPontos WITH matchId).
+      Update web/src/store.js::scoreLabel() to delegate, passing jogo.match_id.
+      Rebuild web/dist. Close out the bug file with tests_added. Demonstrates
+      the new strategy fixing a live, still-open defect.
+      Corresponds to REFACTOR_LATEST.md Phase C (commits 8-11).
+    verify: |
+      cd web && node --test tests/*.test.js && npx vite build && \
+      grep -q 'Status.*fixed' ../specs/bugs/BUG-2026-07-04-170000-knockout-exact-bets-mislabeled.md
+    bcp: 1
+    wsjf: 9.0
+    wsjf_rationale: "BV=8 fixes real open bug + TC=5 currently misleading users + RR=5 proves the pattern works / JS=2 1 day"
+    depends: [e06-s02]
+
+  - id: e06-s04
+    title: "Golden fixture for parse_result + poller regression coverage"
+    description: >
+      Add specs/test-strategy/parse-result-golden.json (every ET status, every
+      penalty variant, regular finish, unknown-future status → expected score).
+      Re-source tests/test_fixtures.py::TestParseResultFieldSelection from the
+      golden file (same behavior, traceable to one place). Confirm/add coverage
+      in tests/test_bot.py for the 409-Conflict ERROR-level log and
+      drop_pending_updates=True — the zombie-poller failure class.
+      Corresponds to REFACTOR_LATEST.md Phase D (commits 12-14).
+    verify: |
+      python3 -c "import json;json.load(open('specs/test-strategy/parse-result-golden.json'))" && \
+      python -m pytest tests/test_fixtures.py tests/test_bot.py -q
+    bcp: 1
+    wsjf: 4.3
+    wsjf_rationale: "BV=5 hardens a twice-fixed bug class + TC=3 flexible + RR=5 moderate mitigation / JS=3 2-3 days"
+    depends: [e06-s01]
+
+  - id: e06-s05
+    title: "File-based CI governance gates (bug registry, scoring parity, coverage)"
+    description: >
+      Add scripts/check_test_governance.py (fails if any specs/bugs/BUG-*.md
+      lacks a registry.yaml entry or tests_added — would have caught the 3
+      currently-unregistered bugs). Backfill the 3 missing registry entries.
+      Add scripts/check_scoring_tables.py (structural belt-and-suspenders:
+      parses FASE_PONTOS from both languages, asserts equality). Add P0-scoped
+      coverage gate (bolao/scoring, bolao/fixtures, bolao/ranking @ 90%+, not
+      whole-repo). Wire all of it plus `cd web && npm test` into
+      .github/workflows/ci-cd.yml before the deploy step. Add
+      specs/test-strategy/quality-gate.md (Definition-of-Done + gate rubric).
+      File-based per bigpowers conventions — no gh issue create, no direct
+      GitHub REST calls. Corresponds to REFACTOR_LATEST.md Phase E (commits 15-20).
+    verify: |
+      python3 scripts/check_test_governance.py && \
+      python3 scripts/check_scoring_tables.py && \
+      python -m pytest --cov=bolao/scoring --cov=bolao/fixtures --cov=bolao/ranking --cov-fail-under=90 -q && \
+      python3 -c "import yaml;yaml.safe_load(open('.github/workflows/ci-cd.yml'))"
+    bcp: 1.5
+    wsjf: 7.0
+    wsjf_rationale: "BV=8 makes governance enforced not aspirational + TC=5 stops future silent gaps + RR=8 catches the exact registry-drift already found / JS=3 2-3 days"
+    depends: [e06-s02, e06-s04]
+
+  - id: e06-s06
+    title: "Documentation reconciliation — CLAUDE.md test section"
+    description: >
+      Update CLAUDE.md's test-file inventory (11 Python files + web suites,
+      currently stale at 9), reference specs/test-strategy/, and document the
+      golden-fixture invariant plus the new governance gates so future sessions
+      discover this strategy without re-deriving it.
+      Corresponds to REFACTOR_LATEST.md Phase F (commit 21).
+    verify: |
+      grep -q 'test-strategy' CLAUDE.md
+    bcp: 0.5
+    wsjf: 5.0
+    wsjf_rationale: "BV=3 discoverability only + TC=1 no urgency + RR=1 no direct risk reduction / JS=1 hours"
+    depends: [e06-s05]

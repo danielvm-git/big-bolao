@@ -45,6 +45,14 @@ epics:
     status: done
     wsjf: 9.0
 
+  - id: e06
+    slug: test-strategy
+    title: "Test Strategy & Architecture Overhaul (TEA-style)"
+    bcp: 7.5
+    priority: 1
+    status: in_progress
+    wsjf: 6.8
+
 stories:
   # ── e05 — Quiet Hours (TOP PRIORITY) ───────────────────────────
   - id: e05-s01
@@ -296,3 +304,40 @@ stories:
     bcp: 0.5
     depends: [e04-s06]
     status: done
+
+  # ── e06 — Test Strategy & Architecture Overhaul ────────────────
+  - id: e06-s01
+    title: "Test-strategy foundation — risk register + traceability matrix"
+    bcp: 1
+    depends: []
+    status: pending
+
+  - id: e06-s02
+    title: "Shared scoring golden fixture — Python↔JS parity, enforced"
+    bcp: 1.5
+    depends: [e06-s01]
+    status: pending
+
+  - id: e06-s03
+    title: "Fix BUG-2026-07-04-170000 TDD-style using the golden suite"
+    bcp: 1
+    depends: [e06-s02]
+    status: pending
+
+  - id: e06-s04
+    title: "Golden fixture for parse_result + poller regression coverage"
+    bcp: 1
+    depends: [e06-s01]
+    status: pending
+
+  - id: e06-s05
+    title: "File-based CI governance gates (bug registry, scoring parity, coverage)"
+    bcp: 1.5
+    depends: [e06-s02, e06-s04]
+    status: pending
+
+  - id: e06-s06
+    title: "Documentation reconciliation — CLAUDE.md test section"
+    bcp: 0.5
+    depends: [e06-s05]
+    status: pending

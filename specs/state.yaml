@@ -1,22 +1,20 @@
 # Orchestrate state
 phase: build
-active_flow: fix_bug
-active_epic_id: e05-quiet-hours
-last_step_completed: investigate-bug
-next_skill: develop-tdd
+active_flow: build_epic
+active_epic_id: e06-test-strategy
+last_step_completed: none
+next_skill: build-epic
 
-bug_cycle:
-  bug_id: BUG-2026-06-30-140000
-  bug_file: specs/bugs/BUG-2026-06-30-140000-wrong-score-after-pen.md
-  current_step: 3
-  completed_steps: [1, 2]
+bug_cycle: {} # cleared — switching to build_epic for e06
 
 epic_cycle:
-  epic: e02-api-integration
-  step: 0
-  story: pending
-  story_bcps: 0
-  next_story: e02-s03
+  epic: e06-test-strategy
+  step: 5
+  story: e06-s01
+  story_bcps: 1
+  next_story: e06-s01
+  fast_mode: true
+audit_result: pending
 
 completed_epics:
   - id: e01
@@ -47,6 +45,11 @@ pending_epics:
     bcps: 2
     status: partial (2/6 stories done)
     next_story: e02-s03 "BigBase.ensure_setup — upsert from API"
+  - id: e06
+    title: "Test Strategy & Architecture Overhaul (TEA-style)"
+    bcps: 7.5
+    status: in_progress
+    next_story: e06-s01 "Test-strategy foundation"
 
 environment:
   node: v24.15.0
