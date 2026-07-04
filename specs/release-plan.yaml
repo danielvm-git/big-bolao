@@ -317,7 +317,8 @@ stories:
     title: "Shared scoring golden fixture — Python↔JS parity, enforced"
     bcp: 1.5
     depends: [e06-s01]
-    status: pending
+    status: done
+    notes: "scoring-golden.json (24 cases), test_scoring.py, scoring-golden.test.js"
 
   - id: e06-s03
     title: "Fix BUG-2026-07-04-170000 TDD-style using the golden suite"

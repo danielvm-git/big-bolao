@@ -10,9 +10,9 @@ bug_cycle: {} # cleared — switching to build_epic for e06
 epic_cycle:
   epic: e06-test-strategy
   step: 7
-  story: e06-s02
-  story_bcps: 1.5
-  next_story: e06-s02
+  story: e06-s03
+  story_bcps: 0
+  next_story: e06-s03
   fast_mode: true
 audit_result: pending
 
@@ -49,7 +49,7 @@ pending_epics:
     title: "Test Strategy & Architecture Overhaul (TEA-style)"
     bcps: 7.5
     status: partial (1/6 stories done)
-    next_story: e06-s02 "Shared scoring golden fixture"
+    next_story: e06-s03 "Fix BUG-2026-07-04-170000 with golden suite"
 
 environment:
   node: v24.15.0
