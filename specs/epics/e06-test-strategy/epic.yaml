@@ -297,6 +297,82 @@ stories:
     wsjf: 7.0
     wsjf_rationale: "BV=8 makes governance enforced not aspirational + TC=5 stops future silent gaps + RR=8 catches the exact registry-drift already found / JS=3 2-3 days"
     depends: [e06-s02, e06-s04]
+    tasks:
+      - id: e06-s05-t01
+        title: "Create scripts/check_test_governance.py"
+        description: >
+          Write a Python script that scans specs/bugs/BUG-*.md and
+          specs/bugs/registry.yaml. For each bug file on disk, verify the
+          registry has a matching entry with bug_id, file path, status, and
+          tests_added. Exit with non-zero and print details for any bug that
+          is unregistered or missing tests_added. Also check for orphaned
+          registry entries with no corresponding file. Must handle missing
+          registry file gracefully.
+        acceptance:
+          - "Script exits with code 0 when all bugs registered"
+          - "Script exits with non-zero when unregistered bugs found"
+          - "Reports which bugs are missing from registry"
+          - "Can be run with python3 from project root"
+
+      - id: e06-s05-t02
+        title: "Backfill 3 missing registry entries"
+        description: >
+          Add registry entries to specs/bugs/registry.yaml for:
+          BUG-2026-06-21-124200-ranking-format-regression.md,
+          BUG-2026-06-30-150000-web-scoring-not-phase-aware.md,
+          BUG-2026-07-04-170000-knockout-exact-bets-mislabeled.md.
+          Each entry must include bug_id, date, severity, priority, scope,
+          summary, file, status, tests_added, and fix_approach.
+        acceptance:
+          - "Registry has entries for all 19 bug files"
+          - "check_test_governance.py exits 0 after backfill"
+
+      - id: e06-s05-t03
+        title: "Create scripts/check_scoring_tables.py"
+        description: >
+          Write a Python script that parses FASE_PONTOS from:
+          (1) bolao/scoring.py (Python dict literal), and
+          (2) web/src/scoring.js (JS const literal).
+          Parse both into equivalent Python structures and assert they are
+          identical entry-by-entry. Exit with non-zero if any phase has
+          different scoring values between the two languages.
+          Use regex or ast parsing — avoid importing the JS module directly.
+        acceptance:
+          - "Script exits 0 when Python+JS tables match"
+          - "Script detects mismatches and reports diffs"
+          - "Can be run with python3 from project root"
+
+      - id: e06-s05-t04
+        title: "Update CI workflow with governance gates"
+        description: >
+          Add the following steps to .github/workflows/ci-cd.yml before the
+          deploy step:
+          - Governance check: python3 scripts/check_test_governance.py
+          - Scoring table parity: python3 scripts/check_scoring_tables.py
+          - Coverage gate: pytest --cov=bolao/scoring --cov=bolao/fixtures
+            --cov=bolao/ranking --cov-fail-under=90
+          - Web tests: cd web && npm test (node --test)
+          Remove the stale comment "35 tests" in the Python test step
+          description. Ensure all new steps run only on new releases
+          (same if condition as other steps).
+        acceptance:
+          - "CI workflow has 4 new governance steps"
+          - "All steps have proper 'if' conditions"
+          - "Workflow validates as valid YAML"
+
+      - id: e06-s05-t05
+        title: "Create specs/test-strategy/quality-gate.md"
+        description: >
+          Document the Definition-of-Done and gate rubric. Include:
+          - Three gates: bug registry, scoring parity, coverage target
+          - CI/CD pipeline diagram with gate positions
+          - What happens when a gate fails (build fails, must fix before deploy)
+          - How to add a new test case to a golden fixture
+          - How to register a new bug
+        acceptance:
+          - "quality-gate.md exists with gates documented"
+          - "References the CI workflow and governance scripts"
+          - "Includes instructions for adding golden cases"
 
   - id: e06-s06
     title: "Documentation reconciliation — CLAUDE.md test section"
