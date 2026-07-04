@@ -1,0 +1,172 @@
+[
+  {
+    "desc": "ET status 'After ET' uses match_score",
+    "match_status": "After ET",
+    "match_hometeam_score": "2",
+    "match_awayteam_score": "1",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "1",
+    "expected_home": 2,
+    "expected_away": 1
+  },
+  {
+    "desc": "ET status 'AET' uses match_score",
+    "match_status": "AET",
+    "match_hometeam_score": "3",
+    "match_awayteam_score": "2",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "1",
+    "expected_home": 3,
+    "expected_away": 2
+  },
+  {
+    "desc": "ET status 'Finished AET' uses match_score",
+    "match_status": "Finished AET",
+    "match_hometeam_score": "2",
+    "match_awayteam_score": "0",
+    "match_hometeam_ft_score": "0",
+    "match_awayteam_ft_score": "0",
+    "expected_home": 2,
+    "expected_away": 0
+  },
+  {
+    "desc": "Penalty 'After Pen.' uses ft_score",
+    "match_status": "After Pen.",
+    "match_hometeam_score": "5",
+    "match_awayteam_score": "4",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "1",
+    "expected_home": 1,
+    "expected_away": 1
+  },
+  {
+    "desc": "Penalty 'PEN' uses ft_score",
+    "match_status": "PEN",
+    "match_hometeam_score": "4",
+    "match_awayteam_score": "3",
+    "match_hometeam_ft_score": "0",
+    "match_awayteam_ft_score": "0",
+    "expected_home": 0,
+    "expected_away": 0
+  },
+  {
+    "desc": "Penalty 'Finished PEN' uses ft_score",
+    "match_status": "Finished PEN",
+    "match_hometeam_score": "6",
+    "match_awayteam_score": "5",
+    "match_hometeam_ft_score": "2",
+    "match_awayteam_ft_score": "2",
+    "expected_home": 2,
+    "expected_away": 2
+  },
+  {
+    "desc": "Regular 'Finished' uses ft_score",
+    "match_status": "Finished",
+    "match_hometeam_score": "4",
+    "match_awayteam_score": "2",
+    "match_hometeam_ft_score": "2",
+    "match_awayteam_ft_score": "1",
+    "expected_home": 2,
+    "expected_away": 1
+  },
+  {
+    "desc": "Regular 'FT' uses ft_score",
+    "match_status": "FT",
+    "match_hometeam_score": "3",
+    "match_awayteam_score": "0",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "0",
+    "expected_home": 1,
+    "expected_away": 0
+  },
+  {
+    "desc": "Non-finished 'Half Time' uses ft_score (safe fallback)",
+    "match_status": "Half Time",
+    "match_hometeam_score": "2",
+    "match_awayteam_score": "0",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "0",
+    "expected_home": 1,
+    "expected_away": 0
+  },
+  {
+    "desc": "Non-finished 'Not Started' uses ft_score (safe fallback)",
+    "match_status": "Not Started",
+    "match_hometeam_score": "3",
+    "match_awayteam_score": "1",
+    "match_hometeam_ft_score": "0",
+    "match_awayteam_ft_score": "0",
+    "expected_home": 0,
+    "expected_away": 0
+  },
+  {
+    "desc": "Unknown future status uses ft_score (defense against drift)",
+    "match_status": "Some New Status",
+    "match_hometeam_score": "99",
+    "match_awayteam_score": "99",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "1",
+    "expected_home": 1,
+    "expected_away": 1
+  },
+  {
+    "desc": "FT missing falls back to match_score for non-ET",
+    "match_status": "Finished",
+    "match_hometeam_score": "3",
+    "match_awayteam_score": "0",
+    "match_hometeam_ft_score": "",
+    "match_awayteam_ft_score": "",
+    "expected_home": 3,
+    "expected_away": 0
+  },
+  {
+    "desc": "Non-numeric match_score uses ft_score for non-ET",
+    "match_status": "Finished",
+    "match_hometeam_score": "n/a",
+    "match_awayteam_score": "n/a",
+    "match_hometeam_ft_score": "1",
+    "match_awayteam_ft_score": "1",
+    "expected_home": 1,
+    "expected_away": 1
+  },
+  {
+    "desc": "Non-numeric match_score with FT missing returns None",
+    "match_status": "Finished",
+    "match_hometeam_score": "n/a",
+    "match_awayteam_score": "n/a",
+    "match_hometeam_ft_score": "",
+    "match_awayteam_ft_score": "",
+    "expected_home": null,
+    "expected_away": null
+  },
+  {
+    "desc": "Dash score values treated as missing (None result)",
+    "match_status": "Finished",
+    "match_hometeam_score": "-",
+    "match_awayteam_score": "-",
+    "match_hometeam_ft_score": "-",
+    "match_awayteam_ft_score": "-",
+    "expected_home": null,
+    "expected_away": null
+  },
+  {
+    "desc": "ET status with FT missing falls back to match_score",
+    "match_status": "After ET",
+    "match_hometeam_score": "2",
+    "match_awayteam_score": "1",
+    "match_hometeam_ft_score": "",
+    "match_awayteam_ft_score": "",
+    "expected_home": 2,
+    "expected_away": 1
+  },
+  {
+    "desc": "All fields missing returns None",
+    "match_status": "Finished",
+    "match_hometeam_score": "",
+    "match_awayteam_score": "",
+    "match_hometeam_ft_score": "",
+    "match_awayteam_ft_score": "",
+    "expected_home": null,
+    "expected_away": null
+  }
+]

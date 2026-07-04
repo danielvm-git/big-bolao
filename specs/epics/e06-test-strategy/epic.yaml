@@ -224,6 +224,7 @@ stories:
     tasks:
       - id: e06-s04-t01
         title: "Create specs/test-strategy/parse-result-golden.json"
+        status: done
         description: >
           Write a golden fixture JSON file with ≥15 test cases covering all
           parse_result() code paths: ET statuses (After ET, AET, Finished AET
