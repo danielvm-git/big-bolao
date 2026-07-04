@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/danielvm-git/big-bolao/compare/v1.15.0...v1.15.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **web:** knockout exact bets mislabeled as "errou" instead of "exato" ([#1](https://github.com/danielvm-git/big-bolao/issues/1)) ([c9326c1](https://github.com/danielvm-git/big-bolao/commit/c9326c18e7ec6669f0c82368b4c5cca10f6cf44a))
+
 # [1.15.0](https://github.com/danielvm-git/big-bolao/compare/v1.14.4...v1.15.0) (2026-07-03)
 
 
