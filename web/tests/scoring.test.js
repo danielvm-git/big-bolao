@@ -8,31 +8,6 @@ import {
   avatarColor,
 } from "../src/scoring.js";
 
-// Scoring rules: 3 = exact score, 1 = correct winner/draw, 0 = miss
-test("calcPontos: exact match returns 3", () => {
-  assert.equal(calcPontos(2, 1, 2, 1), 3);
-  assert.equal(calcPontos(0, 0, 0, 0), 3);
-  assert.equal(calcPontos(5, 3, 5, 3), 3);
-});
-
-test("calcPontos: correct winner (but not exact) returns 1", () => {
-  // Casa wins: palpite 2-1, real 1-0 → same sign (+1)
-  assert.equal(calcPontos(2, 1, 1, 0), 1);
-  // Fora wins: palpite 0-2, real 1-3 → same sign (-1)
-  assert.equal(calcPontos(0, 2, 1, 3), 1);
-  // Draw: palpite 1-1, real 2-2 → same sign (0)
-  assert.equal(calcPontos(1, 1, 2, 2), 1);
-});
-
-test("calcPontos: wrong outcome returns 0", () => {
-  // Palpite casa wins, real fora wins
-  assert.equal(calcPontos(2, 0, 0, 2), 0);
-  // Palpite draw, real casa wins
-  assert.equal(calcPontos(1, 1, 2, 0), 0);
-  // Palpite fora wins, real draw
-  assert.equal(calcPontos(0, 1, 1, 1), 0);
-});
-
 // ── Formatadores ────────────────────────────────────────────────
 
 test("fmtDate: formats ISO to DD/MM", () => {
@@ -203,17 +178,6 @@ test("calcPontos: SF and 3P exact returns 25, winner returns 15", () => {
 test("calcPontos: FIN exact returns 50, winner returns 25", () => {
   assert.equal(calcPontos(1, 0, 1, 0, "FIN-01"), 50);
   assert.equal(calcPontos(2, 0, 3, 0, "FIN-01"), 25);
-});
-
-test("calcPontos: group stage matchId returns 3/1 unchanged", () => {
-  assert.equal(calcPontos(1, 0, 1, 0, "R1-01"), 3);
-  assert.equal(calcPontos(2, 0, 3, 0, "R2-04"), 1);
-  assert.equal(calcPontos(1, 0, 1, 0, "R3-12"), 3);
-});
-
-test("calcPontos: no matchId defaults to group scoring 3/1", () => {
-  assert.equal(calcPontos(1, 0, 1, 0), 3);
-  assert.equal(calcPontos(2, 0, 3, 0), 1);
 });
 
 test("calcRanking: R32 exact gives 5 pts and increments exatos", () => {

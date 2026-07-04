@@ -1,0 +1,218 @@
+[
+  {
+    "desc": "group exact",
+    "pa": 2,
+    "pb": 1,
+    "ra": 2,
+    "rb": 1,
+    "match_id": "R1-01",
+    "expected": 3
+  },
+  {
+    "desc": "group winner home",
+    "pa": 2,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "R1-02",
+    "expected": 1
+  },
+  {
+    "desc": "group winner away",
+    "pa": 0,
+    "pb": 2,
+    "ra": 1,
+    "rb": 3,
+    "match_id": "R1-03",
+    "expected": 1
+  },
+  {
+    "desc": "group draw winner",
+    "pa": 1,
+    "pb": 1,
+    "ra": 2,
+    "rb": 2,
+    "match_id": "R2-01",
+    "expected": 1
+  },
+  {
+    "desc": "group miss outcome",
+    "pa": 2,
+    "pb": 0,
+    "ra": 0,
+    "rb": 2,
+    "match_id": "R2-02",
+    "expected": 0
+  },
+  {
+    "desc": "group exact draw",
+    "pa": 0,
+    "pb": 0,
+    "ra": 0,
+    "rb": 0,
+    "match_id": "R3-01",
+    "expected": 3
+  },
+  {
+    "desc": "group exact large",
+    "pa": 7,
+    "pb": 1,
+    "ra": 7,
+    "rb": 1,
+    "match_id": "R3-12",
+    "expected": 3
+  },
+  {
+    "desc": "R32 exact",
+    "pa": 2,
+    "pb": 1,
+    "ra": 2,
+    "rb": 1,
+    "match_id": "R32-03",
+    "expected": 5
+  },
+  {
+    "desc": "R32 winner",
+    "pa": 2,
+    "pb": 0,
+    "ra": 3,
+    "rb": 0,
+    "match_id": "R32-03",
+    "expected": 2
+  },
+  {
+    "desc": "R32 miss",
+    "pa": 2,
+    "pb": 0,
+    "ra": 0,
+    "rb": 1,
+    "match_id": "R32-03",
+    "expected": 0
+  },
+  {
+    "desc": "R16 exact",
+    "pa": 1,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "R16-01",
+    "expected": 10
+  },
+  {
+    "desc": "R16 winner",
+    "pa": 2,
+    "pb": 0,
+    "ra": 3,
+    "rb": 0,
+    "match_id": "R16-01",
+    "expected": 5
+  },
+  {
+    "desc": "QF exact",
+    "pa": 1,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "QF-01",
+    "expected": 15
+  },
+  {
+    "desc": "QF winner",
+    "pa": 2,
+    "pb": 0,
+    "ra": 3,
+    "rb": 0,
+    "match_id": "QF-01",
+    "expected": 10
+  },
+  {
+    "desc": "SF exact",
+    "pa": 1,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "SF-01",
+    "expected": 25
+  },
+  {
+    "desc": "SF winner",
+    "pa": 2,
+    "pb": 0,
+    "ra": 3,
+    "rb": 0,
+    "match_id": "SF-01",
+    "expected": 15
+  },
+  {
+    "desc": "3P exact",
+    "pa": 1,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "3P-01",
+    "expected": 25
+  },
+  {
+    "desc": "3P winner",
+    "pa": 2,
+    "pb": 0,
+    "ra": 3,
+    "rb": 0,
+    "match_id": "3P-01",
+    "expected": 15
+  },
+  {
+    "desc": "FIN exact",
+    "pa": 1,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "FIN-01",
+    "expected": 50
+  },
+  {
+    "desc": "FIN winner",
+    "pa": 3,
+    "pb": 1,
+    "ra": 2,
+    "rb": 0,
+    "match_id": "FIN-01",
+    "expected": 25
+  },
+  {
+    "desc": "no match_id defaults to group exact",
+    "pa": 1,
+    "pb": 0,
+    "ra": 1,
+    "rb": 0,
+    "match_id": "",
+    "expected": 3
+  },
+  {
+    "desc": "no match_id defaults to group winner",
+    "pa": 2,
+    "pb": 0,
+    "ra": 3,
+    "rb": 0,
+    "match_id": "",
+    "expected": 1
+  },
+  {
+    "desc": "R32 exact draw",
+    "pa": 2,
+    "pb": 2,
+    "ra": 2,
+    "rb": 2,
+    "match_id": "R32-01",
+    "expected": 5
+  },
+  {
+    "desc": "R32 draw winner",
+    "pa": 2,
+    "pb": 2,
+    "ra": 1,
+    "rb": 1,
+    "match_id": "R32-01",
+    "expected": 2
+  }
+]
