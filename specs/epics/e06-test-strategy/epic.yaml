@@ -154,6 +154,51 @@ stories:
     wsjf: 9.0
     wsjf_rationale: "BV=8 fixes real open bug + TC=5 currently misleading users + RR=5 proves the pattern works / JS=2 1 day"
     depends: [e06-s02]
+    tasks:
+      - id: e06-s03-t01
+        title: "Add expected_label to golden fixture + JS test"
+        description: >
+          Add expected_label field to each case in scoring-golden.json ('exato',
+          'vencedor', 'errou'). Add test in scoring-golden.test.js that calls
+          scoreLabelFor() and asserts match. Knockout exact cases should fail
+          before the fix (RED) — they currently label as 'errou'.
+        acceptance:
+          - "Golden fixture has expected_label on all 24 cases"
+          - "Knockout exact cases fail before fix (RED)"
+          - "Group exact cases pass before fix"
+
+      - id: e06-s03-t02
+        title: "Extract scoreLabelFor() as pure function in web/src/scoring.js"
+        description: >
+          Add scoreLabelFor(pa, pb, ra, rb, matchId) that calls calcPontos(pa,pb,ra,rb,matchId)
+          and returns 'exato' / 'vencedor' / 'errou' based on the result using
+          phase-aware scoring thresholds.
+        acceptance:
+          - "scoreLabelFor is a named export from scoring.js"
+          - "Returns correct labels for all golden fixture cases"
+          - "Pure function — no side effects, no I/O"
+
+      - id: e06-s03-t03
+        title: "Update store.js::scoreLabel() to delegate with matchId"
+        description: >
+          Update scoreLabel in store.js to call scoreLabelFor() passing
+          jogo.match_id as the fifth argument, instead of calling calcPontos
+          directly without matchId.
+        acceptance:
+          - "store.js imports and uses scoreLabelFor"
+          - "jogo.match_id is passed as the 5th argument"
+          - "All web tests pass"
+
+      - id: e06-s03-t04
+        title: "Rebuild web/dist and close bug file"
+        description: >
+          Run npx vite build in web/ to update dist/. Update the bug file
+          BUG-2026-07-04-170000-knockout-exact-bets-mislabeled.md: set Status
+          to 'fixed', add tests_added section referencing scoring-golden.json.
+        acceptance:
+          - "web/dist/ is rebuilt"
+          - "Bug file Status is 'fixed'"
+          - "Bug file has tests_added section"
 
   - id: e06-s04
     title: "Golden fixture for parse_result + poller regression coverage"
