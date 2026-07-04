@@ -3,7 +3,7 @@ slug: test-strategy
 title: "Test Strategy & Architecture Overhaul (TEA-style)"
 status: in-progress
 bcp: 7.5
-bcps_delivered: 3.5
+bcps_delivered: 4.5
 wsjf: 6.8
 wsjf_rationale: "BV=8 prevents recurring production bugs + TC=5 active recurrence risk + RR=8 targets proven failure class / JS=3 ~1 week across 6 stories"
 
@@ -205,7 +205,8 @@ stories:
 
   - id: e06-s04
     title: "Golden fixture for parse_result + poller regression coverage"
-    status: planned
+    status: done
+    date: "2026-07-04"
     description: >
       Add specs/test-strategy/parse-result-golden.json (every ET status, every
       penalty variant, regular finish, unknown-future status → expected score).
@@ -274,6 +275,7 @@ stories:
 
   - id: e06-s05
     title: "File-based CI governance gates (bug registry, scoring parity, coverage)"
+    status: planned
     description: >
       Add scripts/check_test_governance.py (fails if any specs/bugs/BUG-*.md
       lacks a registry.yaml entry or tests_added — would have caught the 3
