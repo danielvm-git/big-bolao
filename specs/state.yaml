@@ -9,11 +9,15 @@ bug_cycle: {} # cleared — switching to build_epic for e06
 
 epic_cycle:
   epic: e06-test-strategy
-  step: 3
-  story: e06-s03
-  story_bcps: 1
+  step: 0
+  story: e06-s04
+  story_bcps: 0
   next_story: e06-s03
   fast_mode: true
+  done_stories:
+    - e06-s01
+    - e06-s02
+    - e06-s03
 audit_result: pending
 
 completed_epics:
@@ -48,8 +52,9 @@ pending_epics:
   - id: e06
     title: "Test Strategy & Architecture Overhaul (TEA-style)"
     bcps: 7.5
-    status: partial (1/6 stories done)
-    next_story: e06-s03 "Fix BUG-2026-07-04-170000 with golden suite"
+    bcps_delivered: 3.5
+    status: partial (3/6 stories done)
+    next_story: e06-s04 "Golden fixture for parse_result + poller regression coverage"
 
 environment:
   node: v24.15.0

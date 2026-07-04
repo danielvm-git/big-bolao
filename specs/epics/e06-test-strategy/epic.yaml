@@ -1,8 +1,9 @@
 id: e06
 slug: test-strategy
 title: "Test Strategy & Architecture Overhaul (TEA-style)"
-status: planned
+status: in-progress
 bcp: 7.5
+bcps_delivered: 3.5
 wsjf: 6.8
 wsjf_rationale: "BV=8 prevents recurring production bugs + TC=5 active recurrence risk + RR=8 targets proven failure class / JS=3 ~1 week across 6 stories"
 
@@ -139,6 +140,8 @@ stories:
 
   - id: e06-s03
     title: "Fix BUG-2026-07-04-170000 TDD-style using the golden suite"
+    status: done
+    date: "2026-07-04"
     description: >
       Write a failing golden-derived case asserting a knockout exact bet labels
       as 'exato' (confirm RED). Extract scoreLabelFor(pa,pb,ra,rb,matchId) as a
@@ -202,6 +205,7 @@ stories:
 
   - id: e06-s04
     title: "Golden fixture for parse_result + poller regression coverage"
+    status: planned
     description: >
       Add specs/test-strategy/parse-result-golden.json (every ET status, every
       penalty variant, regular finish, unknown-future status → expected score).
