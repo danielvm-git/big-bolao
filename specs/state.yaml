@@ -1,27 +1,13 @@
 # Orchestrate state
-phase: build
-active_flow: build_epic
-active_epic_id: e06-test-strategy
-last_step_completed: none
-next_skill: build-epic
+phase: sustain
+active_flow: null
+active_epic_id: null
+last_step_completed: release-branch
+next_skill: survey-context
 
-bug_cycle: {} # cleared — switching to build_epic for e06
+bug_cycle: {}
 
-epic_cycle:
-  epic: e06-test-strategy
-  step: 8
-  story: e06-s06
-  story_bcps: 0.5
-  next_story: null
-  fast_mode: true
-  done_stories:
-    - e06-s01
-    - e06-s02
-    - e06-s03
-    - e06-s04
-    - e06-s05
-    - e06-s06
-  audit_result: done
+epic_cycle: {}
 
 completed_epics:
   - id: e06
@@ -80,11 +66,13 @@ handoff:
   current_phase: sustain
   next_skill: survey-context
   notes: >
-    Epic e06 (Test Strategy & Architecture Overhaul) is COMPLETE. All 6 stories delivered
-    (7.5 BCPS): test-strategy foundation, golden fixtures, knockout label fix, parse-result
-    golden fixture, CI governance gates, and CLAUDE.md reconciliation. 160 Python tests,
-    88 web tests, 3 governance gates (G1/G2/G3) pass in CI. Next: e02-s03 (BigBase.ensure_setup
-    — upsert from API) or new work. Clean up stale branch: 'git branch -D e06-s06-doc-reconciliation'.
+    Epic e06 (Test Strategy & Architecture Overhaul) is COMPLETE and ARCHIVED.
+    All 6 stories delivered (7.5 BCPS): test-strategy foundation, golden fixtures,
+    knockout label fix, parse-result golden fixture, CI governance gates, and
+    CLAUDE.md reconciliation. 160 Python tests, 88 web tests, 3 governance gates
+    (G1/G2/G3) pass in CI. Capsule archived to specs/epics/archive/e06-test-strategy/.
+    Stale local branches cleaned up. Next: e02-s03 (BigBase.ensure_setup — upsert
+    from API) or e07 (handlers-deepening, planned).
 
 git:
   branch: main
@@ -92,12 +80,22 @@ git:
 
 release:
   branch: main
-  hash: d5e59ca
+  hash: a195b92
   mode: team-pr
   ci_verified: true
+  committed_unstaged: false
+  capsule_archived: true
+  stale_branches_removed:
+    - e06-s03-fix-knockout-label
+    - e06-s04-parse-result-golden
+    - e06-s05-ci-governance
+    - e06-s06-doc-reconciliation
   commits:
-    - 64b13d6 ci(ci): add governance gates for bug registry, scoring parity, and coverage (#3)
-    - 2351a6d docs(claude): update test inventory, strategy, and governance documentation (#4)
+    - a195b92 chore(state): mark e06 epic complete, all 6 stories delivered
+    - 0c013d2 docs(claude): update test inventory, strategy, and governance documentation (#4)
+    - d5e59ca chore(state): advance e06-s05 to done, point to e06-s06
+    - b96ba13 ci(ci): add governance gates for bug registry, scoring parity, and coverage (#3)
+    - 8e6f60c chore(e06): add tasks for e06-s05 (CI governance gates)
 
 metrics:
   - id: story_start

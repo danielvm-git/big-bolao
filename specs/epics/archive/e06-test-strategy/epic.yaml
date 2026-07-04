@@ -376,6 +376,7 @@ stories:
 
   - id: e06-s06
     title: "Documentation reconciliation — CLAUDE.md test section"
+    status: in-progress
     description: >
       Update CLAUDE.md's test-file inventory (11 Python files + web suites,
       currently stale at 9), reference specs/test-strategy/, and document the
@@ -388,3 +389,20 @@ stories:
     wsjf: 5.0
     wsjf_rationale: "BV=3 discoverability only + TC=1 no urgency + RR=1 no direct risk reduction / JS=1 hours"
     depends: [e06-s05]
+    tasks:
+      - id: e06-s06-t01
+        title: "Update CLAUDE.md test inventory and add test-strategy section"
+        description: >
+          Replace the minimal "Tests" section with a comprehensive one:
+          - Update test file inventory (9→11 Python files + web suites)
+          - Add web test commands (node --test)
+          - Add coverage commands (pytest --cov)
+          - Reference specs/test-strategy/ directory
+          - Document golden fixture invariant (scoring-golden.json, parse-result-golden.json)
+          - Document governance gates (G1 bug registry, G2 scoring parity, G3 coverage)
+          - Add governance gate verification commands
+          - Update scripts/ listing with check_*.py files
+          - Update Architecture test/ listing with test_scoring.py, test_bot.py
+        verify: |
+          grep -q 'test-strategy' CLAUDE.md && grep -q 'scoring-golden' CLAUDE.md
+        bcp: 0.5

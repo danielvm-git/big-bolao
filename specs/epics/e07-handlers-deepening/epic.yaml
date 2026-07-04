@@ -1,0 +1,114 @@
+id: e07
+slug: handlers-deepening
+title: "handlers.py Deepening — GroupAnnouncer + ResultsPublisher + jobs.py"
+status: planned
+bcp: 5.0
+wsjf: 5.5
+wsjf_rationale: "BV=5 testability of quiet-hours path + TC=3 flexible + RR=8 unblocks e06 coverage of untestable module / JS=3 2-3 days"
+
+description: >
+  Deepen the shallowest module in the codebase (handlers.py, Module Depth 2/5,
+  8-9 interleaved concerns). Source: deepen-architecture session 2026-07-04,
+  candidate #1. The group-publication path is untestable and its quiet-hours
+  defer policy is duplicated byte-for-byte across _publicar_resultado and
+  _publicar_ranking; the raw send_message(GRUPO_CHAT_ID, ...) appears in 4 sites,
+  each reaching into context.bot + context.bot_data + module-level
+  is_quiet_hours() at once.
+
+  Extracts three modules:
+    - GroupAnnouncer (deep I/O seam): owns official-group channel + pending_results
+      quiet-hours queue. Interface announce(text, *, force=False) / flush().
+      Injects should_defer predicate (testable clock) and wraps bot_data's queue.
+    - ResultsPublisher (controller): the "results arrived" flow —
+      publish_result / publish_ranking / sync — replacing inline _sync_resultados.
+    - jobs.py: the four job_* wrappers relocated next to bot.py registration.
+
+  HARD-GATE INVARIANT (must survive byte-for-byte): a publication defers to the
+  morning-flush queue IFF is_quiet_hours() and not manually triggered; manual
+  (/sync, /resultado) and lembrete always send immediately; flush drains FIFO
+  with a 2s gap between messages.
+
+  SEQUENCING: land e06-s02 (scoring golden fixture) first — the parity safety net
+  must exist before editing modules adjacent to scoring.
+
+depends_on: [e06-s02]
+
+stories:
+  - id: e07-s01
+    title: "Extract GroupAnnouncer — deep group-channel + quiet-hours seam"
+    description: >
+      Create bolao/group_channel.py with GroupAnnouncer(bot, chat_id, queue,
+      should_defer). announce(text, *, force=False): noop if no chat_id; enqueue
+      {"texto","parse_mode"} if not force and should_defer(); else send_message
+      with ParseMode.HTML. flush(): drain FIFO with 2s gap between (not after
+      last), then clear. Add announcer_from(context) factory wiring context.bot,
+      config.GRUPO_CHAT_ID, bot_data.setdefault("pending_results",[]),
+      is_quiet_hours. No caller changes yet — module lands with its own tests.
+    verify: |
+      python -m pytest tests/test_group_channel.py -q
+    bcp: 1
+    wsjf: 7.0
+    wsjf_rationale: "BV=5 makes quiet-hours testable + TC=3 flexible + RR=8 the core seam / JS=2 1 day"
+    depends: []
+
+  - id: e07-s02
+    title: "Rewire publishers through GroupAnnouncer (behavior-preserving)"
+    description: >
+      Replace the duplicated quiet-hours gates in _publicar_resultado and
+      _publicar_ranking with announcer_from(context).announce(text, force=manual).
+      Replace job_morning_flush body with announcer.flush(). _postar_lembrete
+      uses announce(text, force=True) (reminders never defer). Behavior must be
+      identical — verify existing quiet-hours tests (test_quiet_hours.py) still
+      pass unchanged, plus test_participantes/group_publisher suites.
+    verify: |
+      python -m pytest tests/test_quiet_hours.py tests/test_group_publisher.py -q
+    bcp: 1
+    wsjf: 6.0
+    wsjf_rationale: "BV=5 removes duplicated policy + TC=3 flexible + RR=5 collapses 4 send sites to 1 / JS=2 1 day"
+    depends: [e07-s01]
+
+  - id: e07-s03
+    title: "Extract ResultsPublisher controller"
+    description: >
+      Create bolao/results_publisher.py with ResultsPublisher(db, results_provider,
+      announcer): publish_result(jogo, *, force) (fetch palpites → format_resultado
+      → announce), publish_ranking(*, force) (format_ranking → announce),
+      sync(*, force) -> int (buscar_encerrados loop → publish_result each →
+      publish_ranking if any). Replace inline _sync_resultados. Rewire cmd_resultado
+      → publish_result(jogo, force=True), cmd_sync/job_sync → sync(...). Add unit
+      tests driving the controller with a fake db + fake announcer (no Telegram).
+    verify: |
+      python -m pytest tests/test_results_publisher.py -q
+    bcp: 1.5
+    wsjf: 5.0
+    wsjf_rationale: "BV=5 sync flow testable end-to-end + TC=3 flexible + RR=5 removes inline orchestration / JS=3 2-3 days"
+    depends: [e07-s02]
+
+  - id: e07-s04
+    title: "Relocate job_* wrappers to jobs.py; handlers.py = routing only"
+    description: >
+      Move job_sync, job_sync_fixtures, job_lembrete, job_morning_flush into a new
+      bolao/jobs.py next to where bot.py registers them. Update bot.py imports.
+      handlers.py shrinks to command/callback routing + validation. Confirm the bot
+      still builds and all jobs register. Fix the inline `from bolao.util import
+      kickoff_dt` import (move to module level) while touching this code.
+    verify: |
+      python -m pytest tests/ -q && python -c "import bolao.bot, bolao.jobs, bolao.handlers"
+    bcp: 1
+    wsjf: 4.0
+    wsjf_rationale: "BV=3 locality of job wiring + TC=3 flexible + RR=3 handlers.py readability / JS=2 1 day"
+    depends: [e07-s03]
+
+  - id: e07-s05
+    title: "Docs — tech-stack.md as-built + traceability update"
+    description: >
+      Update specs/tech-architecture/tech-stack.md: promote the "Planned deepening
+      seam" note to as-built, document the three new modules and the preserved
+      invariant. Add the new test files to specs/test-strategy/traceability.md
+      (e06 artifact) so the quiet-hours invariant maps to its guarding tests.
+    verify: |
+      grep -q 'GroupAnnouncer' specs/tech-architecture/tech-stack.md
+    bcp: 0.5
+    wsjf: 4.0
+    wsjf_rationale: "BV=3 discoverability + TC=1 no urgency + RR=3 keeps depth map current / JS=1 hours"
+    depends: [e07-s04]
