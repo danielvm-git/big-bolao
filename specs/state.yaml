@@ -9,9 +9,9 @@ bug_cycle: {} # cleared — switching to build_epic for e06
 
 epic_cycle:
   epic: e06-test-strategy
-  step: 7
+  step: 3
   story: e06-s03
-  story_bcps: 0
+  story_bcps: 1
   next_story: e06-s03
   fast_mode: true
 audit_result: pending

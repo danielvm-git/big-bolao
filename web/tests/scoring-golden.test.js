@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { calcPontos } from "../src/scoring.js";
+import { calcPontos, scoreLabelFor } from "../src/scoring.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const GOLDEN = resolve(
@@ -30,6 +30,15 @@ for (const c of cases) {
       result,
       c.expected,
       `calcPontos(${c.pa},${c.pb},${c.ra},${c.rb},"${c.match_id}") = ${result}, expected ${c.expected}`
+    );
+  });
+
+  test(`JS golden label: ${c.desc}`, () => {
+    const label = scoreLabelFor(c.pa, c.pb, c.ra, c.rb, c.match_id);
+    assert.equal(
+      label,
+      c.expected_label,
+      `scoreLabelFor(${c.pa},${c.pb},${c.ra},${c.rb},"${c.match_id}") = ${label}, expected ${c.expected_label}`
     );
   });
 }

@@ -6,7 +6,8 @@
     "ra": 2,
     "rb": 1,
     "match_id": "R1-01",
-    "expected": 3
+    "expected": 3,
+    "expected_label": "exato"
   },
   {
     "desc": "group winner home",
@@ -15,7 +16,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "R1-02",
-    "expected": 1
+    "expected": 1,
+    "expected_label": "vencedor"
   },
   {
     "desc": "group winner away",
@@ -24,7 +26,8 @@
     "ra": 1,
     "rb": 3,
     "match_id": "R1-03",
-    "expected": 1
+    "expected": 1,
+    "expected_label": "vencedor"
   },
   {
     "desc": "group draw winner",
@@ -33,7 +36,8 @@
     "ra": 2,
     "rb": 2,
     "match_id": "R2-01",
-    "expected": 1
+    "expected": 1,
+    "expected_label": "vencedor"
   },
   {
     "desc": "group miss outcome",
@@ -42,7 +46,8 @@
     "ra": 0,
     "rb": 2,
     "match_id": "R2-02",
-    "expected": 0
+    "expected": 0,
+    "expected_label": "errou"
   },
   {
     "desc": "group exact draw",
@@ -51,7 +56,8 @@
     "ra": 0,
     "rb": 0,
     "match_id": "R3-01",
-    "expected": 3
+    "expected": 3,
+    "expected_label": "exato"
   },
   {
     "desc": "group exact large",
@@ -60,7 +66,8 @@
     "ra": 7,
     "rb": 1,
     "match_id": "R3-12",
-    "expected": 3
+    "expected": 3,
+    "expected_label": "exato"
   },
   {
     "desc": "R32 exact",
@@ -69,7 +76,8 @@
     "ra": 2,
     "rb": 1,
     "match_id": "R32-03",
-    "expected": 5
+    "expected": 5,
+    "expected_label": "exato"
   },
   {
     "desc": "R32 winner",
@@ -78,7 +86,8 @@
     "ra": 3,
     "rb": 0,
     "match_id": "R32-03",
-    "expected": 2
+    "expected": 2,
+    "expected_label": "vencedor"
   },
   {
     "desc": "R32 miss",
@@ -87,7 +96,8 @@
     "ra": 0,
     "rb": 1,
     "match_id": "R32-03",
-    "expected": 0
+    "expected": 0,
+    "expected_label": "errou"
   },
   {
     "desc": "R16 exact",
@@ -96,7 +106,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "R16-01",
-    "expected": 10
+    "expected": 10,
+    "expected_label": "exato"
   },
   {
     "desc": "R16 winner",
@@ -105,7 +116,8 @@
     "ra": 3,
     "rb": 0,
     "match_id": "R16-01",
-    "expected": 5
+    "expected": 5,
+    "expected_label": "vencedor"
   },
   {
     "desc": "QF exact",
@@ -114,7 +126,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "QF-01",
-    "expected": 15
+    "expected": 15,
+    "expected_label": "exato"
   },
   {
     "desc": "QF winner",
@@ -123,7 +136,8 @@
     "ra": 3,
     "rb": 0,
     "match_id": "QF-01",
-    "expected": 10
+    "expected": 10,
+    "expected_label": "vencedor"
   },
   {
     "desc": "SF exact",
@@ -132,7 +146,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "SF-01",
-    "expected": 25
+    "expected": 25,
+    "expected_label": "exato"
   },
   {
     "desc": "SF winner",
@@ -141,7 +156,8 @@
     "ra": 3,
     "rb": 0,
     "match_id": "SF-01",
-    "expected": 15
+    "expected": 15,
+    "expected_label": "vencedor"
   },
   {
     "desc": "3P exact",
@@ -150,7 +166,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "3P-01",
-    "expected": 25
+    "expected": 25,
+    "expected_label": "exato"
   },
   {
     "desc": "3P winner",
@@ -159,7 +176,8 @@
     "ra": 3,
     "rb": 0,
     "match_id": "3P-01",
-    "expected": 15
+    "expected": 15,
+    "expected_label": "vencedor"
   },
   {
     "desc": "FIN exact",
@@ -168,7 +186,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "FIN-01",
-    "expected": 50
+    "expected": 50,
+    "expected_label": "exato"
   },
   {
     "desc": "FIN winner",
@@ -177,7 +196,8 @@
     "ra": 2,
     "rb": 0,
     "match_id": "FIN-01",
-    "expected": 25
+    "expected": 25,
+    "expected_label": "vencedor"
   },
   {
     "desc": "no match_id defaults to group exact",
@@ -186,7 +206,8 @@
     "ra": 1,
     "rb": 0,
     "match_id": "",
-    "expected": 3
+    "expected": 3,
+    "expected_label": "exato"
   },
   {
     "desc": "no match_id defaults to group winner",
@@ -195,7 +216,8 @@
     "ra": 3,
     "rb": 0,
     "match_id": "",
-    "expected": 1
+    "expected": 1,
+    "expected_label": "vencedor"
   },
   {
     "desc": "R32 exact draw",
@@ -204,7 +226,8 @@
     "ra": 2,
     "rb": 2,
     "match_id": "R32-01",
-    "expected": 5
+    "expected": 5,
+    "expected_label": "exato"
   },
   {
     "desc": "R32 draw winner",
@@ -213,6 +236,7 @@
     "ra": 1,
     "rb": 1,
     "match_id": "R32-01",
-    "expected": 2
+    "expected": 2,
+    "expected_label": "vencedor"
   }
 ]

@@ -10,6 +10,13 @@ const FASE_PONTOS = {
   FIN: [50, 25],
 };
 
+export function scoreLabelFor(pa, pb, ra, rb, matchId = "") {
+  const pts = calcPontos(pa, pb, ra, rb, matchId);
+  if (pa === ra && pb === rb) return "exato";
+  const s = (x, y) => (x > y ? 1 : x < y ? -1 : 0);
+  return s(pa, pb) === s(ra, rb) ? "vencedor" : "errou";
+}
+
 export function calcPontos(pa, pb, ra, rb, matchId = "") {
   const phase = (matchId || "").split("-")[0];
   const [ptsExato, ptsVencedor] = FASE_PONTOS[phase] || [3, 1];

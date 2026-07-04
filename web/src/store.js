@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { fetchJogos, fetchAllPalpites, fetchParticipantes, calcRanking, findUser, flag, fmtDate, fmtTime, calcPontos } from './api.js'
+import { scoreLabelFor } from './scoring.js'
 
 export const jogos = ref([])
 export const palpites = ref([])
@@ -82,6 +83,5 @@ export const rankingRich = computed(() =>
 
 export function scoreLabel(pal, jogo) {
   if (!pal || !jogo.isFinalizado || jogo.gols_casa == null) return null
-  const pts = calcPontos(pal.a, pal.b, Number(jogo.gols_casa), Number(jogo.gols_fora))
-  return pts === 3 ? 'exato' : pts === 1 ? 'vencedor' : 'errou'
+  return scoreLabelFor(pal.a, pal.b, Number(jogo.gols_casa), Number(jogo.gols_fora), jogo.match_id)
 }
