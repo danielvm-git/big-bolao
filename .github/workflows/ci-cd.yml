@@ -8,11 +8,12 @@
 # Pipeline:
 #   1. Semantic Release (commit-analyzer → version bump → GitHub Release)
 #   2. Web build (npm ci + vite build in web/)
-#   3. Python tests (pytest, 35 tests)
-#   4. BigBase login (email/password → JWT)
-#   5. Deploy trigger (POST /api/sites/{id}/deploy → BigBase auto-deploys)
-#   6. Health check (curl site, 5 retries, 10s interval)
-#   7. Failure notification
+#   3. Python tests + governance gates (pytest, governance scripts, coverage)
+#   4. Web tests (node --test)
+#   5. BigBase login (email/password → JWT)
+#   6. Deploy trigger (POST /api/sites/{id}/deploy → BigBase auto-deploys)
+#   7. Health check (curl site, 5 retries, 10s interval)
+#   8. Failure notification
 #
 # Secrets needed (repo Settings → Secrets and variables → Actions):
 #   - BIGBASE_EMAIL: service account email
@@ -135,7 +136,7 @@ jobs:
           fi
 
       # -----------------------------------------------------------------------
-      # Step 3: Python tests
+      # Step 3: Python tests + governance gates
       # -----------------------------------------------------------------------
       - name: Setup Python
         if: steps.detect-release.outputs.new_release == 'true'
@@ -143,7 +144,7 @@ jobs:
         with:
           python-version: '${{ env.PYTHON_VERSION }}'
 
-      - name: Run tests
+      - name: Run Python tests
         if: steps.detect-release.outputs.new_release == 'true'
         env:
           TELEGRAM_TOKEN: ci-test-token
@@ -152,10 +153,45 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest-cov
           python -m pytest tests/ -v
 
+      # --- Governance gate 1: Bug registry check ---
+      - name: Check bug registry
+        if: steps.detect-release.outputs.new_release == 'true'
+        run: python3 scripts/check_test_governance.py
+
+      # --- Governance gate 2: Scoring table parity ---
+      - name: Check scoring table parity
+        if: steps.detect-release.outputs.new_release == 'true'
+        run: python3 scripts/check_scoring_tables.py
+
+      # --- Governance gate 3: P0 module coverage ---
+      - name: Check P0 coverage
+        if: steps.detect-release.outputs.new_release == 'true'
+        run: |
+          python -m pytest --cov=bolao.scoring --cov-fail-under=90 tests/test_scoring.py -q
+          python -m pytest --cov=bolao.fixtures --cov-fail-under=90 tests/test_fixtures.py -q
+          python -m pytest --cov=bolao.ranking --cov-fail-under=90 tests/test_ranking.py -q
+
       # -----------------------------------------------------------------------
-      # Step 4: Deploy to BigBase
+      # Step 4: Web tests
+      # -----------------------------------------------------------------------
+      - name: Setup Node for web tests
+        if: steps.detect-release.outputs.new_release == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      - name: Run web tests
+        if: steps.detect-release.outputs.new_release == 'true'
+        working-directory: web
+        run: |
+          npm ci --prefer-offline
+          node --test tests/*.test.js
+
+      # -----------------------------------------------------------------------
+      # Step 5: Deploy to BigBase
       # -----------------------------------------------------------------------
       - name: Login to BigBase
         id: login
@@ -188,7 +224,7 @@ jobs:
           echo "Deployment ID: ${DEPLOY_ID}"
 
       # -----------------------------------------------------------------------
-      # Step 5: Health check (site responds, BigBase auto-finishes deploy)
+      # Step 7: Health check (site responds, BigBase auto-finishes deploy)
       # -----------------------------------------------------------------------
       - name: Health check
         if: steps.detect-release.outputs.new_release == 'true'
@@ -211,7 +247,7 @@ jobs:
           fi
 
       # -----------------------------------------------------------------------
-      # Step 6: Summary
+      # Step 8: Summary
       # -----------------------------------------------------------------------
       - name: Summary
         if: success() && steps.detect-release.outputs.new_release == 'true'
