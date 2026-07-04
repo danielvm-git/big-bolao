@@ -164,14 +164,14 @@ big-bolao/
 │   ├── matches.py      # Hardcoded match schedule: 72 games, 3 rounds
 │   ├── ranking.py      # Ranking calculation (calcular) + formatting (formatar)
 │   ├── results.py      # apifootball.com results provider
-│   ├── scoring.py      # Pontos: exact=3, winner=1, miss=0
+│   ├── scoring.py      # Phase-aware scoring (FASE_PONTOS dict) + scoreLabel
 │   └── util.py         # Time helpers (agora, quiet hours, kickoff), labels, version
 ├── web/
 │   ├── src/
 │   │   ├── api.js      # Re-export barrel (backward compat)
 │   │   ├── transport.js# HTTP client for BigBase API (BB singleton)
 │   │   ├── queries.js  # Domain query functions (fetchJogos, savePalpite, etc.)
-│   │   ├── scoring.js  # Pure scoring + flags + formatting (mirrors Python scoring)
+│   │   ├── scoring.js  # Pure scoring + flags + formatting (golden fixture parity with Python)
 │   │   ├── store.js    # Vue reactive state (jogos, palpites, ranking, user)
 │   │   ├── App.vue     # Nav + bottom-nav + footer + <router-view>
 │   │   ├── style.css   # Global styles
@@ -182,25 +182,36 @@ big-bolao/
 │   │   └── router/index.js  # / (public), /jogos, /meus
 │   ├── public/
 │   │   ├── landing.html / landing.css / landing.js  # Swiss grid landing page
+│   ├── tests/
+│   │   ├── flags.test.js           # 5 tests (flag resolution)
+│   │   ├── queries.test.js         # 8 tests (API queries)
+│   │   ├── scoring-golden.test.js  # 49 tests (golden fixture parity + labels)
+│   │   ├── scoring.test.js         # 19 tests (calcPontos, calcRanking, fmt)
+│   │   └── transport.test.js       # 7 tests (BB HTTP client)
 │   └── dist/           # Pre-built, committed to git
 ├── scripts/
-│   ├── redeploy.py     # Trigger BigBase redeploy (/api/sites/<id>/deploy)
-│   ├── sync_fixtures.py# Sync fixtures from apifootball to BigBase
-│   ├── seed_bigbase.py # One-time seed: R1 data + placeholders
-│   ├── check_ranking.py# Validate scoring rules + R1 ranking
-│   ├── cleanup_duplicates.py  # Fix duplicate participants
-│   ├── setup_server.sh # VPS provisioning (Caddy, systemd, env)
-│   └── mcp_setup.sh    # MCP server configuration
+│   ├── check_ranking.py        # Validate scoring rules + R1 ranking
+│   ├── check_scoring_tables.py # Governance: Python↔JS scoring parity (G2)
+│   ├── check_test_governance.py# Governance: bug registry completeness (G1)
+│   ├── cleanup_duplicates.py   # Fix duplicate participants
+│   ├── mcp_setup.sh            # MCP server configuration
+│   ├── redeploy.py             # Trigger BigBase redeploy
+│   ├── seed_bigbase.py         # One-time seed: R1 data + placeholders
+│   ├── setup_server.sh         # VPS provisioning (Caddy, systemd, env)
+│   └── sync_fixtures.py        # Sync fixtures from apifootball to BigBase
 ├── tests/
-│   ├── test_betting_flow.py    # 24 tests
+│   ├── test_betting_flow.py    # 36 tests (state machine)
+│   ├── test_bot.py             # 5 tests (poller, lifecycle)
 │   ├── test_config.py          # 5 tests
-│   ├── test_fixtures.py        # 14 tests
+│   ├── test_fixtures.py        # 34 tests (parse, normalise, fetch, phase)
 │   ├── test_group_publisher.py # 11 tests
+│   ├── test_logger.py          # 5 tests
 │   ├── test_participantes.py   # 6 tests
-│   ├── test_quiet_hours.py     # 4 tests
+│   ├── test_quiet_hours.py     # 14 tests
 │   ├── test_ranking.py         # 9 tests
 │   ├── test_results.py         # 7 tests
-│   └── test_version.py         # 2 tests
+│   ├── test_scoring.py         # 25 tests (golden fixture)
+│   └── test_version.py         # 3 tests
 └── .github/workflows/
     └── ci-cd.yml       # CI/CD: semantic-release → build → test → deploy → health check
 ```
@@ -235,10 +246,81 @@ APIFOOTBALL_LEAGUE_ID=28       # Copa 2026 (NOT 1)
 RESULTS_PROVIDER=apifootball
 ```
 
-## Tests
+## Test Strategy & Governance
 
+Full test strategy documented in `specs/test-strategy/`:
+
+| Artifact | What it is |
+|----------|-----------|
+| `specs/test-strategy/README.md` | How to run every suite, where to add tests |
+| `specs/test-strategy/risk-register.yaml` | Probability × impact per module (P0/P1/P2) |
+| `specs/test-strategy/traceability.md` | Bug → guarding test mapping |
+| `specs/test-strategy/quality-gate.md` | Definition of Done + gate rubric |
+| `specs/test-strategy/scoring-golden.json` | Single source of truth for scoring (24 cases) |
+| `specs/test-strategy/parse-result-golden.json` | Single source of truth for parse_result (17 cases) |
+
+### Golden Fixture Invariant
+
+Two golden JSON files serve as the single source of truth consumed by both Python and JS test suites. Any scoring drift between `bolao/scoring.py` and `web/src/scoring.js` now fails both suites simultaneously — making the top recurring failure class structurally impossible.
+
+- **`scoring-golden.json`** (24 cases): Covers group + R32/R16/QF/SF/3P/FIN phases with exact/winner/miss/draw outcomes + `expected_label`. Consumed by `tests/test_scoring.py` and `web/tests/scoring-golden.test.js`.
+- **`parse-result-golden.json`** (17 cases): Covers ET, penalty, regular, non-finished, unknown, missing-FT, and absent-score edge cases. Consumed by `tests/test_fixtures.py::TestParseResultFieldSelection`.
+
+### Governance Gates (CI)
+
+Three gates run in CI before deploy (see `.github/workflows/ci-cd.yml`):
+
+| Gate | Script | What it enforces |
+|------|--------|-----------------|
+| **G1** Bug Registry | `scripts/check_test_governance.py` | Every bug file in `specs/bugs/` has a `registry.yaml` entry with `tests_added` |
+| **G2** Scoring Parity | `scripts/check_scoring_tables.py` | Python `FASE_PONTOS` matches JS `FASE_PONTOS` exactly (6 phases) |
+| **G3** P0 Coverage | `pytest --cov=<module> --cov-fail-under=90` | Each P0 module (scoring, fixtures, ranking) ≥ 90% coverage |
+
+### Running Tests
+
+**Python (all):**
 ```bash
-python -m pytest tests/ -v   # requires: pip install pytest pytest-asyncio
+python -m pytest tests/ -v   # 160 tests, 12 files
+```
+
+**Python (by module):**
+```bash
+python -m pytest tests/test_scoring.py -v   # 25 tests (golden fixture)
+python -m pytest tests/test_fixtures.py -v  # 34 tests (parse, normalise, phase)
+python -m pytest tests/test_ranking.py -v   # 9 tests
+```
+
+**Python (with coverage gates):**
+```bash
+python -m pytest --cov=bolao.scoring --cov-fail-under=90 tests/test_scoring.py -q
+python -m pytest --cov=bolao.fixtures --cov-fail-under=90 tests/test_fixtures.py -q
+python -m pytest --cov=bolao.ranking --cov-fail-under=90 tests/test_ranking.py -q
+```
+
+**Governance gate verification:**
+```bash
+python3 scripts/check_test_governance.py  # G1: bug registry
+python3 scripts/check_scoring_tables.py   # G2: scoring parity
+```
+
+**Web (all):**
+```bash
+cd web && node --test tests/*.test.js     # 88 tests, 5 files
+```
+
+**Web (single file):**
+```bash
+cd web && node --test tests/scoring-golden.test.js  # 49 tests
+```
+
+**Full CI pipeline (local dry-run):**
+```bash
+cd web && npm ci && npm run build          # build web
+cd web && node --test tests/*.test.js      # web tests
+python -m pytest tests/ -v                # Python tests
+python3 scripts/check_test_governance.py  # G1
+python3 scripts/check_scoring_tables.py   # G2
+python -m pytest --cov=bolao.scoring --cov=bolao.fixtures --cov=bolao.ranking --cov-fail-under=90 tests/ -q  # G3
 ```
 
 ## Web Build
