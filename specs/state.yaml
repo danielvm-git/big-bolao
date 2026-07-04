@@ -40,9 +40,14 @@ completed_epics:
 pending_epics:
   - id: e02
     title: "Live API Integration (Copa 2026 fixtures)"
-    bcps: 2
-    status: partial (2/6 stories done)
+    bcps: 4
+    status: partial (5/6 stories done)
     next_story: e02-s03 "BigBase.ensure_setup — upsert from API"
+  - id: e08
+    title: "Risk-Prioritized Coverage — participant identity + declared exclusions"
+    bcps: 2.0
+    status: planned
+    next_story: e08-s01 "Fix placeholder substring bug"
 
 environment:
   node: v24.15.0
@@ -66,19 +71,20 @@ handoff:
   current_phase: sustain
   next_skill: survey-context
   notes: >
-    Branch docs/planning-e07-adrs-domain-model merged to main (713f436).
-    Planning artifacts landed: e07 epic capsule, ADR-002 (proposed: full-Python web),
-    ADR-003 (accepted: edition-scoped data model), domain model in tech-stack.md.
-    e06 capsule archived. .coverage added to .gitignore. Next: e02-s03
-    (BigBase.ensure_setup — upsert from API) or e07 (handlers-deepening, planned).
+    Handoff para outro agente (2026-07-04).
+    E01 a e06 completos e commitados. E02: 5/6 stories done — pendente apenas
+    e02-s03 (ensure_setup upsert da API com fallback MATCHES).
+    E08 (coverage-priorities) planejado no release-plan mas nao iniciado.
+    ScoreLabel bug corrigido (PR #1), golden fixtures implementados,
+    governance gates wireados no CI. Proximo: e02-s03 ou e08-s01.
 
 git:
   branch: main
-  hash: d5e59ca
+  hash: 7475b8f
 
 release:
   branch: main
-  hash: 713f436
+  hash: 7475b8f
   mode: solo-local
   ci_verified: true
   capsule_archived: true
