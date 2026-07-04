@@ -90,6 +90,52 @@ stories:
     wsjf: 9.3
     wsjf_rationale: "BV=10 closes the top recurring failure class + TC=8 active risk + RR=10 eliminates drift structurally / JS=3 2-3 days"
     depends: [e06-s01]
+    tasks:
+      - id: e06-s02-t01
+        title: "Create specs/test-strategy/scoring-golden.json"
+        description: >
+          Write a golden fixture JSON file with ≥21 test cases covering all phases
+          (group/R1/R2/R3, R32, R16, QF, SF, 3P, FIN) and bet types (exact, winner,
+          miss). Each case has: palpite_casa, palpite_fora, real_casa, real_fora,
+          match_id, expected_pontos. Include edge cases like draws, 0-0, large scores.
+        acceptance:
+          - "JSON file has ≥21 entries"
+          - "Covers all 4 bet outcomes: exact, winner-home, winner-away, draw-winner"
+          - "Covers all phases: group, R32, R16, QF, SF, 3P, FIN"
+
+      - id: e06-s02-t02
+        title: "Create tests/test_scoring.py"
+        description: >
+          Write a Python test file that loads scoring-golden.json from the project root
+          (via pathlib relative to test file), iterates each case, calls
+          bolao/scoring.py::pontos() with the case params, and asserts result matches
+          expected_pontos. No mocking needed — pure function.
+        acceptance:
+          - "test_scoring.py exists and is importable"
+          - "Golden fixture loads from specs/test-strategy/ relative to project root"
+          - "All 21+ golden cases pass"
+
+      - id: e06-s02-t03
+        title: "Create web/tests/scoring-golden.test.js"
+        description: >
+          Write a JS test file that loads the SAME scoring-golden.json (using relative
+          path ../../specs/test-strategy/scoring-golden.json from web/tests/), iterates
+          each case, calls calcPontos() from ../src/scoring.js, and asserts result
+          matches expected_pontos. This locks Python↔JS parity.
+        acceptance:
+          - "scoring-golden.test.js loads the same golden fixture"
+          - "All 21+ golden cases pass in Node test runner"
+
+      - id: e06-s02-t04
+        title: "Remove stale group-only assertions from web/tests/scoring.test.js"
+        description: >
+          Remove the group-only calcPontos assertions (lines 12-34, testing 3/1/0
+          default scoring) since they are now covered by the golden fixture test.
+          Keep all phase-aware knockout tests, calcRanking tests, and formatter tests.
+        acceptance:
+          - "Group-only scoring assertions removed"
+          - "All phase-aware and ranking tests remain"
+          - "Full web test suite still passes (including golden fixture test)"
 
   - id: e06-s03
     title: "Fix BUG-2026-07-04-170000 TDD-style using the golden suite"
