@@ -20,6 +20,7 @@ import unicodedata
 import httpx
 
 from bolao import config
+from bolao.fixtures import fetch_from_api
 from bolao.matches import MATCHES
 
 PARTICIPANTES = "participantes"
@@ -90,11 +91,81 @@ class BigBase:
     # ---------- setup / seed ----------
 
     async def ensure_setup(self) -> None:
-        """Garante que as coleches existem e popula a agenda das rodadas."""
-        # GET em cada colecao forca a criacao da tabela no servidor.
-        existentes = {j.get("match_id") for j in await self.list_records(JOGOS)}
+        """Garante que as coleções existem e popula a agenda.
+
+        Tenta obter fixtures da API (fetch_from_api) com upsert por
+        api_fixture_id. Se a API falhar (RuntimeError), usa MATCHES hardcoded
+        (comportamento atual) — mantendo a compatibilidade com o seed offline.
+        """
+        # GET em cada colecao força a criação da tabela no servidor.
         await self.list_records(PARTICIPANTES)
         await self.list_records(PALPITES)
+
+        try:
+            fixtures = await fetch_from_api()
+        except RuntimeError:
+            fixtures = None
+
+        if fixtures:
+            await self._upsert_from_api(fixtures)
+        else:
+            await self._seed_from_matches()
+
+    async def _upsert_from_api(self, fixtures: list[dict]) -> None:
+        """Upsert fixtures da API na coleção jogos.
+
+        Usa api_fixture_id como chave primária de deduplicação. Registros
+        existentes sem api_fixture_id (criados pelo seed MATCHES original)
+        são encontrados por match_id e recebem o api_fixture_id via patch.
+        """
+        existentes = await self.list_records(JOGOS)
+        por_api_id: dict[str, dict] = {}
+        por_match_id: dict[str, dict] = {}
+        for j in existentes:
+            if j.get("api_fixture_id"):
+                por_api_id[str(j["api_fixture_id"])] = j
+            if j.get("match_id"):
+                por_match_id[j["match_id"]] = j
+
+        for fx in fixtures:
+            api_id = str(fx.get("api_fixture_id") or "")
+            match_id = str(fx.get("match_id") or "")
+
+            # Tenta encontrar registro existente
+            existente = por_api_id.get(api_id) or por_match_id.get(match_id)
+
+            if existente:
+                # Atualiza dados (gols, status) e api_fixture_id se faltar
+                patch_data: dict[str, object] = {}
+                for key in ("gols_casa", "gols_fora", "status"):
+                    val = fx.get(key)
+                    if val is not None:
+                        patch_data[key] = val
+                if not existente.get("api_fixture_id") and api_id:
+                    patch_data["api_fixture_id"] = api_id
+                if patch_data:
+                    await self.patch(JOGOS, existente["id"], patch_data)
+            else:
+                await self._criar_jogo_api(fx)
+
+    async def _criar_jogo_api(self, fx: dict) -> None:
+        """Cria um registro de jogo na coleção a partir de fixture da API."""
+        record = {
+            "match_id": fx.get("match_id"),
+            "api_fixture_id": fx.get("api_fixture_id"),
+            "rodada": fx.get("rodada"),
+            "kickoff": fx.get("kickoff"),
+            "casa": fx.get("casa"),
+            "fora": fx.get("fora"),
+            "gols_casa": fx.get("gols_casa"),
+            "gols_fora": fx.get("gols_fora"),
+            "status": fx.get("status", "agendado"),
+        }
+        await self.create(JOGOS, record)
+
+    async def _seed_from_matches(self) -> None:
+        """Popula a agenda a partir de MATCHES hardcoded (fallback)."""
+        existentes = {j.get("match_id") for j in await self.list_records(JOGOS)}
         for m in MATCHES:
             if m.match_id in existentes:
                 continue

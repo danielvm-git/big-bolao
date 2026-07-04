@@ -8,13 +8,18 @@ next_skill: security-review
 bug_cycle: {}
 
 epic_cycle:
-  current_step: 3
+  current_step: 8
   fast_mode: false
   story_bcps: 1
   completed_steps:
     - "0: security-review → LOW risk (no blocking issues)"
     - "1: survey-context → confirmed e02-s03, 160 tests baseline pass"
     - "2: plan-work + assess-impact → 3 tasks, LOW risk"
+    - "3: kickoff-branch → e02-s03-ensure-setup-api-upsert, 160+88 tests pass"
+    - "4: develop-tdd → 6 tests + implementation, 166+88 pass"
+    - "5: verify-work → mechanical gates all pass (G1/G2/G3)"
+    - "6: audit-code → PASS (all checklist items, 1 minor noted)"
+    - "7: commit-message → feat(bigbase) = minor bump, 3 commits"
 
 completed_epics:
   - id: e06
