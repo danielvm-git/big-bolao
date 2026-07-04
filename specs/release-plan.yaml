@@ -200,8 +200,8 @@ stories:
     title: "BigBase.ensure_setup — upsert from API, store api_fixture_id"
     bcp: 1
     depends: [e02-s01]
-    status: pending
-    notes: "NOT STARTED — ensure_setup still seeds from hardcoded MATCHES"
+    status: done
+    notes: "Implemented: fetch_from_api with upsert by api_fixture_id, fallback to MATCHES. 6 tests."
 
   - id: e02-s04
     title: "results.py — match results by api_fixture_id"

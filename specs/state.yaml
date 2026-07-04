@@ -1,14 +1,14 @@
 # Orchestrate state
 phase: sustain
-active_flow: build_epic
-active_epic_id: e02
+active_flow: null
+active_epic_id: null
 last_step_completed: release-branch
-next_skill: security-review
+next_skill: survey-context
 
 bug_cycle: {}
 
 epic_cycle:
-  current_step: 8
+  current_step: complete
   fast_mode: false
   story_bcps: 1
   completed_steps:
@@ -20,8 +20,15 @@ epic_cycle:
     - "5: verify-work → mechanical gates all pass (G1/G2/G3)"
     - "6: audit-code → PASS (all checklist items, 1 minor noted)"
     - "7: commit-message → feat(bigbase) = minor bump, 3 commits"
+    - "8: release-branch → squash-merged to main, pushed"
 
 completed_epics:
+  - id: e02
+    title: "Live API Integration (Copa 2026 fixtures)"
+    bcps: 4
+    date: "2026-07-04"
+    status: done
+    stories: "6/6 done (e02-s03 implementado: API upsert + fallback)"
   - id: e06
     title: "Test Strategy & Architecture Overhaul (TEA-style)"
     bcps: 7.5
@@ -50,11 +57,6 @@ completed_epics:
     full_suite: 102 (all pass)
 
 pending_epics:
-  - id: e02
-    title: "Live API Integration (Copa 2026 fixtures)"
-    bcps: 4
-    status: partial (5/6 stories done)
-    next_story: e02-s03 "BigBase.ensure_setup — upsert from API"
   - id: e08
     title: "Risk-Prioritized Coverage — participant identity + declared exclusions"
     bcps: 2.0
@@ -84,11 +86,11 @@ handoff:
   next_skill: survey-context
   notes: >
     Handoff para outro agente (2026-07-04).
-    E01 a e06 completos e commitados. E02: 5/6 stories done — pendente apenas
-    e02-s03 (ensure_setup upsert da API com fallback MATCHES).
-    E08 (coverage-priorities) planejado no release-plan mas nao iniciado.
-    ScoreLabel bug corrigido (PR #1), golden fixtures implementados,
-    governance gates wireados no CI. Proximo: e02-s03 ou e08-s01.
+    E01 a e06 completos e commitados. E02: 6/6 stories done
+    (e02-s03 ensure_setup upsert da API com fallback MATCHES concluido).
+    E08 (coverage-priorities) planejado no release-plan — proximo passo.
+    Branch e02-s03-ensure-setup-api-upsert precisa ser removida
+    (git branch -D e02-s03-ensure-setup-api-upsert nao executado pelo agente).
 
 git:
   branch: main
@@ -96,10 +98,10 @@ git:
 
 release:
   branch: main
-  hash: 7475b8f
+  hash: 8bf5349
   mode: solo-local
   ci_verified: true
-  capsule_archived: true
+  capsule_archived: false
   stale_branches_removed:
     - docs/planning-e07-adrs-domain-model
     - e06-s03-fix-knockout-label
