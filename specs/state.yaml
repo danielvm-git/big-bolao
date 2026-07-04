@@ -1,13 +1,20 @@
 # Orchestrate state
 phase: sustain
-active_flow: null
-active_epic_id: null
+active_flow: build_epic
+active_epic_id: e02
 last_step_completed: release-branch
-next_skill: survey-context
+next_skill: security-review
 
 bug_cycle: {}
 
-epic_cycle: {}
+epic_cycle:
+  current_step: 3
+  fast_mode: false
+  story_bcps: 1
+  completed_steps:
+    - "0: security-review → LOW risk (no blocking issues)"
+    - "1: survey-context → confirmed e02-s03, 160 tests baseline pass"
+    - "2: plan-work + assess-impact → 3 tasks, LOW risk"
 
 completed_epics:
   - id: e06

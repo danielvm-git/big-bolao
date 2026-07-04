@@ -1,0 +1,80 @@
+id: e02
+slug: api-integration
+title: "Live API Integration (Copa 2026 fixtures)"
+status: partial
+bcp: 4
+wsjf: 4.5
+wsjf_rationale: "BV=8 critical path for live scoring + TC=3 flexible + RR=4 API reliability / JS=3 2-3 days"
+
+description: >
+  Replace the hardcoded match schedule and manual result entry with live data
+  from apifootball.com. After this epic the bot and web app will: (1) seed &
+  refresh fixtures automatically from the API, (2) pull final scores every hour
+  without admin action, (3) store api_fixture_id for exact result matching,
+  (4) keep /resultado as admin override and matches.py as offline fallback.
+
+stories:
+  - id: e02-s01
+    title: "fixtures.py — fetch & normalise fixtures from apifootball.com"
+    description: >
+      New module bolao/fixtures.py: fetch_from_api (HTTP client to apiv3.apifootball.com),
+      normalise (convert raw API response to BigBase-ready dicts), parse_result
+      (extract score with ET awareness), _parse_phase (match_round → phase_id).
+      FINISHED_STATUSES constant shared with results.py.
+    verify: |
+      python -m pytest tests/test_fixtures.py -q
+    bcp: 1
+    status: done
+
+  - id: e02-s02
+    title: "Config: add FIXTURES_PROVIDER env var"
+    description: >
+      Add APIFOOTBALL_KEY, APIFOOTBALL_LEAGUE_ID, APIFOOTBALL_SEASON to
+      bolao/config.py. validate_config() guards that KEY is set when
+      RESULTS_PROVIDER=apifootball.
+    verify: |
+      python -m pytest tests/test_config.py -q
+    bcp: 0.5
+    status: done
+
+  - id: e02-s03
+    title: "BigBase.ensure_setup — upsert from API, store api_fixture_id"
+    description: >
+      Modify BigBase.ensure_setup() to: (1) try fetch_from_api() from fixtures.py,
+      (2) if OK → upsert fixtures keyed by api_fixture_id (patch existing, create
+      new), (3) if API fails → fallback to MATCHES hardcoded (current behavior).
+      Migration: existing records without api_fixture_id get it matched by match_id.
+    verify: |
+      python -m pytest tests/test_bigbase.py -q
+    bcp: 1
+    status: pending
+    depends: [e02-s01]
+
+  - id: e02-s04
+    title: "results.py — match results by api_fixture_id"
+    description: >
+      Apifootball provider matches by api_fixture_id with name-based fallback.
+      7 tests covering exact match, name fallback, missing fixture.
+    verify: |
+      python -m pytest tests/test_results.py -q
+    bcp: 0.5
+    status: done
+
+  - id: e02-s05
+    title: "/sync admin command + job_sync_fixtures (1h)"
+    description: >
+      cmd_sync in handlers.py triggers result sync; job_sync_fixtures in bot.py
+      runs hourly — no separate /sync_jogos needed.
+    verify: |
+      python -m pytest tests/test_bot.py tests/test_results.py -q
+    bcp: 0.5
+    status: done
+
+  - id: e02-s06
+    title: ".env.example + README docs"
+    description: >
+      APIFOOTBALL_* vars documented in .env.example and README.
+    verify: |
+      grep -q 'APIFOOTBALL' .env.example && echo "OK"
+    bcp: 0.5
+    status: done

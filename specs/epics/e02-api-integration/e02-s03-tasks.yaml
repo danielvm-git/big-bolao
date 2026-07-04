@@ -1,0 +1,39 @@
+story_id: e02-s03
+title: "BigBase.ensure_setup — upsert from API, store api_fixture_id"
+status: todo
+bcps: 1
+security: none
+context: infra
+
+description: >
+  Modify BigBase.ensure_setup() to fetch fixtures from the apifootball API,
+  upsert using api_fixture_id as dedup key, with fallback to hardcoded MATCHES.
+  Existing records without api_fixture_id are matched by match_id during migration.
+
+tasks:
+  - id: 1
+    description: >
+      Create test file tests/test_bigbase.py — add tests for ensure_setup API
+      path (upsert with api_fixture_id dedup) and fallback path (API fails →
+      MATCHES seeds as today). Mock fetch_from_api and list_records.
+    verify: "python -m pytest tests/test_bigbase.py -v --tb=short 2>&1 | grep -E 'PASSED|FAILED|ERROR'"
+    status: todo
+
+  - id: 2
+    description: >
+      Modify BigBase.ensure_setup() in bolao/bigbase.py: add import for
+      fetch_from_api from fixtures.py. Add try/except: try fetch_from_api(),
+      if success → upsert logic (match by api_fixture_id or match_id, create or
+      patch accordingly), if RuntimeError → fallback to current MATCHES loop.
+    verify: "python -m pytest tests/test_bigbase.py tests/test_bot.py tests/test_fixtures.py -q"
+    status: todo
+
+  - id: 3
+    description: >
+      Verify full test suite still passes — Python 160 tests + web 88 tests.
+      Run governance gates (G1/G2/G3) to confirm no regressions.
+    verify: |
+      python -m pytest tests/ -q && cd web && node --test tests/*.test.js -q && cd .. && \
+      python3 scripts/check_test_governance.py && python3 scripts/check_scoring_tables.py && \
+      echo "ALL GATES PASS"
+    status: todo
