@@ -310,7 +310,8 @@ stories:
     title: "Test-strategy foundation — risk register + traceability matrix"
     bcp: 1
     depends: []
-    status: pending
+    status: done
+    notes: "specs/test-strategy/ README + risk-register.yaml + traceability.md"
 
   - id: e06-s02
     title: "Shared scoring golden fixture — Python↔JS parity, enforced"
