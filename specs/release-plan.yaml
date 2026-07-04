@@ -62,6 +62,14 @@ epics:
     wsjf: 5.5
     depends_on: [e06]
 
+  - id: e08
+    slug: coverage-priorities
+    title: "Risk-Prioritized Coverage — participant identity + declared exclusions"
+    bcp: 2.0
+    priority: 1
+    status: planned
+    wsjf: 6.7
+
 stories:
   # ── e05 — Quiet Hours (TOP PRIORITY) ───────────────────────────
   - id: e05-s01

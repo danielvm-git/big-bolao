@@ -1,0 +1,185 @@
+id: e08
+slug: coverage-priorities
+title: "Risk-Prioritized Coverage — participant identity + declared exclusions"
+status: planned
+bcp: 2.0
+wsjf: 6.7
+wsjf_rationale: "BV=5 fixes a real production-risk bug + TC=3 flexible + RR=8 closes the one gap that coincides with correctness risk / JS=2 1 day"
+
+description: >
+  Follow-up to the release-branch coverage warning (65% overall on the docs/
+  planning-e07-adrs-domain-model branch — pre-existing on main, no code in that
+  branch). The 65% figure is correctly read through specs/test-strategy/
+  risk-register.yaml, not as a flat target: P0 modules (scoring.py 100%,
+  ranking.py 98%, fixtures.py 98%) are already covered by e06's golden fixtures.
+  The overall number is dragged down by two modules, and only one of them is a
+  coverage problem worth solving directly:
+
+    - bolao/bigbase.py (57%): the uncovered lines are the PARTICIPANT IDENTITY
+      paths (registrar_participante, reivindicar, _placeholder_por_nome_parcial,
+      _vincular_placeholder — lines 113-259). This is the exact machinery
+      modeled in ADR-003 (Edition/Participante/Placeholder/Link/Merge), and it
+      contains a REAL, UNFIXED DEFECT found during that modeling session:
+      _placeholder_por_nome_parcial does unbounded substring matching with no
+      word boundaries, so a placeholder "Ana" wrongly matches a new user
+      "Mariana" ("ana" is a substring of "mariana") and silently migrates the
+      wrong person's historical bets. Coverage and correctness coincide here —
+      this is the priority-1 story.
+
+    - bolao/handlers.py (23%): the uncovered lines are almost entirely the
+      publication/job-scheduling orchestration already identified as
+      Module-Depth 2/5 in the deepen-architecture session and already scoped
+      for extraction in epic e07 (GroupAnnouncer + ResultsPublisher + jobs.py).
+      Testing handlers.py in place would mean mocking Telegram+BigBase
+      together for code that's about to be deleted/moved — writing tests
+      against a module already condemned to refactor. This epic does NOT
+      attempt to raise handlers.py coverage directly; e07 is what makes it
+      testable. Recorded here as an explicit deferral, not an oversight.
+
+    - bolao/historico.py (0%): static transcription of Rodada-1 spreadsheet
+      data (already exercised indirectly by scripts/check_ranking.py, which is
+      not part of the pytest suite). A unit test here would assert data equals
+      itself. This epic marks it as a deliberate no-coverage entry in the risk
+      register rather than writing a hollow test.
+
+  Also verified during this epic's scoping (2026-07-04): the CURRENTLY LIVE
+  ranking was independently recomputed three ways against real BigBase data
+  (93 jogos, 593 palpites, 10 participantes, 86 finished matches) — via
+  bolao/ranking.py::calcular(), via a raw hand-rolled loop bypassing
+  ranking.py entirely, and via web/src/scoring.js::calcRanking() on the same
+  data. All three produced byte-identical results for all 9 active
+  participants (1 excluded record confirmed correct: the "Flávia" Placeholder,
+  telegram_id=-4, already Linked to the real account per the ADR-003 state
+  machine). No ranking bug exists today — this epic is preventive, not
+  reactive.
+
+priorities:
+  p1_correctness_and_coverage: [e08-s01]
+  p2_declared_exclusion: [e08-s02]
+  p3_deferred_to_e07: [e08-s03]
+
+coverage_baseline:
+  overall: "65% (948 stmts, 330 missing)"
+  by_module:
+    - {
+        module: "bolao/scoring.py",
+        cov: "100%",
+        risk: P0,
+        note: "e06 golden fixture",
+      }
+    - {
+        module: "bolao/ranking.py",
+        cov: "98%",
+        risk: P0,
+        note: "e06 golden fixture",
+      }
+    - {
+        module: "bolao/fixtures.py",
+        cov: "98%",
+        risk: P0,
+        note: "e06 golden fixture",
+      }
+    - {
+        module: "bolao/betting_flow.py",
+        cov: "94%",
+        risk: P1,
+        note: "deep module, minor gaps",
+      }
+    - { module: "bolao/bot.py", cov: "92%", risk: P1, note: "acceptable" }
+    - { module: "bolao/results.py", cov: "92%", risk: P1, note: "acceptable" }
+    - { module: "bolao/config.py", cov: "97%", risk: P1, note: "acceptable" }
+    - { module: "bolao/matches.py", cov: "80%", risk: P2, note: "acceptable" }
+    - { module: "bolao/logger.py", cov: "77%", risk: P2, note: "acceptable" }
+    - { module: "bolao/util.py", cov: "75%", risk: P2, note: "acceptable" }
+    - {
+        module: "bolao/bigbase.py",
+        cov: "57%",
+        risk: P0,
+        note: "GAP — e08-s01 target: participant identity, real defect found",
+      }
+    - {
+        module: "bolao/handlers.py",
+        cov: "23%",
+        risk: P1,
+        note: "GAP — deferred to e07 (module being extracted, not patched in place)",
+      }
+    - {
+        module: "bolao/historico.py",
+        cov: "0%",
+        risk: P2,
+        note: "declared exclusion — static seed data, e08-s02",
+      }
+
+stories:
+  - id: e08-s01
+    title: "Fix + cover: fuzzy placeholder-name substring defect (bigbase.py)"
+    description: >
+      File specs/bugs/BUG-2026-07-04-<time>-placeholder-substring-misattribution.md
+      documenting the defect: _placeholder_por_nome_parcial (bolao/bigbase.py)
+      matches on unbounded substring (pnome in alvo or alvo in pnome) with no
+      word boundaries, so a short placeholder name (e.g. "Ana") wrongly matches
+      an unrelated new user whose name contains it as a substring (e.g.
+      "Mariana"), silently migrating the wrong person's historical palpites
+      via _vincular_placeholder. Fix: require a full whitespace-delimited
+      token match (placeholder's name-tokens are a subset of the candidate's
+      name-tokens, or vice versa) instead of raw substring containment; if a
+      name matches zero or more-than-one placeholder, do not auto-link — leave
+      it to the /sou manual path (reivindicar). Add regression tests in
+      tests/test_participantes.py covering: (a) the "Ana"/"Mariana" false
+      positive is no longer created, (b) the legitimate "Flávia" / "Ana Flavia
+      Cernic Ramos" case from BUG-2026-06-20-100000 still auto-links, (c)
+      ambiguous multi-match refuses to auto-link. This closes the majority of
+      bigbase.py's coverage gap (registrar_participante, reivindicar,
+      _placeholder_por_nome_parcial, _vincular_placeholder) as a side effect of
+      testing real behavior, not as a coverage-for-its-own-sake exercise.
+    verify: |
+      python -m pytest tests/test_participantes.py -q && \
+      python -m pytest --cov=bolao/bigbase --cov-report=term-missing -q | grep bigbase
+    bcp: 1
+    wsjf: 8.0
+    wsjf_rationale: "BV=8 fixes a real silent-misattribution bug + TC=3 flexible + RR=8 closes identity-integrity risk / JS=2 1 day"
+    depends: []
+
+  - id: e08-s02
+    title: "Declare historico.py and handlers.py as risk-register exclusions"
+    description: >
+      Update specs/test-strategy/risk-register.yaml: mark bolao/historico.py as
+      an intentional 0%-coverage entry (static Rodada-1 transcription, already
+      exercised offline by scripts/check_ranking.py which is not part of the
+      pytest suite by design — no live BigBase/network calls). Mark
+      bolao/handlers.py's low coverage as an explicit, epic-linked deferral
+      (depends_on: e07) rather than a gap — the module is scheduled for
+      extraction, not in-place testing. Add both to
+      specs/test-strategy/traceability.md so a future coverage report reads
+      these as decisions, not oversights. Optionally add historico.py to a
+      coverage-omit config so TOTAL% reflects only modules under active
+      coverage policy.
+    verify: |
+      grep -q 'historico' specs/test-strategy/risk-register.yaml && \
+      grep -q 'e07' specs/test-strategy/risk-register.yaml
+    bcp: 0.5
+    wsjf: 4.0
+    wsjf_rationale: "BV=3 documentation clarity + TC=1 no urgency + RR=3 prevents future false-alarm on the same 65% number / JS=1 hours"
+    depends: []
+
+  - id: e08-s03
+    title: "Live-ranking verification script (regression guard, not one-off)"
+    description: >
+      Codify the ad-hoc live-data verification performed during this epic's
+      scoping (2026-07-04: 93 jogos / 593 palpites / 10 participantes / 86
+      finished matches, cross-checked via ranking.py, a raw independent loop,
+      and web/src/scoring.js — all three agreed byte-for-byte) as a repeatable
+      script: scripts/verify_live_ranking.py. It should fetch live BigBase data
+      read-only, recompute ranking two independent ways (ranking.calcular() vs
+      a hand-rolled loop using bolao.scoring.pontos() directly), and fail loudly
+      if they disagree — a cheap tripwire against a future regression in
+      ranking.py without needing the JS runtime. Do NOT persist or print
+      participant PII beyond what's already shown in /ranking; do not write
+      any temp files with live data (the ad-hoc check in this session used and
+      deleted /tmp/live_data.json — the script should never touch disk).
+    verify: |
+      python -m scripts.verify_live_ranking
+    bcp: 0.5
+    wsjf: 4.5
+    wsjf_rationale: "BV=3 cheap regression guard + TC=1 no urgency + RR=5 catches ranking drift before users notice / JS=1 hours"
+    depends: []
