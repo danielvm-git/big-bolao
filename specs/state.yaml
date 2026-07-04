@@ -9,10 +9,10 @@ bug_cycle: {} # cleared — switching to build_epic for e06
 
 epic_cycle:
   epic: e06-test-strategy
-  step: 7
+  step: 8
   story: e06-s06
-  story_bcps: 1
-  next_story: e06-s06
+  story_bcps: 0.5
+  next_story: null
   fast_mode: true
   done_stories:
     - e06-s01
@@ -20,9 +20,15 @@ epic_cycle:
     - e06-s03
     - e06-s04
     - e06-s05
+    - e06-s06
   audit_result: done
 
 completed_epics:
+  - id: e06
+    title: "Test Strategy & Architecture Overhaul (TEA-style)"
+    bcps: 7.5
+    date: "2026-07-04"
+    status: done
   - id: e01
     title: "Site Big Bolão Mobile (Vite + Vue 3)"
     bcps: 7
@@ -51,12 +57,6 @@ pending_epics:
     bcps: 2
     status: partial (2/6 stories done)
     next_story: e02-s03 "BigBase.ensure_setup — upsert from API"
-  - id: e06
-    title: "Test Strategy & Architecture Overhaul (TEA-style)"
-    bcps: 7.5
-    bcps_delivered: 5.5
-    status: partial (5/6 stories done)
-    next_story: e06-s06 "Remaining quality gates & hardening"
 
 environment:
   node: v24.15.0
@@ -77,24 +77,27 @@ required_reading:
   - specs/release-plan.yaml
 
 handoff:
-  current_phase: build
-  next_skill: build-epic
+  current_phase: sustain
+  next_skill: survey-context
   notes: >
-    e06-s05 (CI governance gates) squash-merged to main. Governance gates G1, G2, G3 all pass.
-    160 Python tests, 88 web tests pass. Next: e06-s06 remaining quality gates & hardening.
-    Clean worktree needed: run 'git worktree remove -f ../e06-s05-ci-governance && git branch -D e06-s05-ci-governance'.
+    Epic e06 (Test Strategy & Architecture Overhaul) is COMPLETE. All 6 stories delivered
+    (7.5 BCPS): test-strategy foundation, golden fixtures, knockout label fix, parse-result
+    golden fixture, CI governance gates, and CLAUDE.md reconciliation. 160 Python tests,
+    88 web tests, 3 governance gates (G1/G2/G3) pass in CI. Next: e02-s03 (BigBase.ensure_setup
+    — upsert from API) or new work. Clean up stale branch: 'git branch -D e06-s06-doc-reconciliation'.
 
 git:
   branch: main
-  hash: 8e6f60c
+  hash: d5e59ca
 
 release:
   branch: main
-  hash: 8e6f60c
+  hash: d5e59ca
   mode: team-pr
   ci_verified: true
   commits:
-    - 64b13d6 ci(ci): add governance gates for bug registry, scoring parity, and coverage
+    - 64b13d6 ci(ci): add governance gates for bug registry, scoring parity, and coverage (#3)
+    - 2351a6d docs(claude): update test inventory, strategy, and governance documentation (#4)
 
 metrics:
   - id: story_start
@@ -145,3 +148,9 @@ metrics:
     end: "2026-07-04T10:30:00-03:00"
     cycle_minutes: 1050
     bcp_per_hour: 0.06
+  - id: e06-s06-doc-reconciliation
+    bcps: 0.5
+    start: "2026-07-04T10:30:00-03:00"
+    end: "2026-07-04T11:00:00-03:00"
+    cycle_minutes: 30
+    bcp_per_hour: 1.0
