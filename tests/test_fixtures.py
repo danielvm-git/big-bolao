@@ -123,60 +123,50 @@ class TestNormalise:
         assert kickoffs == sorted(kickoffs)
 
 
-# ── parse_result — status-aware field selection ──────────────────────────────
+# ── parse_result — golden fixture tests ────────────────────────────────────
+#
+# DESIGN DECISION: we use a DENYLIST-like approach — only ET statuses get
+# match_score; everything else gets ft_score. This defends against API
+# status-string drift. If apifootball adds a new penalty status we haven't
+# seen, we still read ft_score (correct) instead of match_score (unreliable
+# for penalty-decided matches). See BUG-2026-06-30-140000 and its recurrence.
+#
+# The golden fixture (specs/test-strategy/parse-result-golden.json) is the
+# single source of truth for all parse_result() code paths. Add new cases
+# there, not here. Tests/ directory mirrors this invariant.
+
+import json
+from pathlib import Path
+
+_HERE = Path(__file__).resolve().parent
+_GOLDEN = _HERE.parent / "specs" / "test-strategy" / "parse-result-golden.json"
+with open(_GOLDEN) as _f:
+    _PARSE_CASES = json.load(_f)
+
 
 class TestParseResultFieldSelection:
     """parse_result() defaults to ft_score (safe); only ET statuses use match_score."""
 
-    # ── ET matches: use match_*_score (ET goals count) ─────────────────────
+    def test_golden_has_at_least_15_cases(self):
+        assert len(_PARSE_CASES) >= 15, f"Expected ≥15 cases, got {len(_PARSE_CASES)}"
 
-    @pytest.mark.parametrize("status", ["After ET", "AET", "Finished AET"])
-    def test_et_statuses_use_match_score(self, status):
-        """ET goals count — match_*_score must be preferred for ET statuses."""
+    @pytest.mark.parametrize("c", _PARSE_CASES, ids=lambda c: c["desc"])
+    def test_parse_result_golden(self, c):
+        """Every golden case must match parse_result()."""
         fx = {
-            "match_status": status,
-            "match_hometeam_score": "2", "match_awayteam_score": "1",
-            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
+            "match_status": c["match_status"],
+            "match_hometeam_score": c["match_hometeam_score"],
+            "match_awayteam_score": c["match_awayteam_score"],
+            "match_hometeam_ft_score": c["match_hometeam_ft_score"],
+            "match_awayteam_ft_score": c["match_awayteam_ft_score"],
         }
-        assert parse_result(fx) == (2, 1)
-
-    # ── Everyone else defaults to ft_score (safe) ──────────────────────────
-
-    @pytest.mark.parametrize("status", [
-        "After Pen.", "PEN", "Finished PEN",  # penalty variants
-        "Finished", "FT",                       # regular finish
-        "Half Time", "Not Started",             # not finished (shouldn't happen but safe)
-        "Some New Status",                      # unknown future status
-    ])
-    def test_non_et_statuses_use_ft_score(self, status):
-        """Any status NOT explicitly ET defaults to ft_score (safe).
-
-        This defends against API status-string drift — if the API adds a new
-        penalty status we haven't seen before, we still read the reliable
-        ft_score field instead of the potentially-inflated match_score.
-        """
-        fx = {
-            "match_status": status,
-            "match_hometeam_score": "99", "match_awayteam_score": "99",
-            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
-        }
-        assert parse_result(fx) == (1, 1)
-
-    def test_non_et_falls_back_to_match_score_when_ft_missing(self):
-        """When ft_score is absent, fall back to match_score (graceful degradation)."""
-        fx = {
-            "match_status": "Finished",
-            "match_hometeam_score": "3", "match_awayteam_score": "0",
-            "match_hometeam_ft_score": "", "match_awayteam_ft_score": "",
-        }
-        assert parse_result(fx) == (3, 0)
-
-    def test_discrepancy_check_survives_non_numeric_fields(self):
-        """Hardening log must not crash when match_score fields are non-numeric."""
-        fx = {
-            "match_status": "Finished",
-            "match_hometeam_score": "n/a", "match_awayteam_score": "n/a",
-            "match_hometeam_ft_score": "1", "match_awayteam_ft_score": "1",
-        }
-        # Must still return correct ft_score without raising
-        assert parse_result(fx) == (1, 1)
+        result = parse_result(fx)
+        expected = (
+            (c["expected_home"], c["expected_away"])
+            if c["expected_home"] is not None
+            else None
+        )
+        assert result == expected, (
+            f"parse_result({c['desc']!r}): "
+            f"got {result}, expected {expected}"
+        )
