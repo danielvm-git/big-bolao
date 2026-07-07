@@ -106,6 +106,15 @@ def _build() -> list[Match]:
 
 
 MATCHES: list[Match] = _build()
+
+# ---- Quartas de Final ----
+_QUARTAS: list[Match] = [
+    Match("QF-01", 0, "2026-07-09T17:00:00", "França", "Marrocos"),
+    Match("QF-02", 0, "2026-07-10T16:00:00", "Espanha", "Bélgica"),
+    Match("QF-03", 0, "2026-07-11T18:00:00", "Noruega", "Inglaterra"),
+]
+MATCHES.extend(_QUARTAS)
+
 BY_ID: dict[str, Match] = {m.match_id: m for m in MATCHES}
 
 
