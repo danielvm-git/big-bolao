@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/danielvm-git/big-bolao/compare/v1.17.0...v1.17.1) (2026-07-07)
+
+
+### Bug Fixes
+
+* **ci:** decouple fixtures from config import for G3 coverage gate ([6b4d379](https://github.com/danielvm-git/big-bolao/commit/6b4d379dbf1003543190af5338387b5941bd0e86))
+
 # [1.17.0](https://github.com/danielvm-git/big-bolao/compare/v1.16.0...v1.17.0) (2026-07-07)
 
 
