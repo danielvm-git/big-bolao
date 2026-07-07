@@ -32,11 +32,11 @@ permissions:
   pull-requests: write
 
 env:
-  NODE_VERSION: '22'
-  PYTHON_VERSION: '3.12'
-  BIGBASE_URL: 'https://bigbase.click'
-  BIGBASE_REPO_ID: '04c58b9df51405ee33378c2539f9ea68'
-  SITE_URL: 'https://bolao.bigbase.click'
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
+  BIGBASE_URL: "https://bigbase.click"
+  BIGBASE_REPO_ID: "04c58b9df51405ee33378c2539f9ea68"
+  SITE_URL: "https://bolao.bigbase.click"
 
 jobs:
   ci-cd:
@@ -61,7 +61,7 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/setup-node@v4
         with:
-          node-version: '${{ env.NODE_VERSION }}'
+          node-version: "${{ env.NODE_VERSION }}"
 
       - name: Save pre-release HEAD
         id: pre-release
@@ -109,13 +109,13 @@ jobs:
         if: steps.detect-release.outputs.new_release == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '${{ env.NODE_VERSION }}'
+          node-version: "${{ env.NODE_VERSION }}"
 
       - name: Build web (Vite)
         if: steps.detect-release.outputs.new_release == 'true'
         working-directory: web
         env:
-          PUPPETEER_SKIP_DOWNLOAD: 'true'
+          PUPPETEER_SKIP_DOWNLOAD: "true"
         run: |
           npm ci --prefer-offline
           npm run build
@@ -142,7 +142,7 @@ jobs:
         if: steps.detect-release.outputs.new_release == 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: '${{ env.PYTHON_VERSION }}'
+          python-version: "${{ env.PYTHON_VERSION }}"
 
       - name: Run Python tests
         if: steps.detect-release.outputs.new_release == 'true'
@@ -169,6 +169,10 @@ jobs:
       # --- Governance gate 3: P0 module coverage ---
       - name: Check P0 coverage
         if: steps.detect-release.outputs.new_release == 'true'
+        env:
+          TELEGRAM_TOKEN: ci-test-token
+          BIGBASE_EMAIL: ci-test@test.local
+          BIGBASE_PASSWORD: ci-test-password
         run: |
           python -m pytest --cov=bolao.scoring --cov-fail-under=90 tests/test_scoring.py -q
           python -m pytest --cov=bolao.fixtures --cov-fail-under=90 tests/test_fixtures.py -q
@@ -181,7 +185,7 @@ jobs:
         if: steps.detect-release.outputs.new_release == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: '${{ env.NODE_VERSION }}'
+          node-version: "${{ env.NODE_VERSION }}"
 
       - name: Run web tests
         if: steps.detect-release.outputs.new_release == 'true'

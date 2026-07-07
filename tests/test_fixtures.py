@@ -199,12 +199,12 @@ async def test_fetch_from_api_returns_normalised_fixtures():
 
     mock_response = MockResponse()
 
-    with patch("bolao.fixtures.config.APIFOOTBALL_KEY", "test-key-123"):
-        with patch("bolao.fixtures.config.APIFOOTBALL_LEAGUE_ID", "28"):
-            with patch("bolao.fixtures.httpx.AsyncClient") as MockClient:
-                instance = MockClient.return_value.__aenter__.return_value
-                instance.get.return_value = mock_response
-                result = await fetch_from_api()
+    env = {"APIFOOTBALL_KEY": "test-key-123", "APIFOOTBALL_LEAGUE_ID": "28"}
+    with patch.dict("os.environ", env, clear=False):
+        with patch("bolao.fixtures.httpx.AsyncClient") as MockClient:
+            instance = MockClient.return_value.__aenter__.return_value
+            instance.get.return_value = mock_response
+            result = await fetch_from_api()
 
     assert len(result) == 1
     assert result[0]["casa"] == "Brazil"
@@ -228,3 +228,32 @@ def test_parse_phase_date_fallback():
     # Outside all ranges should return None
     phase = _parse_phase("", "2026-05-01")
     assert phase is None, f"Expected None, got {phase}"
+
+
+def test_fixtures_imports_without_bot_credentials(tmp_path):
+    """Regression: CI G3 coverage runs pytest without TELEGRAM_TOKEN."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parents[1]
+    env = os.environ.copy()
+    for key in ("TELEGRAM_TOKEN", "BIGBASE_EMAIL", "BIGBASE_PASSWORD"):
+        env.pop(key, None)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            f"import sys; sys.path.insert(0, {str(project_root)!r}); "
+            "from bolao.fixtures import parse_result; "
+            "assert parse_result({'match_status': 'FT', 'match_hometeam_score': '1', "
+            "'match_awayteam_score': '0'}) == (1, 0)",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        cwd=str(tmp_path),
+    )
+    assert result.returncode == 0, result.stderr

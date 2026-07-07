@@ -18,11 +18,10 @@ match_id gerado: <phase_id>-<NN> ex. R1-01, R16-03, QF-02, FIN-01
 from __future__ import annotations
 
 import logging
+import os
 from datetime import timedelta, timezone
 
 import httpx
-
-from bolao import config
 
 log = logging.getLogger("bolao.fixtures")
 
@@ -240,7 +239,7 @@ async def fetch_from_api(
 
     Levanta RuntimeError se a chave nao estiver configurada ou a API retornar erro.
     """
-    key = config.APIFOOTBALL_KEY
+    key = os.environ.get("APIFOOTBALL_KEY", "")
     if not key:
         raise RuntimeError(
             "APIFOOTBALL_KEY nao configurada. "
@@ -254,7 +253,7 @@ async def fetch_from_api(
         "APIkey": key,
         "timezone": "America/Sao_Paulo",  # times returned in BRT, no conversion needed
     }
-    lid = league_id or config.APIFOOTBALL_LEAGUE_ID
+    lid = league_id or os.environ.get("APIFOOTBALL_LEAGUE_ID", "")
     if lid:
         params["league_id"] = str(lid)
 

@@ -5,7 +5,12 @@ active_epic_id: null
 last_step_completed: release-branch
 next_skill: survey-context
 
-bug_cycle: {}
+bug_cycle:
+  current_step: 5
+  completed_steps: [1, 2, 3, 4]
+  bug_id: BUG-2026-07-07-183300-ci-g3-fixtures-config-import
+  handoff:
+    next_skill: release-branch
 
 epic_cycle:
   current_step: complete
