@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/danielvm-git/big-bolao/compare/v1.16.0...v1.17.0) (2026-07-07)
+
+
+### Features
+
+* **matches:** add quarter-final fixtures (QF-01 to QF-03) ([385c14f](https://github.com/danielvm-git/big-bolao/commit/385c14f3ecbd8012426f8d5ce84379656a4cd7c2))
+
 # [1.16.0](https://github.com/danielvm-git/big-bolao/compare/v1.15.1...v1.16.0) (2026-07-04)
 
 
