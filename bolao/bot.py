@@ -77,6 +77,7 @@ def build_app() -> Application:
     app.add_handler(CommandHandler("ranking", handlers.cmd_ranking))
     # admin
     app.add_handler(CommandHandler("resultado", handlers.cmd_resultado))
+    app.add_handler(CommandHandler("matchid", handlers.cmd_matchid))
     app.add_handler(CommandHandler("sync", handlers.cmd_sync))
     app.add_handler(CommandHandler("lembrete", handlers.cmd_lembrete))
     # fluxo de palpite (callbacks) — patterns via BettingFlow

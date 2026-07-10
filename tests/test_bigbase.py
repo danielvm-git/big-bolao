@@ -213,8 +213,8 @@ async def test_ensure_setup_api_failure_fallback_matches():
         await bb.ensure_setup()
 
     jogos = _jogos_no_store(bb)
-    # MATCHES tem 75 jogos (72 grupos + 3 quartas)
-    assert len(jogos) == 75
+    # MATCHES tem 76 jogos (72 grupos + 4 quartas)
+    assert len(jogos) == 76
     # Verifica alguns jogos conhecidos
     match_ids = {j["match_id"] for j in jogos}
     assert "R1-01" in match_ids
@@ -251,8 +251,8 @@ async def test_ensure_setup_api_failure_existing_unchanged():
         await bb.ensure_setup()
 
     jogos = _jogos_no_store(bb)
-    # Deve ter 1 (existente) + 74 (novos do MATCHES) = 75
-    assert len(jogos) == 75
+    # Deve ter 1 (existente) + 75 (novos do MATCHES) = 76
+    assert len(jogos) == 76
     # O existente não foi recriado
     j1 = next(j for j in jogos if j["match_id"] == "R1-01")
     assert j1["id"] == 1

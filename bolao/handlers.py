@@ -253,7 +253,7 @@ async def cmd_resultado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if not config.is_admin(update.effective_user.id):
         return
     try:
-        mid, gc, gf = context.args[0], int(context.args[1]), int(context.args[2])
+        mid, gc, gf = context.args[0].upper(), int(context.args[1]), int(context.args[2])
     except (IndexError, ValueError):
         await update.message.reply_text("Uso: /resultado <match_id> <gols_casa> <gols_fora>")
         return
@@ -264,6 +264,73 @@ async def cmd_resultado(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     jogo = await db(context).get_jogo(mid)
     await update.message.reply_text(f"✅ Resultado salvo: {label_placar(jogo)}")
     await _publicar_resultado(context, jogo, manual=True)
+
+
+async def cmd_matchid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin: lista match_ids com times, kickoff, placar e status.
+
+    Uso:
+        /matchid                 → todos os jogos
+        /matchid Argentina       → filtra por nome de time (substring, case-insensitive)
+        /matchid --encerrado     → só jogos encerrados
+    """
+    if not config.is_admin(update.effective_user.id):
+        return
+
+    args = context.args or []
+    filtro_encerrado = "--encerrado" in args
+    filtro_time = " ".join(a for a in args if a != "--encerrado").strip().lower()
+
+    jogos = await db(context).get_jogos()
+
+    if filtro_encerrado:
+        jogos = [j for j in jogos if j.get("status") == "encerrado"]
+
+    if filtro_time:
+        jogos = [
+            j for j in jogos
+            if filtro_time in (j.get("casa") or "").lower()
+            or filtro_time in (j.get("fora") or "").lower()
+        ]
+
+    if not jogos:
+        await update.message.reply_text("Nenhum jogo encontrado.")
+        return
+
+    def _row(j: dict) -> str:
+        mid = (j.get("match_id") or "?").ljust(10)
+        casa = (j.get("casa") or "?")[:14].ljust(14)
+        fora = (j.get("fora") or "?")[:14].ljust(14)
+        ko = (j.get("kickoff") or "")[:16].replace("T", " ")
+        gc = j.get("gols_casa")
+        gf = j.get("gols_fora")
+        placar = f"{gc}x{gf}" if gc is not None and gf is not None else "-x-"
+        status = "✅" if j.get("status") == "encerrado" else "⏳"
+        return f"{mid} {casa} x {fora}  {ko}  {placar}  {status}"
+
+    MAX = 4000  # Telegram limit is 4096; leave headroom for <pre> tags
+    lines = [_row(j) for j in jogos]
+    chunks: list[str] = []
+    buf: list[str] = []
+    cur_len = 0
+
+    for line in lines:
+        if cur_len + len(line) + 1 > MAX:
+            chunks.append("\n".join(buf))
+            buf = []
+            cur_len = 0
+        buf.append(line)
+        cur_len += len(line) + 1
+
+    if buf:
+        chunks.append("\n".join(buf))
+
+    for i, chunk in enumerate(chunks):
+        suffix = f"\n… ({len(jogos)} jogos total)" if i == len(chunks) - 1 and len(chunks) > 1 else ""
+        await update.message.reply_text(
+            f"<pre>{chunk}{suffix}</pre>",
+            parse_mode=ParseMode.HTML,
+        )
 
 
 async def cmd_sync(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -1,0 +1,47 @@
+id: e09
+slug: matchid-command
+title: "/matchid admin command — list match IDs from Telegram"
+status: planned
+bcp: 1.0
+wsjf: 5.5
+wsjf_rationale: "BV=5 saves admin time, reduces typos in manual /resultado + TC=3 knockouts happening now + RR=3 reduces error risk / JS=2 ~1 day"
+
+description: >
+  Add an admin-only /matchid Telegram command that lists all matches with their
+  match_id, teams, kickoff, result, and status. Accepts an optional team name
+  filter. Solves the pain of needing to SSH + run a CLI script just to find a
+  match_id when entering manual results via /resultado.
+
+  Command format:
+    /matchid                   → all matches
+    /matchid Argentina         → filter by team name
+    /matchid --encerrado       → only finished matches
+
+  Output format (HTML, ParseMode.HTML):
+    <pre>
+    R32-08    Argentina x Cape Verde    2026-07-03 19:00  3x2  encerrado
+    R32-16    Colombia x Ghana          2026-07-03 22:30  1x0  encerrado
+    R16-01    Canada x Morocco          2026-07-04 14:00  -x-  agendado
+    </pre>
+
+  IMPORTANT: Must stay within Telegram's 4096-char message limit. For large
+  match lists with 90+ games, paginate or truncate.
+
+depends_on: []
+
+stories:
+  - id: e09-s01
+    title: "Add /matchid admin command — list match IDs with optional filter"
+    description: >
+      Create cmd_matchid handler in handlers.py that fetches jogos via db(),
+      applies optional team-name filter, formats a <pre> table with
+      match_id, teams, kickoff, result, and status, and replies in
+      ParseMode.HTML. Register as admin-only CommandHandler in bot.py.
+      If result set exceeds Telegram's 4096-char limit, truncate with a
+      "... (+N more)" message. Write tests with a fake db.
+    verify: |
+      python -m pytest tests/test_matchid.py -v
+    bcp: 1.0
+    wsjf: 5.5
+    wsjf_rationale: "BV=5 + TC=3 + RR=3 / JS=2 (1 day)"
+    depends: []

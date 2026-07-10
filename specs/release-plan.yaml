@@ -70,6 +70,14 @@ epics:
     status: planned
     wsjf: 6.7
 
+  - id: e09
+    slug: matchid-command
+    title: "/matchid admin command — list match IDs from Telegram"
+    bcp: 1.0
+    priority: 1
+    status: planned
+    wsjf: 5.5
+
 stories:
   # ── e05 — Quiet Hours (TOP PRIORITY) ───────────────────────────
   - id: e05-s01
@@ -360,3 +368,11 @@ stories:
     bcp: 0.5
     depends: [e06-s05]
     status: pending
+
+  # ── e09 — /matchid admin command ───────────────────────────────
+  - id: e09-s01
+    title: "Add /matchid admin command — list match IDs with optional filter"
+    bcp: 1.0
+    depends: []
+    status: planned
+    notes: "Admin-only; accepts team name filter; <pre> formatted; truncates at 4096 chars"

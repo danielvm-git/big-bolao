@@ -112,6 +112,7 @@ _QUARTAS: list[Match] = [
     Match("QF-01", 0, "2026-07-09T17:00:00", "França", "Marrocos"),
     Match("QF-02", 0, "2026-07-10T16:00:00", "Espanha", "Bélgica"),
     Match("QF-03", 0, "2026-07-11T18:00:00", "Noruega", "Inglaterra"),
+    Match("QF-04", 0, "2026-07-11T22:00:00", "Argentina", "Suíça"),
 ]
 MATCHES.extend(_QUARTAS)
 

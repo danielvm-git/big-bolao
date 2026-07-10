@@ -16,8 +16,8 @@
 #   8. Failure notification
 #
 # Secrets needed (repo Settings → Secrets and variables → Actions):
-#   - BIGBASE_EMAIL: service account email
-#   - BIGBASE_PASSWORD: service account password
+#   - BIGBASE_DEPLOY_TOKEN: scoped deploy token (see docs/reference/contracts/bigbase-deploy-contract.md in .github)
+#   - BIGBASE_SITE_ID: site this token is scoped to
 # ============================================================================
 name: CI/CD
 
@@ -31,11 +31,14 @@ permissions:
   issues: write
   pull-requests: write
 
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   NODE_VERSION: "22"
   PYTHON_VERSION: "3.12"
   BIGBASE_URL: "https://bigbase.click"
-  BIGBASE_REPO_ID: "04c58b9df51405ee33378c2539f9ea68"
   SITE_URL: "https://bolao.bigbase.click"
 
 jobs:
@@ -197,29 +200,20 @@ jobs:
       # -----------------------------------------------------------------------
       # Step 5: Deploy to BigBase
       # -----------------------------------------------------------------------
-      - name: Login to BigBase
-        id: login
-        if: steps.detect-release.outputs.new_release == 'true'
-        run: |
-          RESPONSE=$(curl -sS -X POST \
-            "${{ env.BIGBASE_URL }}/api/auth/login" \
-            -H "Content-Type: application/json" \
-            -d "{\"email\":\"${{ secrets.BIGBASE_EMAIL }}\",\"password\":\"${{ secrets.BIGBASE_PASSWORD }}\"}")
-          TOKEN=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])" 2>/dev/null || echo "")
-          if [ -z "${TOKEN}" ]; then
-            echo "ERROR: Login failed"
-            exit 1
-          fi
-          echo "::add-mask::${TOKEN}"
-          echo "token=${TOKEN}" >> "$GITHUB_OUTPUT"
-
       - name: Trigger BigBase deploy
         id: deploy
         if: steps.detect-release.outputs.new_release == 'true'
+        env:
+          BIGBASE_DEPLOY_TOKEN: ${{ secrets.BIGBASE_DEPLOY_TOKEN }}
+          BIGBASE_SITE_ID: ${{ secrets.BIGBASE_SITE_ID }}
         run: |
+          if [ -z "${BIGBASE_DEPLOY_TOKEN}" ]; then
+            echo "::error::BIGBASE_DEPLOY_TOKEN not set — provision via bigbase_provision_ci_credentials"
+            exit 1
+          fi
           RESPONSE=$(curl -sS -X POST \
-            "${{ env.BIGBASE_URL }}/api/sites/${{ env.BIGBASE_REPO_ID }}/deploy" \
-            -H "Authorization: Bearer ${{ steps.login.outputs.token }}" \
+            "${{ env.BIGBASE_URL }}/api/sites/${BIGBASE_SITE_ID}/deploy" \
+            -H "Authorization: Bearer ${BIGBASE_DEPLOY_TOKEN}" \
             -H "Content-Type: application/json" \
             -d '{"branch": "main", "app_type": "python", "passthrough_paths": ["/api/version"]}')
           echo "Deploy triggered: ${RESPONSE}"
