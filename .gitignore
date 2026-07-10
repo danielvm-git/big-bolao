@@ -18,3 +18,6 @@ node_modules/
 .pi/
 .bts.toml
 .envrc
+
+# Test output artifacts
+specs/epics/*/baseline-*.log
