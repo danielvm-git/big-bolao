@@ -90,22 +90,25 @@ handoff:
   current_phase: sustain
   next_skill: survey-context
   notes: >
-    Handoff para outro agente (2026-07-04).
-    E01 a e06 completos e commitados. E02: 6/6 stories done
-    (e02-s03 ensure_setup upsert da API com fallback MATCHES concluido).
-    E08 (coverage-priorities) planejado no release-plan — proximo passo.
-    Branch e02-s03-ensure-setup-api-upsert precisa ser removida
-    (git branch -D e02-s03-ensure-setup-api-upsert nao executado pelo agente).
+    Release e09 (matchid command) pushed to main (4ffea2c).
+    CI test gates all pass — deploy step fails because BIGBASE_DEPLOY_TOKEN
+    and BIGBASE_SITE_ID secrets not yet set in GitHub repo.
+    Action: add BIGBASE_DEPLOY_TOKEN + BIGBASE_SITE_ID to repo secrets
+    (Settings → Secrets and variables → Actions), then re-run CI or push
+    again to trigger deploy.
+    Previous: E01-e06 done. E07 planned, E08 planned, E09 implemented.
+    Branch e02-s03-ensure-setup-api-upsert precisa ser removida.
 
 git:
   branch: main
-  hash: 7475b8f
+  hash: 4ffea2c
 
 release:
   branch: main
-  hash: 8bf5349
+  hash: 4ffea2c
   mode: solo-local
-  ci_verified: true
+  ci_verified: false
+  ci_failure_reason: "Deploy step: BIGBASE_DEPLOY_TOKEN + BIGBASE_SITE_ID secrets not provisioned in GitHub repo"
   capsule_archived: false
   stale_branches_removed:
     - docs/planning-e07-adrs-domain-model
@@ -114,6 +117,7 @@ release:
     - e06-s05-ci-governance
     - e06-s06-doc-reconciliation
   commits:
+    - 4ffea2c feat(matchid): add /matchid admin command, QF-04 fixture, CI deploy-token migration
     - 713f436 docs(planning): capture e07 epic, ADR-002/003, and domain model
     - a195b92 chore(state): mark e06 epic complete, all 6 stories delivered
     - 0c013d2 docs(claude): update test inventory, strategy, and governance documentation (#4)
