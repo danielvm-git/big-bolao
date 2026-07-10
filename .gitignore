@@ -1,17 +1,39 @@
+# Environment
 .env
+.env.local
+*.local
 credentials.json
-__pycache__
-*.pyc
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
 .venv/
 venv/
-.DS_Store
-big-bolao-handoff.zip
-/dist/
-.ruff_cache/
-.pytest_cache/
+dist/
+build/
 .coverage
-prototype/
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
 node_modules/
+
+# Vite
+vite.config.*.timestamp-*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Project-specific
+big-bolao-handoff.zip
+prototype/
 
 # Tooling config (personal, not shared)
 .rtk/
