@@ -1,0 +1,17 @@
+story_id: e07-s05
+title: "Docs — tech-stack.md as-built + traceability update"
+status: todo
+bcps: 0.5
+tasks:
+  - id: 1
+    description: "Update specs/tech-architecture/tech-stack.md — promote deepening seam to as-built, update bot layer diagram and jobs list"
+    verify: "grep -q 'GroupAnnouncer' specs/tech-architecture/tech-stack.md"
+    status: todo
+  - id: 2
+    description: "Update specs/test-strategy/traceability.md — add new test files mapped to quiet-hours/sync invariants"
+    verify: "grep -q 'test_group_channel' specs/test-strategy/traceability.md"
+    status: todo
+  - id: 3
+    description: "Verify no stale references to extracted code (handlers.job_, send_message in handlers, is_quiet_hours in handlers)"
+    verify: "test 0 -eq $(grep -c 'handlers.job_' bolao/bot.py) && test 0 -eq $(grep -c 'send_message.*GRUPO_CHAT_ID' bolao/handlers.py) && test 0 -eq $(grep -c 'is_quiet_hours' bolao/handlers.py)"
+    status: todo

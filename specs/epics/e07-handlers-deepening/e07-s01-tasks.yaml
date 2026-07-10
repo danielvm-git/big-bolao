@@ -1,0 +1,25 @@
+story_id: e07-s01
+title: "Extract GroupAnnouncer — deep group-channel + quiet-hours seam"
+status: todo
+bcps: 1
+tasks:
+  - id: 1
+    description: "Create bolao/group_channel.py with GroupAnnouncer class (init, announce, flush)"
+    verify: 'python -c "from bolao.group_channel import GroupAnnouncer; print(''OK'')"'
+    status: todo
+  - id: 2
+    description: "Implement GroupAnnouncer.announce(text, *, force=False) — send or enqueue with quiet-hours logic"
+    verify: "python -m pytest tests/test_group_channel.py -k test_announce -q"
+    status: todo
+  - id: 3
+    description: "Implement GroupAnnouncer.flush() — drain FIFO with 2s gap, then clear"
+    verify: "python -m pytest tests/test_group_channel.py -k test_flush -q"
+    status: todo
+  - id: 4
+    description: "Add announcer_from(context) factory wiring context.bot, config.GRUPO_CHAT_ID, bot_data queue, is_quiet_hours"
+    verify: 'python -c "from bolao.group_channel import announcer_from; print(''OK'')"'
+    status: todo
+  - id: 5
+    description: "Write tests/test_group_channel.py — coverage for announce, flush, edge cases, and factory"
+    verify: "python -m pytest tests/test_group_channel.py -v"
+    status: todo

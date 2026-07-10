@@ -1,0 +1,29 @@
+story_id: e07-s04
+title: "Relocate job_* wrappers to jobs.py; handlers.py = routing only"
+status: todo
+bcps: 1
+tasks:
+  - id: 1
+    description: "Create bolao/jobs.py with job_sync, job_sync_fixtures, job_lembrete, job_morning_flush copied from handlers.py"
+    verify: 'python -c "from bolao.jobs import job_sync, job_sync_fixtures, job_lembrete, job_morning_flush; print(''OK'')"'
+    status: todo
+  - id: 2
+    description: "Remove the four job functions from handlers.py (keep kickoff_horas)"
+    verify: 'python -c "import bolao.handlers; print(''OK'')"'
+    status: todo
+  - id: 3
+    description: "Update bot.py: change handlers.job_* references to jobs.job_*"
+    verify: 'python -c "from bolao import bot; print(''OK'')"'
+    status: todo
+  - id: 4
+    description: "Move inline 'from bolao.util import kickoff_dt' to module-level imports in handlers.py"
+    verify: 'python -c "import ast; ast.parse(open(''bolao/handlers.py'').read()); print(''syntax OK'')"'
+    status: todo
+  - id: 5
+    description: "Update test_quiet_hours.py import: from bolao.jobs import job_morning_flush"
+    verify: "python -m pytest tests/test_quiet_hours.py -v"
+    status: todo
+  - id: 6
+    description: "Full regression: 166 tests pass + all modules import cleanly"
+    verify: 'python -m pytest tests/ -q && python -c "import bolao.bot, bolao.jobs, bolao.handlers; print(''all import OK'')"'
+    status: todo

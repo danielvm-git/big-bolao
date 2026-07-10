@@ -1,0 +1,29 @@
+story_id: e07-s03
+title: "Extract ResultsPublisher controller"
+status: todo
+bcps: 1.5
+tasks:
+  - id: 1
+    description: "Create bolao/results_publisher.py with ResultsPublisher(db, results_provider, announcer) — publish_result, publish_ranking, sync methods"
+    verify: 'python -c "from bolao.results_publisher import ResultsPublisher; print(''OK'')"'
+    status: todo
+  - id: 2
+    description: "Rewire _sync_resultados in handlers.py to delegate to ResultsPublisher(db, results_mod, announcer_from).sync(force=manual)"
+    verify: 'python -c "import bolao.handlers; print(''OK'')"'
+    status: todo
+  - id: 3
+    description: "Rewire cmd_resultado to use ResultsPublisher.publish_result(jogo, force=True)"
+    verify: 'python -c "import bolao.handlers; print(''OK'')"'
+    status: todo
+  - id: 4
+    description: "Rewire cmd_sync to delegate through ResultsPublisher"
+    verify: 'python -c "import bolao.handlers; print(''OK'')"'
+    status: todo
+  - id: 5
+    description: "Write tests/test_results_publisher.py with fake db + fake announcer — 6+ tests covering publish_result, publish_ranking, sync, error handling"
+    verify: "python -m pytest tests/test_results_publisher.py -v"
+    status: todo
+  - id: 6
+    description: "Full regression: verify all 166 tests pass"
+    verify: "python -m pytest tests/ -q"
+    status: todo

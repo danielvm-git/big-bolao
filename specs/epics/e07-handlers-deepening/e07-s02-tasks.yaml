@@ -1,0 +1,29 @@
+story_id: e07-s02
+title: "Rewire publishers through GroupAnnouncer (behavior-preserving)"
+status: todo
+bcps: 1
+tasks:
+  - id: 1
+    description: "Replace _publicar_resultado body with announcer_from(context).announce(texto, force=manual)"
+    verify: "python -m pytest tests/test_quiet_hours.py -v"
+    status: todo
+  - id: 2
+    description: "Replace _publicar_ranking body with announcer_from(context).announce(texto, force=manual)"
+    verify: "python -m pytest tests/test_quiet_hours.py -v"
+    status: todo
+  - id: 3
+    description: "Replace job_morning_flush body with announcer_from(context).flush()"
+    verify: "python -m pytest tests/test_quiet_hours.py -v"
+    status: todo
+  - id: 4
+    description: "Replace _postar_lembrete body with announcer_from(context).announce(texto, force=True)"
+    verify: "python -m pytest tests/test_group_publisher.py tests/test_ranking.py -v"
+    status: todo
+  - id: 5
+    description: "Remove unused is_quiet_hours import from handlers.py (keep in util import line)"
+    verify: 'python -c "import ast; ast.parse(open(''bolao/handlers.py'').read()); print(''syntax OK'')"'
+    status: todo
+  - id: 6
+    description: "Full regression: verify all 166 tests pass and zero raw send_message(GRUPO_CHAT_ID) remain"
+    verify: "python -m pytest tests/ -q && test 0 -eq $(grep -c 'send_message.*GRUPO_CHAT_ID' bolao/handlers.py)"
+    status: todo
