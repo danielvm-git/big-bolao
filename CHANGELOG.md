@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/danielvm-git/big-bolao/compare/v1.17.1...v1.18.0) (2026-07-10)
+
+
+### Features
+
+* **matchid:** add /matchid admin command, QF-04 fixture, CI deploy-token migration ([4ffea2c](https://github.com/danielvm-git/big-bolao/commit/4ffea2c71987a2643a114ec08958b7e1e3348de7))
+
 ## [1.17.1](https://github.com/danielvm-git/big-bolao/compare/v1.17.0...v1.17.1) (2026-07-07)
 
 
