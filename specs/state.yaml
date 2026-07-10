@@ -105,10 +105,9 @@ git:
 
 release:
   branch: main
-  hash: 4ffea2c
+  hash: a318ad9
   mode: solo-local
-  ci_verified: false
-  ci_failure_reason: "Deploy step: BIGBASE_DEPLOY_TOKEN + BIGBASE_SITE_ID secrets not provisioned in GitHub repo"
+  ci_verified: true
   capsule_archived: false
   stale_branches_removed:
     - docs/planning-e07-adrs-domain-model
