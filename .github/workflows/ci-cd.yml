@@ -10,14 +10,17 @@
 #   2. Web build (npm ci + vite build in web/)
 #   3. Python tests + governance gates (pytest, governance scripts, coverage)
 #   4. Web tests (node --test)
-#   5. BigBase login (email/password → JWT)
-#   6. Deploy trigger (POST /api/sites/{id}/deploy → BigBase auto-deploys)
-#   7. Health check (curl site, 5 retries, 10s interval)
-#   8. Failure notification
+#   5. Deploy to BigBase (scoped token, ::add-mask::, curl POST)
+#   6. Health check (8 retries, 10s interval)
+#   7. Failure notification
 #
 # Secrets needed (repo Settings → Secrets and variables → Actions):
 #   - BIGBASE_DEPLOY_TOKEN: scoped deploy token (see docs/reference/contracts/bigbase-deploy-contract.md in .github)
 #   - BIGBASE_SITE_ID: site this token is scoped to
+#
+# NOTE: web/dist/ auto-commit is kept because BigBase deploys from the repo
+# (not from artifacts) and app.py serves web/dist/ at runtime. BigBase does
+# not run npm build during deploy. See bigbase-deploy-contract.md.
 # ============================================================================
 name: CI/CD
 
@@ -27,9 +30,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: ci-cd-${{ github.workflow }}-${{ github.ref }}
@@ -44,8 +45,12 @@ env:
 jobs:
   ci-cd:
     name: CI/CD
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 10
+    permissions:
+      contents: write # semantic-release creates tags + changelog commits
+      issues: write
+      pull-requests: write
 
     steps:
       # -----------------------------------------------------------------------
@@ -124,7 +129,9 @@ jobs:
           npm run build
           echo "Web dist: $(ls dist/ 2>/dev/null | wc -l) files"
 
-      - name: Auto-commit rebuilt web/dist
+      # BigBase deploys from repo (no artifact API); dist must be present
+      # for app.py to serve the SPA at runtime.
+      - name: Commit rebuilt web/dist
         if: steps.detect-release.outputs.new_release == 'true'
         run: |
           if [ -n "$(git status --porcelain web/dist/)" ]; then
@@ -211,6 +218,7 @@ jobs:
             echo "::error::BIGBASE_DEPLOY_TOKEN not set — provision via bigbase_provision_ci_credentials"
             exit 1
           fi
+          echo "::add-mask::${BIGBASE_DEPLOY_TOKEN}"
           RESPONSE=$(curl -sS -X POST \
             "${{ env.BIGBASE_URL }}/api/sites/${BIGBASE_SITE_ID}/deploy" \
             -H "Authorization: Bearer ${BIGBASE_DEPLOY_TOKEN}" \
@@ -222,7 +230,7 @@ jobs:
           echo "Deployment ID: ${DEPLOY_ID}"
 
       # -----------------------------------------------------------------------
-      # Step 7: Health check (site responds, BigBase auto-finishes deploy)
+      # Step 6: Health check
       # -----------------------------------------------------------------------
       - name: Health check
         if: steps.detect-release.outputs.new_release == 'true'
@@ -245,7 +253,7 @@ jobs:
           fi
 
       # -----------------------------------------------------------------------
-      # Step 8: Summary
+      # Step 7: Summary
       # -----------------------------------------------------------------------
       - name: Summary
         if: success() && steps.detect-release.outputs.new_release == 'true'
@@ -263,7 +271,7 @@ jobs:
   # ==========================================================================
   notify:
     name: Notify on failure
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [ci-cd]
     if: failure() && github.event_name != 'workflow_dispatch'
     steps:

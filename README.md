@@ -1,5 +1,7 @@
 # Big Bolão — Copa 2026 no Telegram + Web
 
+[![CI/CD](https://github.com/danielvm-git/big-bolao/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/danielvm-git/big-bolao/actions/workflows/ci-cd.yml)
+
 Bot de Telegram + Vue SPA pra rodar o bolão da Copa do Mundo 2026. Os palpites são feitos **no privado com o bot** (ninguém vê o palpite do outro, zero flood no grupo). O grupo só recebe lembretes, resultados e o ranking. Backend de dados no [BigBase](https://bigbase.click).
 
 Site web em **https://bolao.bigbase.click** — dashboard público com ranking, jogos e grade de palpites.
@@ -11,6 +13,24 @@ Site web em **https://bolao.bigbase.click** — dashboard público com ranking, 
 - **No site:** dashboard público (sem login) com ranking, lista de jogos, grade de palpites. Login automático via `?uid=` na URL enviada pelo bot (`/web`).
 - **Quiet Hours:** entre 22h e 8h BRT, o bot não publica resultados/ranking no grupo — enfileira e libera tudo às 8h.
 - **Pontuação:** `3` placar exato · `1` acertar vencedor/empate · `0` erro.
+
+## Tech Stack
+
+| Tool                          | Purpose                                    |
+| ----------------------------- | ------------------------------------------ |
+| **Python 3.12+**              | Bot backend (python-telegram-bot)          |
+| **Vue 3**                     | SPA com Composition API (`<script setup>`) |
+| **Vite**                      | Dev server + build bundler                 |
+| **BigBase**                   | Backend-as-a-Service (REST + JWT, SQLite)  |
+| **API-Football**              | Live match results (optional)              |
+| **pytest**                    | Python test framework (167 tests)          |
+| **Vitest / Node test runner** | Web test framework (88 tests)              |
+
+## Code Style
+
+- **Python**: Type hints on all public functions. Structured JSON logging via `bolao/logger.py`. Flake8 linting.
+- **Vue**: Composition API with `<script setup>`. Named exports only. No inline styles (BigBase CSP).
+- **All**: Conventional Commits mandatory. See `CONVENTIONS.md` for full conventions.
 
 ## Comandos do Bot
 
@@ -176,11 +196,14 @@ python3 scripts/redeploy.py   # deploy no bolao.bigbase.click
 
 > ⚠️ O MCP `deploy_site` do BigBase deploya no subdomínio errado (`danielvm-git-big-bolao.bigbase.click`). Use apenas `redeploy.py`.
 
-## Testes
+## Tests
 
 ```bash
-python3 -m pytest tests/ -v   # 80+ tests
+python -m pytest tests/ -q         # 167 Python tests
+cd web && node --test tests/*.test.js  # 88 web tests
 ```
+
+See `specs/test-strategy/README.md` for the full test strategy, governance gates, and golden fixture invariant. Coverage gates enforce ≥90% on business-logic modules (scoring, fixtures, ranking).
 
 ## Observabilidade
 
@@ -193,3 +216,17 @@ Logging usa JSON estruturado via `bolao/logger.py`. Todos os eventos são single
 | BigBase data | `sqlite3 /opt/bigbase/data/bigbase.db "SELECT COUNT(*) FROM records"` |
 
 **Nunca logar secrets, tokens, senhas ou PII.** Telegram IDs são logged para auditoria.
+
+## Contribute
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feat/my-feature`
+3. Write tests first (TDD). Run `python -m pytest tests/ -q` after every change.
+4. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
+5. Push and open a Pull Request
+
+All contributions must pass tests, lint, and coverage gates. See `CONTRIBUTING.md` for the full development setup.
+
+## License
+
+MIT — see [LICENSE](./LICENSE) for details.
