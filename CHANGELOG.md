@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/danielvm-git/big-bolao/compare/v1.18.0...v1.19.0) (2026-07-10)
+
+
+### Features
+
+* **ci:** add CodeQL security scanning (Python + JS), enhance .gitignore ([decdc00](https://github.com/danielvm-git/big-bolao/commit/decdc00dd7340a5b110acf6fa854c5c270ee3a6f))
+
 # [1.18.0](https://github.com/danielvm-git/big-bolao/compare/v1.17.1...v1.18.0) (2026-07-10)
 
 
