@@ -124,6 +124,24 @@ bugs:
       PR no BigBase propagando root_path para DetectAppType + python3 -m pip"
     risk_level: medium
     tests_added: []
+  - bug_id: BUG-2026-07-10-170000
+    date: "2026-07-10"
+    severity: high
+    priority: critical
+    scope: ci
+    summary: CI "Commit rebuilt web/dist" fails — .gitignore `dist/` matches `web/dist/`
+    file: specs/bugs/BUG-2026-07-10-170000-gitignore-dist-pattern.md
+    status: fixed
+    fixed_date: "2026-07-10"
+    root_cause: "dist/ in .gitignore (no leading /) matches any directory named dist at any level — including web/dist/"
+    approach: "Changed dist/ → /dist/ to scope to root-level dist/ (Python artifacts) only"
+    risk_level: low
+    files_changed:
+      - .gitignore
+    tests_added: []
+    hardening:
+      - "Pattern scoped with leading / to avoid matching subdirectories"
+    commit_message: "fix(ci): scope dist/ gitignore to root level — /dist/ avoids catching web/dist/"
   - bug_id: BUG-2026-06-20-100000
     date: "2026-06-20"
     severity: low
