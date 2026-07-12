@@ -149,6 +149,10 @@ jobs:
         run: npm ci
 
       - name: Preflight
+        env:
+          TELEGRAM_TOKEN: ci-test-token
+          BIGBASE_EMAIL: ci-test@test.local
+          BIGBASE_PASSWORD: ci-test-password
         run: bash scripts/preflight.sh
 
       - name: Check Conventional Commits
