@@ -116,6 +116,25 @@ _QUARTAS: list[Match] = [
 ]
 MATCHES.extend(_QUARTAS)
 
+# ---- Semi-finais ----
+_SEMIS: list[Match] = [
+    Match("SF-01", 0, "2026-07-14T16:00:00", "França", "Espanha"),
+    Match("SF-02", 0, "2026-07-15T16:00:00", "Vencedor QF-03", "Vencedor QF-04"),
+]
+MATCHES.extend(_SEMIS)
+
+# ---- Disputa de 3º Lugar ----
+_TERCEIRO: list[Match] = [
+    Match("3P-01", 0, "2026-07-18T18:00:00", "Perdedor SF-01", "Perdedor SF-02"),
+]
+MATCHES.extend(_TERCEIRO)
+
+# ---- Final ----
+_FINAL: list[Match] = [
+    Match("FIN-01", 0, "2026-07-19T16:00:00", "Vencedor SF-01", "Vencedor SF-02"),
+]
+MATCHES.extend(_FINAL)
+
 BY_ID: dict[str, Match] = {m.match_id: m for m in MATCHES}
 
 
