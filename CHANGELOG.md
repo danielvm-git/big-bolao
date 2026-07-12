@@ -1,3 +1,17 @@
+# [1.20.0](https://github.com/danielvm-git/big-bolao/compare/v1.19.0...v1.20.0) (2026-07-12)
+
+
+### Bug Fixes
+
+* **ci:** add CI env vars to verify job preflight step ([79208df](https://github.com/danielvm-git/big-bolao/commit/79208df6626b023a21444da7b4894bec86794809))
+* **ci:** remove hashFiles conditions and cache-dependency-path ([099c787](https://github.com/danielvm-git/big-bolao/commit/099c7878b47141182987a780333fa5ee3f0b8f16))
+* **ci:** scope dist/ gitignore to root — /dist/ avoids catching web/dist/ ([8fb68a4](https://github.com/danielvm-git/big-bolao/commit/8fb68a49e9621bbd1ced634ccfc4355db01a1ad1))
+
+
+### Features
+
+* **matches:** add semi-finals, third-place, and final to tournament schedule ([27d02ae](https://github.com/danielvm-git/big-bolao/commit/27d02ae423f1a5841135dff4fcfacf4be409f99f))
+
 # [1.19.0](https://github.com/danielvm-git/big-bolao/compare/v1.18.0...v1.19.0) (2026-07-10)
 
 
