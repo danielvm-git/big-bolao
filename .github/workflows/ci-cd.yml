@@ -1,31 +1,28 @@
 # ============================================================================
 # ci-cd.yml — CI/CD pipeline for Big Bolão
 #
-# Triggers:
-#   - Push to main → semantic-release analyzes commits, runs tests, deploys
-#   - Manual workflow_dispatch (for re-deploying without a new release)
+# Based on ci-cd-monorepo.yml template (v2.0.0) with project-specific additions:
+#   - Semantic Release (version bump + changelog + GitHub Release)
+#   - Governance gates (G1 bug registry, G2 scoring parity, G3 P0 coverage)
+#   - Web build + auto-commit of web/dist/ (BigBase deploys from repo)
+#   - Failure notification
 #
 # Pipeline:
-#   1. Semantic Release (commit-analyzer → version bump → GitHub Release)
-#   2. Web build (npm ci + vite build in web/)
-#   3. Python tests + governance gates (pytest, governance scripts, coverage)
-#   4. Web tests (node --test)
-#   5. Deploy to BigBase (scoped token, ::add-mask::, curl POST)
-#   6. Health check (8 retries, 10s interval)
-#   7. Failure notification
+#   ci (node + python) → verify → semantic-release → deploy
 #
 # Secrets needed (repo Settings → Secrets and variables → Actions):
-#   - BIGBASE_DEPLOY_TOKEN: scoped deploy token (see docs/reference/contracts/bigbase-deploy-contract.md in .github)
+#   - BIGBASE_DEPLOY_TOKEN: scoped deploy token
 #   - BIGBASE_SITE_ID: site this token is scoped to
 #
 # NOTE: web/dist/ auto-commit is kept because BigBase deploys from the repo
-# (not from artifacts) and app.py serves web/dist/ at runtime. BigBase does
-# not run npm build during deploy. See bigbase-deploy-contract.md.
+# (not from artifacts) and app.py serves web/dist/ at runtime.
 # ============================================================================
 name: CI/CD
 
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -33,51 +30,176 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  group: pipeline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   NODE_VERSION: "22"
   PYTHON_VERSION: "3.12"
-  BIGBASE_URL: "https://bigbase.click"
+  APP_TYPE: python
   SITE_URL: "https://bolao.bigbase.click"
 
 jobs:
-  ci-cd:
-    name: CI/CD
+  # ==========================================================================
+  # CI: Node.js (web SPA)
+  # ==========================================================================
+  node:
+    if: hashFiles('web/package.json') != ''
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Lint
+        working-directory: web
+        run: npm run lint --if-present
+
+      - name: Test
+        working-directory: web
+        run: node --test tests/*.test.js
+
+      - name: Build
+        working-directory: web
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "true"
+        run: npm run build
+
+  # ==========================================================================
+  # CI: Python (bot + backend)
+  # ==========================================================================
+  python:
+    if: hashFiles('requirements.txt') != ''
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+
+      - name: Test
+        env:
+          TELEGRAM_TOKEN: ci-test-token
+          BIGBASE_EMAIL: ci-test@test.local
+          BIGBASE_PASSWORD: ci-test-password
+        run: python -m pytest tests/ -v
+
+      # --- Governance gate 1: Bug registry check ---
+      - name: Check bug registry (G1)
+        run: python3 scripts/check_test_governance.py
+
+      # --- Governance gate 2: Scoring table parity ---
+      - name: Check scoring table parity (G2)
+        run: python3 scripts/check_scoring_tables.py
+
+      # --- Governance gate 3: P0 module coverage ---
+      - name: Check P0 coverage (G3)
+        env:
+          TELEGRAM_TOKEN: ci-test-token
+          BIGBASE_EMAIL: ci-test@test.local
+          BIGBASE_PASSWORD: ci-test-password
+        run: |
+          python -m pytest --cov=bolao.scoring --cov-fail-under=90 tests/test_scoring.py -q
+          python -m pytest --cov=bolao.fixtures --cov-fail-under=90 tests/test_fixtures.py -q
+          python -m pytest --cov=bolao.ranking --cov-fail-under=90 tests/test_ranking.py -q
+
+  # ==========================================================================
+  # Verify: preflight + conventional commits + no AI attribution
+  # ==========================================================================
+  verify:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Node dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Preflight
+        run: bash scripts/preflight.sh
+
+      - name: Check Conventional Commits
+        run: |
+          git log origin/main..HEAD --oneline | while read -r line; do
+            if ! echo "$line" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: "; then
+              echo "FAIL: Non-conventional commit: $line"
+              exit 1
+            fi
+          done
+          echo "PASS: All commits follow Conventional Commits"
+
+      - name: Check no AI agent attribution
+        run: |
+          if git log origin/main..HEAD --format="%B" | grep -qiE '^co[- ]authored[- ]by:'; then
+            echo "FAIL: Co-authored-by: footer found"
+            exit 1
+          fi
+          echo "PASS: No AI agent attribution"
+
+  # ==========================================================================
+  # Semantic Release (push to main only)
+  # ==========================================================================
+  semantic-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [node, python, verify]
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
-      contents: write # semantic-release creates tags + changelog commits
+      contents: write
       issues: write
       pull-requests: write
-
     steps:
-      # -----------------------------------------------------------------------
-      # Step 0: Checkout
-      # -----------------------------------------------------------------------
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
 
-      # -----------------------------------------------------------------------
-      # Step 1: Semantic Release
-      # -----------------------------------------------------------------------
-      - name: Setup Node
-        if: github.event_name == 'push'
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "${{ env.NODE_VERSION }}"
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Save pre-release HEAD
         id: pre-release
-        if: github.event_name == 'push'
         run: echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Install semantic-release
-        if: github.event_name == 'push'
         run: |
           npm install --no-save \
             semantic-release \
@@ -85,54 +207,54 @@ jobs:
             @semantic-release/exec \
             @semantic-release/git
 
-      - name: Semantic Release
-        if: github.event_name == 'push'
+      - name: Run semantic-release
         id: semantic
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # --- Detect if release was created ---
       - name: Detect new release
         id: detect-release
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          NEW_HEAD=$(git rev-parse HEAD)
+          if [ "${{ steps.pre-release.outputs.head }}" != "$NEW_HEAD" ]; then
             echo "new_release=true" >> "$GITHUB_OUTPUT"
-            echo "Manual deploy"
+            echo "New release detected"
           else
-            NEW_HEAD=$(git rev-parse HEAD)
-            if [ "${{ steps.pre-release.outputs.head }}" != "$NEW_HEAD" ]; then
-              echo "new_release=true" >> "$GITHUB_OUTPUT"
-              echo "New release detected"
-            else
-              echo "new_release=false" >> "$GITHUB_OUTPUT"
-              echo "No new release - skipping deploy"
-            fi
+            echo "new_release=false" >> "$GITHUB_OUTPUT"
+            echo "No new release"
           fi
 
-      # -----------------------------------------------------------------------
-      # Step 2: Web build
-      # -----------------------------------------------------------------------
-      - name: Setup Node for web build
-        if: steps.detect-release.outputs.new_release == 'true'
-        uses: actions/setup-node@v4
+  # ==========================================================================
+  # Web build + auto-commit (after semantic-release, if new release)
+  # ==========================================================================
+  web-build-commit:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.semantic-release.outputs.new_release == 'true'
+    needs: [semantic-release]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
         with:
-          node-version: "${{ env.NODE_VERSION }}"
+          persist-credentials: true
 
-      - name: Build web (Vite)
-        if: steps.detect-release.outputs.new_release == 'true'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build web
         working-directory: web
         env:
           PUPPETEER_SKIP_DOWNLOAD: "true"
         run: |
           npm ci --prefer-offline
           npm run build
-          echo "Web dist: $(ls dist/ 2>/dev/null | wc -l) files"
 
-      # BigBase deploys from repo (no artifact API); dist must be present
-      # for app.py to serve the SPA at runtime.
       - name: Commit rebuilt web/dist
-        if: steps.detect-release.outputs.new_release == 'true'
         run: |
           if [ -n "$(git status --porcelain web/dist/)" ]; then
             git config user.name "github-actions[bot]"
@@ -145,126 +267,24 @@ jobs:
             echo "web/dist/ already up to date"
           fi
 
-      # -----------------------------------------------------------------------
-      # Step 3: Python tests + governance gates
-      # -----------------------------------------------------------------------
-      - name: Setup Python
-        if: steps.detect-release.outputs.new_release == 'true'
-        uses: actions/setup-python@v5
+  # ==========================================================================
+  # Deploy to BigBase
+  # ==========================================================================
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [node, python, verify]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to BigBase
+        uses: danielvm-git/.github/actions/bigbase-deploy@main
         with:
-          python-version: "${{ env.PYTHON_VERSION }}"
-
-      - name: Run Python tests
-        if: steps.detect-release.outputs.new_release == 'true'
-        env:
-          TELEGRAM_TOKEN: ci-test-token
-          BIGBASE_EMAIL: ci-test@test.local
-          BIGBASE_PASSWORD: ci-test-password
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-cov
-          python -m pytest tests/ -v
-
-      # --- Governance gate 1: Bug registry check ---
-      - name: Check bug registry
-        if: steps.detect-release.outputs.new_release == 'true'
-        run: python3 scripts/check_test_governance.py
-
-      # --- Governance gate 2: Scoring table parity ---
-      - name: Check scoring table parity
-        if: steps.detect-release.outputs.new_release == 'true'
-        run: python3 scripts/check_scoring_tables.py
-
-      # --- Governance gate 3: P0 module coverage ---
-      - name: Check P0 coverage
-        if: steps.detect-release.outputs.new_release == 'true'
-        env:
-          TELEGRAM_TOKEN: ci-test-token
-          BIGBASE_EMAIL: ci-test@test.local
-          BIGBASE_PASSWORD: ci-test-password
-        run: |
-          python -m pytest --cov=bolao.scoring --cov-fail-under=90 tests/test_scoring.py -q
-          python -m pytest --cov=bolao.fixtures --cov-fail-under=90 tests/test_fixtures.py -q
-          python -m pytest --cov=bolao.ranking --cov-fail-under=90 tests/test_ranking.py -q
-
-      # -----------------------------------------------------------------------
-      # Step 4: Web tests
-      # -----------------------------------------------------------------------
-      - name: Setup Node for web tests
-        if: steps.detect-release.outputs.new_release == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "${{ env.NODE_VERSION }}"
-
-      - name: Run web tests
-        if: steps.detect-release.outputs.new_release == 'true'
-        working-directory: web
-        run: |
-          npm ci --prefer-offline
-          node --test tests/*.test.js
-
-      # -----------------------------------------------------------------------
-      # Step 5: Deploy to BigBase
-      # -----------------------------------------------------------------------
-      - name: Trigger BigBase deploy
-        id: deploy
-        if: steps.detect-release.outputs.new_release == 'true'
-        env:
-          BIGBASE_DEPLOY_TOKEN: ${{ secrets.BIGBASE_DEPLOY_TOKEN }}
-          BIGBASE_SITE_ID: ${{ secrets.BIGBASE_SITE_ID }}
-        run: |
-          if [ -z "${BIGBASE_DEPLOY_TOKEN}" ]; then
-            echo "::error::BIGBASE_DEPLOY_TOKEN not set — provision via bigbase_provision_ci_credentials"
-            exit 1
-          fi
-          echo "::add-mask::${BIGBASE_DEPLOY_TOKEN}"
-          RESPONSE=$(curl -sS -X POST \
-            "${{ env.BIGBASE_URL }}/api/sites/${BIGBASE_SITE_ID}/deploy" \
-            -H "Authorization: Bearer ${BIGBASE_DEPLOY_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d '{"branch": "main", "app_type": "python", "passthrough_paths": ["/api/version"]}')
-          echo "Deploy triggered: ${RESPONSE}"
-          DEPLOY_ID=$(echo "${RESPONSE}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || echo "")
-          echo "deployment_id=${DEPLOY_ID}" >> "$GITHUB_OUTPUT"
-          echo "Deployment ID: ${DEPLOY_ID}"
-
-      # -----------------------------------------------------------------------
-      # Step 6: Health check
-      # -----------------------------------------------------------------------
-      - name: Health check
-        if: steps.detect-release.outputs.new_release == 'true'
-        run: |
-          echo "Waiting for deploy to propagate..."
-          HEALTH_PASS=false
-          for i in 1 2 3 4 5 6 7 8; do
-            sleep 10
-            STATUS=$(curl -sS -o /dev/null -w "%{http_code}" "${{ env.SITE_URL }}" 2>/dev/null || echo "000")
-            echo "  [${i}/8] HTTP ${STATUS}"
-            if [ "${STATUS}" = "200" ]; then
-              HEALTH_PASS=true
-              echo "  Healthy - Big Bolao is live"
-              break
-            fi
-          done
-          if [ "${HEALTH_PASS}" = false ]; then
-            echo "Health check failed after 8 attempts"
-            exit 1
-          fi
-
-      # -----------------------------------------------------------------------
-      # Step 7: Summary
-      # -----------------------------------------------------------------------
-      - name: Summary
-        if: success() && steps.detect-release.outputs.new_release == 'true'
-        run: |
-          echo ""
-          echo "========================================="
-          echo "  CI/CD Complete"
-          echo "  Site:    ${{ env.SITE_URL }}"
-          echo "  Time:    $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-          echo "  Run:     ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "========================================="
+          site_id: ${{ secrets.BIGBASE_SITE_ID }}
+          app_type: ${{ env.APP_TYPE }}
+          site_url: ${{ env.SITE_URL }}
+          deploy_token: ${{ secrets.BIGBASE_DEPLOY_TOKEN }}
 
   # ==========================================================================
   # Notify on failure
@@ -272,8 +292,9 @@ jobs:
   notify:
     name: Notify on failure
     runs-on: ubuntu-22.04
-    needs: [ci-cd]
-    if: failure() && github.event_name != 'workflow_dispatch'
+    timeout-minutes: 5
+    needs: [node, python, verify, semantic-release, web-build-commit, deploy]
+    if: always() && failure() && github.event_name != 'workflow_dispatch'
     steps:
       - name: Build failure summary
         run: |

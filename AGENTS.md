@@ -96,25 +96,21 @@ Config: `.mcp.json` at project root; auth via `BIGBASE_MCP_TOKEN` env var.
 
 ### GitHub Actions (CI/CD)
 
-```yaml
-name: Deploy to BigBase
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cd web && npm ci && npm run build
-      - run: |
-          curl -X POST https://bigbase.click/api/deploy \
-            -H "Authorization: Bearer ${{ secrets.BIGBASE_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"repo_id":"04c58b9df51405ee33378c2539f9ea68","branch":"main"}'
-```
+Pipeline: `ci (node + python) → verify → semantic-release → deploy`
 
-Secret `BIGBASE_API_KEY` via `POST /api/orgs/{id}/api-keys` no dashboard.
+7 jobs in `.github/workflows/ci-cd.yml`:
+
+| Job                | Trigger                    | What it does                                         |
+| ------------------ | -------------------------- | ---------------------------------------------------- |
+| `node`             | push/PR                    | `npm ci` → lint → test → build (web/)                |
+| `python`           | push/PR                    | `pip install` → pytest → G1/G2/G3 gates              |
+| `verify`           | push to main / PR          | preflight + conventional commits + no AI attribution |
+| `semantic-release` | push to main               | version bump + changelog + GitHub Release            |
+| `web-build-commit` | push to main (new release) | rebuild web/dist/ and auto-commit to repo            |
+| `deploy`           | push to main               | BigBase deploy via `bigbase-deploy` action           |
+| `notify`           | failure                    | failure summary with commit SHA and run URL          |
+
+Secrets: `BIGBASE_DEPLOY_TOKEN` (scoped), `BIGBASE_SITE_ID`.
 
 ### BigBase expectations
 
@@ -201,7 +197,9 @@ big-bolao/
 │   ├── test_scoring.py         # 25 tests (golden fixture)
 │   └── test_version.py         # 3 tests
 └── .github/workflows/
-    └── ci-cd.yml       # CI/CD: semantic-release → build → test → deploy → health check
+    ├── ci-cd.yml       # CI/CD: ci → verify → semantic-release → deploy
+    ├── codeql-javascript.yml  # CodeQL security scanning (JS)
+    └── codeql-python.yml     # CodeQL security scanning (Python)
 ```
 
 ## Bot Commands
@@ -256,6 +254,12 @@ Three gates run in CI before deploy (see `.github/workflows/ci-cd.yml`):
 
 ### Running Tests
 
+**Full CI pipeline (local dry-run):**
+
+```bash
+bash scripts/preflight.sh   # Python tests + G1/G2/G3 + web tests
+```
+
 **Python (all):**
 
 ```bash
@@ -283,6 +287,17 @@ python -m pytest --cov=bolao.ranking --cov-fail-under=90 tests/test_ranking.py -
 ```bash
 python3 scripts/check_test_governance.py  # G1: bug registry
 python3 scripts/check_scoring_tables.py   # G2: scoring parity
+```
+
+**Full CI pipeline (local dry-run):**
+
+```bash
+cd web && npm ci && npm run build          # build web
+cd web && node --test tests/*.test.js      # web tests
+python -m pytest tests/ -v                # Python tests
+python3 scripts/check_test_governance.py  # G1
+python3 scripts/check_scoring_tables.py   # G2
+python -m pytest --cov=bolao.scoring --cov=bolao.fixtures --cov=bolao.ranking --cov-fail-under=90 tests/ -q  # G3
 ```
 
 **Web (all):**
