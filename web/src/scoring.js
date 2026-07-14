@@ -41,6 +41,7 @@ const FLAGS = {
   france: "🇫🇷",
   franca: "🇫🇷",
   england: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  inglaterra: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
   portugal: "🇵🇹",
   netherlands: "🇳🇱",
   "paises baixos": "🇳🇱",
