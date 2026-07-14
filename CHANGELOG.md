@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/danielvm-git/big-bolao/compare/v1.20.0...v1.21.0) (2026-07-14)
+
+
+### Features
+
+* **matches:** update SF-02 with confirmed QF winners — Inglaterra vs Argentina ([ad433e6](https://github.com/danielvm-git/big-bolao/commit/ad433e6970c17872029994ed3c3674f01585fb7d))
+
 # [1.20.0](https://github.com/danielvm-git/big-bolao/compare/v1.19.0...v1.20.0) (2026-07-12)
 
 
