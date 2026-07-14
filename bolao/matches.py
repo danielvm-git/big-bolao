@@ -119,7 +119,7 @@ MATCHES.extend(_QUARTAS)
 # ---- Semi-finais ----
 _SEMIS: list[Match] = [
     Match("SF-01", 0, "2026-07-14T16:00:00", "França", "Espanha"),
-    Match("SF-02", 0, "2026-07-15T16:00:00", "Vencedor QF-03", "Vencedor QF-04"),
+    Match("SF-02", 0, "2026-07-15T16:00:00", "Inglaterra", "Argentina"),
 ]
 MATCHES.extend(_SEMIS)
 
