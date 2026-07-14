@@ -1,3 +1,11 @@
+## [1.21.1](https://github.com/danielvm-git/big-bolao/compare/v1.21.0...v1.21.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **ci:** correct bug_id format in registry.yaml for G1 governance ([c595306](https://github.com/danielvm-git/big-bolao/commit/c595306f9bb0d266ea1f41458e0d68d82b473a58))
+* **flags:** add Portuguese 'inglaterra' to FLAGS dict — resolves white flag fallback ([7d06397](https://github.com/danielvm-git/big-bolao/commit/7d06397c3a642d49494f3d47093c3fef7d0fa275))
+
 # [1.21.0](https://github.com/danielvm-git/big-bolao/compare/v1.20.0...v1.21.0) (2026-07-14)
 
 
