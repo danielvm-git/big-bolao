@@ -5,6 +5,16 @@ active_epic_id: null
 last_step_completed: release-branch
 next_skill: survey-context
 
+# Release SF-02 update
+release_sf02:
+  branch: main
+  hash: ad433e6
+  mode: solo-local
+  ci_verified: true
+  ci_completed: "2026-07-13"
+  commits:
+    - ad433e6 "feat(matches): update SF-02 with confirmed QF winners — Inglaterra vs Argentina"
+
 bug_cycle:
   current_step: 5
   completed_steps: [1, 2, 3, 4]
