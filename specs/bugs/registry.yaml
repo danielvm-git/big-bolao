@@ -533,7 +533,7 @@ bugs:
     root_cause:
       store.js::scoreLabel() called calcPontos() without matchId — knockout
       exact bets scored 5-50 but label checked pts === 3
-  - bug_id: BUG-2026-07-13-225800-inglaterra-missing-flag
+  - bug_id: BUG-2026-07-13-225800
     date: "2026-07-13"
     severity: low
     priority: p1
