@@ -125,13 +125,13 @@ MATCHES.extend(_SEMIS)
 
 # ---- Disputa de 3º Lugar ----
 _TERCEIRO: list[Match] = [
-    Match("3P-01", 0, "2026-07-18T18:00:00", "Perdedor SF-01", "Perdedor SF-02"),
+    Match("3P-01", 0, "2026-07-18T18:00:00", "França", "Inglaterra"),
 ]
 MATCHES.extend(_TERCEIRO)
 
 # ---- Final ----
 _FINAL: list[Match] = [
-    Match("FIN-01", 0, "2026-07-19T16:00:00", "Vencedor SF-01", "Vencedor SF-02"),
+    Match("FIN-01", 0, "2026-07-19T16:00:00", "Espanha", "Argentina"),
 ]
 MATCHES.extend(_FINAL)
 
