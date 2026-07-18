@@ -1,3 +1,10 @@
+## [1.21.2](https://github.com/danielvm-git/big-bolao/compare/v1.21.1...v1.21.2) (2026-07-18)
+
+
+### Bug Fixes
+
+* **matches:** update 3P and FIN with confirmed SF winners — França vs Inglaterra, Espanha vs Argentina ([5c946bf](https://github.com/danielvm-git/big-bolao/commit/5c946bfca43c4f25edc587ba38e61cf9a330b616))
+
 ## [1.21.1](https://github.com/danielvm-git/big-bolao/compare/v1.21.0...v1.21.1) (2026-07-14)
 
 
