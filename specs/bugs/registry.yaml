@@ -35,8 +35,7 @@ bugs:
     files_changed:
       - web/src/App.vue
     tests_added:
-      - web/tests/router.test.js (4 unit tests)
-      - web/test-e2e.cjs (15 e2e tests)
+      - "(deleted in 15cf799 frontend rebuild — route navigation now covered by App.vue <router-view /> pattern)"
     hardening:
       - Code comment in App.vue warning against v-slot on router-view
       - Route config unit test prevents route definition errors
@@ -309,7 +308,7 @@ bugs:
       - web/tests/queries.test.js (new)
       - web/tests/flags.test.js (updated import)
     tests_added:
-      - web/tests/scoring.test.js (20 tests)
+      - web/tests/scoring.test.js (19 tests)
       - web/tests/transport.test.js (7 tests)
       - web/tests/queries.test.js (8 tests)
     hardening:
@@ -456,7 +455,7 @@ bugs:
       - bolao/fixtures.py
       - tests/test_fixtures.py
     tests_added:
-      - tests/test_fixtures.py (5 new — TestParseResultPenStatus)
+      - tests/test_fixtures.py (superseded by TestParseResultFieldSelection in BUG-2026-07-03-191600)
     commit_message:
       "fix(scoring): use ft_score for penalty-decided matches — parse_result
       status-aware"
