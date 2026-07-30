@@ -1,3 +1,10 @@
+## [1.21.5](https://github.com/danielvm-git/big-bolao/compare/v1.21.4...v1.21.5) (2026-07-30)
+
+
+### Bug Fixes
+
+* **web:** rebuild web/dist with VERSION 1.21.4 — footer version mismatch ([ae2732a](https://github.com/danielvm-git/big-bolao/commit/ae2732a91f163be646a96e4c1e01004c57472f88))
+
 ## [1.21.4](https://github.com/danielvm-git/big-bolao/compare/v1.21.3...v1.21.4) (2026-07-30)
 
 
