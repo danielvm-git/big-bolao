@@ -1,6 +1,6 @@
 """Handlers do bot do bolao.
 
-Privacidade / anti-flood: TODO o fluxo de palpite acontece no chat privado com o
+Privacidade / anti-flood: todo o fluxo de palpite acontece no chat privado com o
 bot. No grupo o bot so reage a /ranking, e os comandos de palpite redirecionam a
 pessoa pro privado (com botao de deep-link). Ninguem ve o palpite de ninguem.
 """

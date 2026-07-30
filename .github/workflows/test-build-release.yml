@@ -1,14 +1,10 @@
 # ============================================================================
-# ci-cd.yml — CI/CD pipeline for Big Bolão
-#
-# Based on ci-cd-monorepo.yml template (v2.0.0) with project-specific additions:
-#   - Semantic Release (version bump + changelog + GitHub Release)
-#   - Governance gates (G1 bug registry, G2 scoring parity, G3 P0 coverage)
-#   - Web build + auto-commit of web/dist/ (BigBase deploys from repo)
-#   - Failure notification
+# test-build-release.yml — CI/CD pipeline for Big Bolão
 #
 # Pipeline:
-#   ci (node + python) → verify → semantic-release → deploy
+#   ci (node + python) → verify → semantic-release → web-build-commit
+#
+# Deploy is in a separate deploy.yml triggered via workflow_run.
 #
 # Secrets needed (repo Settings → Secrets and variables → Actions):
 #   - BIGBASE_DEPLOY_TOKEN: scoped deploy token
@@ -17,7 +13,7 @@
 # NOTE: web/dist/ auto-commit is kept because BigBase deploys from the repo
 # (not from artifacts) and app.py serves web/dist/ at runtime.
 # ============================================================================
-name: CI/CD
+name: Test, Build & Release
 
 on:
   push:
@@ -30,14 +26,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: pipeline-${{ github.workflow }}-${{ github.ref }}
+  group: test-build-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   NODE_VERSION: "22"
   PYTHON_VERSION: "3.12"
-  APP_TYPE: python
-  SITE_URL: "https://bolao.bigbase.click"
 
 jobs:
   # ==========================================================================
@@ -98,15 +92,12 @@ jobs:
           BIGBASE_PASSWORD: ci-test-password
         run: python -m pytest tests/ -v
 
-      # --- Governance gate 1: Bug registry check ---
       - name: Check bug registry (G1)
         run: python3 scripts/check_test_governance.py
 
-      # --- Governance gate 2: Scoring table parity ---
       - name: Check scoring table parity (G2)
         run: python3 scripts/check_scoring_tables.py
 
-      # --- Governance gate 3: P0 module coverage ---
       - name: Check P0 coverage (G3)
         env:
           TELEGRAM_TOKEN: ci-test-token
@@ -157,7 +148,7 @@ jobs:
 
       - name: Check Conventional Commits
         run: |
-          git log origin/main..HEAD --oneline | while read -r line; do
+          git log origin/main..HEAD --no-merges --oneline | while read -r line; do
             if ! echo "$line" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: "; then
               echo "FAIL: Non-conventional commit: $line"
               exit 1
@@ -267,32 +258,13 @@ jobs:
           fi
 
   # ==========================================================================
-  # Deploy to BigBase
-  # ==========================================================================
-  deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [node, python, verify]
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Deploy to BigBase
-        uses: danielvm-git/.github/actions/bigbase-deploy@main
-        with:
-          site_id: ${{ secrets.BIGBASE_SITE_ID }}
-          app_type: ${{ env.APP_TYPE }}
-          site_url: ${{ env.SITE_URL }}
-          deploy_token: ${{ secrets.BIGBASE_DEPLOY_TOKEN }}
-
-  # ==========================================================================
   # Notify on failure
   # ==========================================================================
   notify:
     name: Notify on failure
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [node, python, verify, semantic-release, web-build-commit, deploy]
+    needs: [node, python, verify, semantic-release, web-build-commit]
     if: always() && failure() && github.event_name != 'workflow_dispatch'
     steps:
       - name: Build failure summary

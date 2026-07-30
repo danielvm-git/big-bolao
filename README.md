@@ -1,6 +1,7 @@
 # Big Bolão — Copa 2026 no Telegram + Web
 
-[![CI/CD](https://github.com/danielvm-git/big-bolao/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/danielvm-git/big-bolao/actions/workflows/ci-cd.yml)
+[![Test, Build & Release](https://github.com/danielvm-git/big-bolao/actions/workflows/test-build-release.yml/badge.svg)](https://github.com/danielvm-git/big-bolao/actions/workflows/test-build-release.yml)
+[![Deploy](https://github.com/danielvm-git/big-bolao/actions/workflows/deploy.yml/badge.svg)](https://github.com/danielvm-git/big-bolao/actions/workflows/deploy.yml)
 
 Bot de Telegram + Vue SPA pra rodar o bolão da Copa do Mundo 2026. Os palpites são feitos **no privado com o bot** (ninguém vê o palpite do outro, zero flood no grupo). O grupo só recebe lembretes, resultados e o ranking. Backend de dados no [BigBase](https://bigbase.click).
 
@@ -104,7 +105,8 @@ big-bolao/
 │   ├── test_results.py         # 7 tests
 │   └── test_version.py         # 2 tests
 └── .github/workflows/
-    └── ci-cd.yml       # CI/CD: semantic-release → build → test → deploy → health check
+    ├── test-build-release.yml  # CI: lint → test → build → release
+    └── deploy.yml              # Deploy to BigBase + smoke test (workflow_run)
 ```
 
 ### Data flow

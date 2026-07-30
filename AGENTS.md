@@ -33,7 +33,7 @@ Two MCP servers are configured in `.pi/mcp.json` (git-ignored, per-developer).
 
 - `app.py` + BigBase entry point → `ping`, `deploy_site`
 - `bolao/bigbase.py` (BigBase client) → `get_code_example`, `get_service_docs`
-- CI/CD (`scripts/redeploy.py`, `.github/workflows/ci-cd.yml`) → `deploy_site`, `get_deploy_status`
+- CI/CD (`scripts/redeploy.py`, `.github/workflows/test-build-release.yml`, `.github/workflows/deploy.yml`) → `deploy_site`, `get_deploy_status`
 
 ### New Relic MCP — `mcp({ connect: "newrelic" })`
 
@@ -98,7 +98,7 @@ Config: `.mcp.json` at project root; auth via `BIGBASE_MCP_TOKEN` env var.
 
 Pipeline: `ci (node + python) → verify → semantic-release → deploy`
 
-7 jobs in `.github/workflows/ci-cd.yml`:
+7 jobs in `.github/workflows/test-build-release.yml` + `.github/workflows/deploy.yml`:
 
 | Job                | Trigger                    | What it does                                         |
 | ------------------ | -------------------------- | ---------------------------------------------------- |
@@ -244,7 +244,7 @@ Two golden JSON files serve as the single source of truth consumed by both Pytho
 
 ### Governance Gates (CI)
 
-Three gates run in CI before deploy (see `.github/workflows/ci-cd.yml`):
+Three gates run in CI before deploy (see `.github/workflows/test-build-release.yml`):
 
 | Gate                  | Script                                      | What it enforces                                                               |
 | --------------------- | ------------------------------------------- | ------------------------------------------------------------------------------ |
