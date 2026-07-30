@@ -1,3 +1,10 @@
+## [1.21.3](https://github.com/danielvm-git/big-bolao/compare/v1.21.2...v1.21.3) (2026-07-30)
+
+
+### Bug Fixes
+
+* **registry:** correct 3 stale test references + rebuild web/dist ([a8cea23](https://github.com/danielvm-git/big-bolao/commit/a8cea23ebe0fa92e9cd67a7c6fbaffe0e46ecc2b))
+
 ## [1.21.2](https://github.com/danielvm-git/big-bolao/compare/v1.21.1...v1.21.2) (2026-07-18)
 
 
