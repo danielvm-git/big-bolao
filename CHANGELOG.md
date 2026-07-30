@@ -1,3 +1,11 @@
+## [1.21.4](https://github.com/danielvm-git/big-bolao/compare/v1.21.3...v1.21.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* **registry:** add missing BUG-*.md file for BUG-2026-07-30-100000 ([872a57e](https://github.com/danielvm-git/big-bolao/commit/872a57e34dcf7aeacfb0793fe228c518125dab34))
+* **scoring:** use acertou_exato for cravadores + add jogos to JS ranking + QA report ([b40189d](https://github.com/danielvm-git/big-bolao/commit/b40189d36a9a66f41cd6de795ba77e079fb957bd))
+
 ## [1.21.3](https://github.com/danielvm-git/big-bolao/compare/v1.21.2...v1.21.3) (2026-07-30)
 
 
