@@ -187,7 +187,8 @@ export function calcRanking(jogos, palpites, participantes) {
       });
     e.pontos += pts;
     if (pc === ra && pf === rb) e.exatos++;
-    if (pts >= 1) e.acertos++;
+    if (pts > 0) e.acertos++;
+    e.jogos++;
   }
   for (const tid of Object.keys(nomes)) {
     if (!acc[tid])

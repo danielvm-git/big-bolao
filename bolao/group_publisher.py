@@ -7,7 +7,7 @@ O envio (send_message) ainda vive em handlers.py.
 from __future__ import annotations
 
 from bolao import ranking as ranking_mod
-from bolao.scoring import pontos
+from bolao.scoring import acertou_exato
 from bolao.util import label_jogo
 
 
@@ -28,7 +28,7 @@ def format_resultado(jogo: dict, palpites: list[dict]) -> str:
     txt = f"⚽ <b>Fim de jogo:</b> {casa} {gc} x {gf} {fora}"
     cravadores = [
         p["nome"] for p in palpites
-        if pontos(int(p["gols_casa"]), int(p["gols_fora"]), gc, gf) == 3
+        if acertou_exato(int(p["gols_casa"]), int(p["gols_fora"]), gc, gf)
     ]
     if cravadores:
         txt += "\n🎯 Cravaram o placar: " + ", ".join(cravadores)

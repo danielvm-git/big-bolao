@@ -556,3 +556,21 @@ bugs:
     approach: "Operational: kill zombie on server. Code: PID lock file, BOLAO_BOT_ENABLED env gate, 409 Conflict treated as fatal after retries."
     risk_level: high
     tests_added: []
+  - bug_id: BUG-2026-07-30-100000
+    date: "2026-07-30"
+    severity: high
+    priority: critical
+    scope: bot-cravadores
+    summary: "format_resultado hardcodes pontos==3 for exact-match detection — knockout exact scorers (5/10/15/25/50 pts) never announced as 'Cravaram o placar' in group"
+    file: specs/bugs/BUG-2026-07-30-100000-cravadores-knockout-hardcode.md
+    status: fixed
+    fixed_date: "2026-07-30"
+    root_cause: "format_resultado used pontos()==3 to detect exact matches. This only works for group-stage (3 pts). Knockout phases use different values (R32=5, R16=10, QF=15, SF/3P=25, FIN=50)."
+    approach: "Replaced pontos()==3 with acertou_exato() which checks exact score regardless of phase."
+    risk_level: low
+    files_changed:
+      - bolao/group_publisher.py
+      - tests/test_group_publisher.py
+    tests_added:
+      - tests/test_group_publisher.py::TestFormatResultado::test_knockout_exact_still_announced_as_cravou
+    commit_message: "fix(scoring): use acertou_exato for cravadores detection — knockout exacts were never announced"

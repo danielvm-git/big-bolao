@@ -76,6 +76,29 @@ class TestFormatResultado:
         assert "Fim de jogo" in html
         assert "Cravaram" not in html  # acertou vencedor mas nao placar exato
 
+    def test_knockout_exact_still_announced_as_cravou(self):
+        """Knockout exact matches are worth 5/10/15/25/50 pts (not 3).
+        format_resultado must use acertou_exato, not pontos==3."""
+        jogo = {
+            "casa": "França", "fora": "Inglaterra",
+            "gols_casa": 1, "gols_fora": 0,
+        }
+        palpites = [{"nome": "Carlos", "gols_casa": 1, "gols_fora": 0}]
+        html = format_resultado(jogo, palpites)
+        assert "Carlos" in html
+        assert "🎯" in html  # cravou placar — must not be missed
+
+    def test_knockout_exact_still_announced_as_cravou(self):
+        """Regression: knockout exacts use phase-aware scoring (>3 pts) but should still be 'cravou'."""
+        jogo = {
+            "casa": "França", "fora": "Inglaterra",
+            "gols_casa": 2, "gols_fora": 1,
+        }
+        palpites = [{"nome": "Ricardo", "gols_casa": 2, "gols_fora": 1}]
+        html = format_resultado(jogo, palpites)
+        assert "Ricardo" in html
+        assert "🎯" in html  # cravou even for knockout match
+
 
 class TestFormatRanking:
     """format_ranking() produces HTML from plain data dicts."""

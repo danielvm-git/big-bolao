@@ -16,11 +16,30 @@ release_sf02:
     - ad433e6 "feat(matches): update SF-02 with confirmed QF winners — Inglaterra vs Argentina"
 
 bug_cycle:
-  current_step: 5
-  completed_steps: [1, 2, 3, 4]
-  bug_id: BUG-2026-07-07-183300-ci-g3-fixtures-config-import
+  current_step: null
+  completed_steps: []
+  bug_id: BUG-2026-07-30-100000-cravadores-knockout-hardcode
   handoff:
-    next_skill: release-branch
+    next_skill: audit-code
+
+# QA Audit 2026-07-30
+qa_audit:
+  date: "2026-07-30"
+  total_bugs_found: 33
+  bugs_fixed: 1
+  bugs_open: 20
+  bugs_dismissed: 3
+  modules_audited:
+    - bot-core (5 bugs)
+    - web-frontend (9 bugs)
+    - scoring-fixtures (8 bugs)
+    - infrastructure (11 bugs)
+  preflight: PASS
+  python_tests: 168
+  web_tests: 89
+  g1: PASS
+  g2: PASS
+  g3: PASS
 
 epic_cycle:
   current_step: complete
@@ -98,16 +117,13 @@ required_reading:
 
 handoff:
   current_phase: sustain
-  next_skill: survey-context
+  next_skill: audit-code
   notes: >
-    Release e09 (matchid command) pushed to main (4ffea2c).
-    CI test gates all pass — deploy step fails because BIGBASE_DEPLOY_TOKEN
-    and BIGBASE_SITE_ID secrets not yet set in GitHub repo.
-    Action: add BIGBASE_DEPLOY_TOKEN + BIGBASE_SITE_ID to repo secrets
-    (Settings → Secrets and variables → Actions), then re-run CI or push
-    again to trigger deploy.
-    Previous: E01-e06 done. E07 planned, E08 planned, E09 implemented.
-    Branch e02-s03-ensure-setup-api-upsert precisa ser removida.
+    QA audit completed 2026-07-30. 33 bugs found across 4 modules.
+    1 fix applied: BUG-QA-02 format_resultado hardcoded ==3 for cravadores.
+    19 new bugs documented in QA report, priority ranked for next session.
+    Preflight GREEN: 168 Python + 89 web tests, G1/G2/G3 all pass.
+    Next: commit and push fix, then work through remaining bugs by priority.
 
 git:
   branch: main
