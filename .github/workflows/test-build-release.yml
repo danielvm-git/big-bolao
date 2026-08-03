@@ -2,7 +2,7 @@
 # test-build-release.yml — CI/CD pipeline for Big Bolão
 #
 # Pipeline:
-#   ci (node + python) → verify → semantic-release → web-build-commit
+#   ci (node + python) → verify → big-release → web-build-commit
 #
 # Deploy is in a separate deploy.yml triggered via workflow_run.
 #
@@ -177,6 +177,8 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    outputs:
+      new_release: ${{ steps.big-release.outputs.published }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -187,38 +189,35 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Save pre-release HEAD
-        id: pre-release
-        run: echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Install semantic-release
+      - name: Install big-release
         run: |
-          npm install --no-save \
-            semantic-release \
-            @semantic-release/changelog \
-            @semantic-release/exec \
-            @semantic-release/git
+          curl -sL https://github.com/danielvm-git/big-release/releases/latest/download/big-release-linux-amd64 -o big-release
+          chmod +x big-release
+          sudo mv big-release /usr/local/bin/
+          big-release --version
 
-      - name: Run semantic-release
-        id: semantic
-        run: npx semantic-release
+      - name: Run big-release
+        id: big-release
+        run: big-release release --verbose
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: big-release-bot
+          GIT_AUTHOR_EMAIL: big-release-bot@danielvm-git.github.io
+          GIT_COMMITTER_NAME: big-release-bot
+          GIT_COMMITTER_EMAIL: big-release-bot@danielvm-git.github.io
 
-      - name: Detect new release
-        id: detect-release
+      - name: Sync VERSION and CHANGELOG
+        if: steps.big-release.outputs.published == 'true'
         run: |
-          NEW_HEAD=$(git rev-parse HEAD)
-          if [ "${{ steps.pre-release.outputs.head }}" != "$NEW_HEAD" ]; then
-            echo "new_release=true" >> "$GITHUB_OUTPUT"
-            echo "New release detected"
-          else
-            echo "new_release=false" >> "$GITHUB_OUTPUT"
-            echo "No new release"
-          fi
+          VER="${{ steps.big-release.outputs.version }}"
+          echo "$VER" > VERSION
+          git add VERSION CHANGELOG.md
+          git -c user.name="big-release-bot" -c user.email="big-release-bot@danielvm-git.github.io" \
+            commit -m "chore(release): update version files to ${VER} [skip ci]"
+          git push origin main
 
   # ==========================================================================
-  # Web build + auto-commit (after semantic-release, if new release)
+  # Web build + auto-commit (after big-release, if new release)
   # ==========================================================================
   web-build-commit:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.semantic-release.outputs.new_release == 'true'
