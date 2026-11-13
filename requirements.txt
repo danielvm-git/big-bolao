@@ -2,5 +2,5 @@ python-telegram-bot[job-queue]==22.8
 httpx==0.28.1
 python-dotenv==1.2.4
 pytest>=9.1.1
-pytest-asyncio>=1.4.1
+pytest-asyncio>=1.4.1.post1
 pyyaml>=6.0.3
