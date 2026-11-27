@@ -1,43 +1,23 @@
-// I/O transport layer — HTTP client for BigBase API.
+// I/O transport layer — HTTP client for the bolao server API.
+// The browser holds no store credentials: the server owns the data.
+// `session` carries the signed link (?uid=&sig=) the bot sent this user.
+
+export const session = { uid: null, sig: null }
 
 export const BB = {
-  _token: null,
-
-  async _auth() {
-    if (BB._token) return
-    const r = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'bolao-bot@bigbase.local', password: 'bolao-bot-secure-password-2026' }),
-    })
-    if (r.ok) BB._token = (await r.json()).token
-  },
-
   async get(path) {
-    await BB._auth()
-    const r = await fetch(path, { headers: { Authorization: `Bearer ${BB._token}` } })
+    const r = await fetch(path)
     if (!r.ok) throw new Error(`${r.status} ${path}`)
     return r.json()
   },
 
   async post(path, body) {
-    await BB._auth()
     const r = await fetch(path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BB._token}` },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
     if (!r.ok) throw new Error(`${r.status} ${path}`)
     return r.json()
-  },
-
-  async patch(path, body) {
-    await BB._auth()
-    const r = await fetch(path, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${BB._token}` },
-      body: JSON.stringify(body),
-    })
-    if (!r.ok) throw new Error(`${r.status} ${path}`)
   },
 }

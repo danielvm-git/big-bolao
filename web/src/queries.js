@@ -1,6 +1,6 @@
 // Domain query functions — consume BB from transport.js.
 
-import { BB } from './transport.js'
+import { BB, session } from './transport.js'
 
 async function list(col) {
   const d = await BB.get(`/api/collections/${col}?limit=1000`)
@@ -25,12 +25,14 @@ export async function fetchPalpitesDoUsuario(telegramId) {
   return all.filter(p => Number(p.telegram_id) === Number(telegramId))
 }
 
+// The server checks the signed link, that the match is open, and takes the
+// name from its own records. `nome` stays in the signature for callers.
+// eslint-disable-next-line no-unused-vars
 export async function savePalpite(matchId, telegramId, nome, golsCasa, golsFora) {
-  const all = await list('palpites')
-  const ex = all.find(p => String(p.match_id) === String(matchId) && Number(p.telegram_id) === Number(telegramId))
-  const payload = { match_id: matchId, telegram_id: Number(telegramId), nome, gols_casa: golsCasa, gols_fora: golsFora, atualizado_em: new Date().toISOString() }
-  if (ex) await BB.patch(`/api/collections/palpites/${ex.id}`, payload)
-  else await BB.post('/api/collections/palpites', payload)
+  await BB.post('/api/palpite', {
+    uid: Number(telegramId), sig: session.sig,
+    match_id: matchId, gols_casa: golsCasa, gols_fora: golsFora,
+  })
 }
 
 export async function findUser(telegramId) {
