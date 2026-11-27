@@ -5,6 +5,12 @@
 
 * **web:** rebuild web/dist with VERSION 1.21.4 — footer version mismatch ([ae2732a](https://github.com/danielvm-git/big-bolao/commit/ae2732a91f163be646a96e4c1e01004c57472f88))
 
+## [1.22.2] - 2026-11-27
+
+### Fixed
+
+- **ci:** pin the Oracle host key with HostKeyAlias ([9527ac9](https://github.com/danielvm-git/big-bolao/commit/9527ac96702bede8e13b6bac77c84c40709b54b3))
+
 ## [1.22.1] - 2026-11-27
 
 ### Fixed
