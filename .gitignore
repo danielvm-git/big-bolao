@@ -43,3 +43,11 @@ prototype/
 
 # Test output artifacts
 specs/epics/*/baseline-*.log
+
+# Built inside the image (Dockerfile), not committed
+web/dist/
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal

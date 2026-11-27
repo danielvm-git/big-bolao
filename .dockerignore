@@ -1,0 +1,15 @@
+.git
+.github
+.venv
+venv
+**/node_modules
+web/dist
+tests
+specs
+tutorial
+*.md
+!README.md
+.env
+.env.*
+*.db
+*.db-*
