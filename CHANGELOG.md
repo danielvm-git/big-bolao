@@ -5,6 +5,17 @@
 
 * **web:** rebuild web/dist with VERSION 1.21.4 — footer version mismatch ([ae2732a](https://github.com/danielvm-git/big-bolao/commit/ae2732a91f163be646a96e4c1e01004c57472f88))
 
+## [1.22.0] - 2026-11-27
+
+### Added
+
+- **store:** SQLite store, server data API and signed site links ([96a1cf7](https://github.com/danielvm-git/big-bolao/commit/96a1cf724e61ef3c4b4f550d8dfbb45b06e8a8e9))
+
+### Fixed
+
+- **store:** build SQL from fixed collection names only ([e9c0e9e](https://github.com/danielvm-git/big-bolao/commit/e9c0e9ec0b99bf33aa3ec9bb19377abfa48c87ee))
+- **web:** the browser no longer holds BigBase credentials ([000e32d](https://github.com/danielvm-git/big-bolao/commit/000e32da8db2ceee95b14d4b093e0e5961c44e4d))
+
 ## [1.21.4](https://github.com/danielvm-git/big-bolao/compare/v1.21.3...v1.21.4) (2026-07-30)
 
 
