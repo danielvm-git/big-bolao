@@ -27,7 +27,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://bigbase.click',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: true,
       },

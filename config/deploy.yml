@@ -1,0 +1,56 @@
+# Kamal 2 — Big Bolão on the Oracle A1 (production), reached over the tailnet.
+# Deploys run only from GitHub Actions (.github/workflows/deploy.yml).
+service: bolao
+image: danielvm-git/big-bolao
+
+servers:
+  web:
+    hosts:
+      - oracle-prod          # Tailscale MagicDNS name of the Oracle node
+
+ssh:
+  user: deploy
+  keys_only: true
+  key_data:
+    - KAMAL_SSH_KEY
+
+registry:
+  server: ghcr.io
+  username: danielvm-git
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: arm64              # CI builds the image; Kamal never builds
+
+# Appwrite's Traefik owns 80/443 on this host. kamal-proxy listens on
+# 127.0.0.1:8080 only, and cloudflared (tunnel oracle-prod) is its one client.
+proxy:
+  host: bolao.danielvm.net
+  app_port: 3000
+  ssl: false
+  forward_headers: true
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 3
+  run:
+    http_port: 8080
+    https_port: 8443
+    bind_ips:
+      - 127.0.0.1
+
+env:
+  clear:
+    BOLAO_STORE: sqlite
+    BOLAO_DB: /data/bolao.db
+    BOLAO_BOT: "off"       # on at cutover, after the BigBase copy stops polling
+    BOLAO_WEB_URL: https://bolao.danielvm.net
+    TIMEZONE: America/Sao_Paulo
+  secret:
+    - BOLAO_LINK_SECRET
+
+volumes:
+  - /srv/bolao:/data       # bolao.db (WAL); Litestream streams it to Contabo
+
+retain_containers: 3

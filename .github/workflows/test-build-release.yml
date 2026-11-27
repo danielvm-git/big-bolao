@@ -2,16 +2,13 @@
 # test-build-release.yml — CI/CD pipeline for Big Bolão
 #
 # Pipeline:
-#   ci (node + python) → verify → big-release → web-build-commit
+#   ci (node + python) → verify → big-release | image → deploy-meta
 #
 # Deploy is in a separate deploy.yml triggered via workflow_run.
 #
-# Secrets needed (repo Settings → Secrets and variables → Actions):
-#   - BIGBASE_DEPLOY_TOKEN: scoped deploy token
-#   - BIGBASE_SITE_ID: site this token is scoped to
-#
-# NOTE: web/dist/ auto-commit is kept because BigBase deploys from the repo
-# (not from artifacts) and app.py serves web/dist/ at runtime.
+# The image job builds once (linux/arm64), pushes to GHCR by digest and
+# attests provenance. deploy.yml verifies that attestation before Kamal runs.
+# web/dist/ is built inside the image, never committed.
 # ============================================================================
 name: Test, Build & Release
 
@@ -217,53 +214,60 @@ jobs:
           git push origin main
 
   # ==========================================================================
-  # Web build + auto-commit (after big-release, if new release)
+  # Image: build once (arm64, for the Oracle A1), push to GHCR, attest
   # ==========================================================================
-  web-build-commit:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.semantic-release.outputs.new_release == 'true'
-    needs: [semantic-release]
-    runs-on: ubuntu-22.04
-    timeout-minutes: 10
+  image:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [node, python, verify]
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
     permissions:
-      contents: write
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: true
+          persist-credentials: false
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build web
-        working-directory: web
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: "true"
-        run: |
-          npm ci --prefer-offline
-          npm run build
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          labels: |
+            service=bolao
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
 
-      - name: Commit rebuilt web/dist
-        run: |
-          if [ -n "$(git status --porcelain web/dist/)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add web/dist/
-            git commit -m "build(web): auto-commit rebuilt dist [skip ci]"
-            git push
-            echo "Committed rebuilt web/dist/"
-          else
-            echo "web/dist/ already up to date"
-          fi
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
   # ==========================================================================
   # Deploy metadata (boundary artifact for deploy.yml)
   # ==========================================================================
   deploy-meta:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [node, python, verify]
-    runs-on: ubuntu-22.04
+    needs: [image]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Write deploy-meta
@@ -272,7 +276,9 @@ jobs:
             --arg sha "${{ github.sha }}" \
             --arg ref "${{ github.ref_name }}" \
             --arg app_type "${{ env.APP_TYPE }}" \
-            '{sha: $sha, ref: $ref, app_type: $app_type}' > deploy-meta.json
+            --arg image "ghcr.io/${{ github.repository }}" \
+            --arg digest "${{ needs.image.outputs.digest }}" \
+            '{sha: $sha, ref: $ref, app_type: $app_type, image: $image, digest: $digest}' > deploy-meta.json
 
       - name: Upload deploy-meta artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -288,7 +294,7 @@ jobs:
     name: Notify on failure
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [node, python, verify, semantic-release, web-build-commit]
+    needs: [node, python, verify, semantic-release, image, deploy-meta]
     if: always() && failure() && github.event_name != 'workflow_dispatch'
     steps:
       - name: Build failure summary
