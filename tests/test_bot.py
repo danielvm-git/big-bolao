@@ -71,7 +71,7 @@ def test_build_app_registers_error_handler():
     """Test that build_app calls add_error_handler (implicitly tests via mock)."""
     from bolao import bot
 
-    with patch('bolao.bot.BigBase'):
+    with patch('bolao.bot.open_store'):
         app = bot.build_app()
         # Verify that the app is built and doesn't fail (error handler was registered)
         assert app is not None
@@ -94,7 +94,7 @@ async def test_post_init_logs_version_at_startup():
     mock_db.ensure_setup = AsyncMock()
 
     with patch('bolao.bot.log', mock_logger):
-        with patch('bolao.bot.BigBase', return_value=mock_db):
+        with patch('bolao.bot.open_store', return_value=mock_db):
             await bot._post_init(mock_app)
 
     # Assert that log.info was called to record the version

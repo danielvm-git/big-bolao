@@ -97,10 +97,13 @@ async def cmd_version(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def cmd_web(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Envia link do site do bolao com autenticacao automatica."""
+    """Envia link do site do bolao, assinado para este usuario."""
+    from bolao import config, links
     uid = update.effective_user.id
     web_url = os.environ.get("BOLAO_WEB_URL", "http://localhost:5173")
     link = f"{web_url}/?uid={uid}"
+    if config.LINK_SECRET:
+        link += f"&sig={links.sign(uid)}"
     await update.message.reply_text(
         f"🌐 <b>Acesse o Bolao pelo navegador:</b>\n\n"
         f"<a href=\"{link}\">👉 Clique aqui para abrir</a>\n\n"

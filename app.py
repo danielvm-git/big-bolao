@@ -83,7 +83,19 @@ def run_bot():
     except Exception as e:
         log.error("Bot failed: %s", e)
 
-threading.Thread(target=run_bot, daemon=True).start()
+from bolao import config as _config  # noqa: E402
+
+if _config.BOT_ENABLED:
+    threading.Thread(target=run_bot, daemon=True).start()
+else:
+    log.info("Bot disabled (BOLAO_BOT=off): serving the site only")
+
+# The site's data API runs here only with the SQLite store. On BigBase hosting,
+# BigBase itself answers /api/*.
+STORE = None
+if _config.STORE == "sqlite":
+    from bolao.store import open_store
+    STORE = open_store()
 
 # Serve web/dist/ as SPA on $PORT (BigBase health-checks this).
 # Version is baked into the JS bundle at build time (see web/vite.config.js) —
@@ -104,7 +116,10 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split('?')[0].lstrip('/')
         ua = self.headers.get('User-Agent', '')
 
-        # Health check — BigBase uses /health to verify the service is alive
+        # Health checks: /up for kamal-proxy, /health for BigBase
+        if path == 'up':
+            self._send_json({"status": "ok"})
+            return
         if path == 'health':
             from bolao.util import version
             self._send_json({"status": "ok", "service": "bolao", "version": version()})
@@ -115,11 +130,35 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
             self._serve_telegram_iv()
             return
 
+        if path.startswith('api/'):
+            if STORE is None:
+                self._send_json({"error": "not found"}, 404)
+                return
+            from bolao import web_api
+            self._send_json(*_swap(web_api.handle_get(STORE, path)))
+            return
+
         # SPA: serve files or fallback to index.html
         full = DIST / path
         if not full.exists() or full.is_dir():
             self.path = '/index.html'
         super().do_GET()
+
+    def do_POST(self):
+        path = self.path.split('?')[0].lstrip('/')
+        if STORE is None or not path.startswith('api/'):
+            self._send_json({"error": "not found"}, 404)
+            return
+        length = int(self.headers.get('Content-Length') or 0)
+        if length > 4096:
+            self._send_json({"error": "body too large"}, 413)
+            return
+        try:
+            body = json.loads(self.rfile.read(length) or b'null')
+        except ValueError:
+            body = None
+        from bolao import web_api
+        self._send_json(*_swap(web_api.handle_post(STORE, path, body)))
 
     def _send_json(self, data: dict, status: int = 200) -> None:
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
@@ -137,15 +176,19 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(TELEGRAM_IV_HTML.encode('utf-8'))
 
+    def log_request(self, code='-', size='-'):
+        # Never log the request line: its query holds the user's signed link.
+        self.log_message('%s', str(getattr(code, 'value', code)))
+
     def log_message(self, fmt, *args):
-        # Structured JSON logging for every HTTP request
-        status = args[0] if args else "?"
-        log.info("HTTP %s %s → %s", self.command, self.path, status,
+        # Structured JSON logging for every HTTP request (path only, no query)
+        status = str(args[-1]) if args else "?"
+        clean_path = self.path.split('?')[0]
+        log.info("HTTP %s %s → %s", self.command, clean_path, status,
                  extra={
                      "http_method": self.command,
-                     "http_path": self.path,
+                     "http_path": clean_path,
                      "http_status": int(status) if status.isdigit() else status,
-                     "remote_ip": self.client_address[0],
                  })
 
 
@@ -177,7 +220,12 @@ TELEGRAM_IV_HTML = (
 )
 
 
-socketserver.TCPServer.allow_reuse_address = True
-with socketserver.TCPServer(('0.0.0.0', PORT), SPAHandler) as httpd:
+def _swap(result: tuple[int, dict]) -> tuple[dict, int]:
+    status, payload = result
+    return payload, status
+
+
+http.server.ThreadingHTTPServer.allow_reuse_address = True
+with http.server.ThreadingHTTPServer(('0.0.0.0', PORT), SPAHandler) as httpd:
     log.info("HTTP server ready", extra={"port": PORT, "dist": str(DIST)})
     httpd.serve_forever()

@@ -11,13 +11,25 @@ def _ids(raw: str) -> set[int]:
     return {int(x) for x in raw.replace(" ", "").split(",") if x}
 
 
-TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+# Bot on/off. "off" serves only the site (e.g. a second host before cutover:
+# Telegram allows one polling bot per token).
+BOT_ENABLED = os.environ.get("BOLAO_BOT", "on").strip().lower() != "off"
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
+if BOT_ENABLED and not TELEGRAM_TOKEN:
+    raise RuntimeError("TELEGRAM_TOKEN is required while BOLAO_BOT is on")
 GRUPO_CHAT_ID = int(os.environ.get("GRUPO_CHAT_ID", "0") or "0")
 ADMIN_IDS = _ids(os.environ.get("ADMIN_IDS", ""))
 
 BIGBASE_URL = os.environ.get("BIGBASE_URL", "https://bigbase.click").rstrip("/")
-BIGBASE_EMAIL = os.environ["BIGBASE_EMAIL"]
-BIGBASE_PASSWORD = os.environ["BIGBASE_PASSWORD"]
+BIGBASE_EMAIL = os.environ.get("BIGBASE_EMAIL", "")
+BIGBASE_PASSWORD = os.environ.get("BIGBASE_PASSWORD", "")
+
+# Data store: "sqlite" (one file, WAL) or "bigbase" (legacy HTTP collections).
+STORE = os.environ.get("BOLAO_STORE", "bigbase").strip().lower()
+DB_PATH = os.environ.get("BOLAO_DB", "/data/bolao.db")
+
+# Secret that signs each user's site link (HMAC). Without it, the site is read-only.
+LINK_SECRET = os.environ.get("BOLAO_LINK_SECRET", "")
 
 RESULTS_PROVIDER = os.environ.get("RESULTS_PROVIDER", "").strip().lower()
 APIFOOTBALL_KEY = os.environ.get("APIFOOTBALL_KEY", "")
