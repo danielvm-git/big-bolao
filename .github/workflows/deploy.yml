@@ -98,8 +98,9 @@ jobs:
         run: |
           install -d -m 700 ~/.ssh
           echo "oracle-prod ${ORACLE_HOST_KEY}" > ~/.ssh/known_hosts
-          # CheckHostIP no: net-ssh would also look up the tailnet IP; the key stays pinned to the name.
-          printf 'Host oracle-prod\n  StrictHostKeyChecking yes\n  CheckHostIP no\n  UserKnownHostsFile ~/.ssh/known_hosts\n' > ~/.ssh/config
+          # HostKeyAlias: SSHKit looks up name AND tailnet IP and needs both in known_hosts.
+          # With the alias, only "oracle-prod" is looked up, so the pin does not depend on the IP.
+          printf 'Host oracle-prod\n  StrictHostKeyChecking yes\n  HostKeyAlias oracle-prod\n  UserKnownHostsFile ~/.ssh/known_hosts\n' > ~/.ssh/config
           chmod 600 ~/.ssh/known_hosts ~/.ssh/config
 
       - uses: ruby/setup-ruby@145243922b4465b78e04dd66294782c7de45901f # v1.345.0
