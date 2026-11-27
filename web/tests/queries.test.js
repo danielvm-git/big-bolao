@@ -18,6 +18,7 @@ mock.method(global, 'fetch', (url, opts = {}) => {
 
 import { fetchJogos, fetchParticipantes, fetchAllPalpites,
   fetchPalpitesDoUsuario, savePalpite, findUser } from '../src/queries.js'
+import { session } from '../src/transport.js'
 
 test('fetchJogos: returns sorted by kickoff', async () => {
   fetchCalls = []
@@ -97,56 +98,21 @@ test('fetchPalpitesDoUsuario: filters by telegram_id', async () => {
   assert.equal(mine[1].match_id, 'R1-03')
 })
 
-test('savePalpite: creates new palpite when none exists', async () => {
+test('savePalpite: posts the bet with the signed link, never to a collection', async () => {
   fetchCalls = []
+  session.uid = '111'
+  session.sig = 'abc123'
   getHandler = (url, opts) => {
-    if (url.includes('/api/collections/palpites') && (!opts || opts.method !== 'POST')) {
-      // GET - return empty list so no existing palpite
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ data: [] }),
-      })
-    }
-    if (opts && opts.method === 'POST' && url === '/api/collections/palpites') {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({}),
-      })
+    if (url === '/api/palpite' && opts?.method === 'POST') {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) })
     }
     return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })
   }
   await savePalpite('R1-01', 111, 'Alice', 2, 1)
-  const postCalls = fetchCalls.filter(c => c.opts?.method === 'POST')
-  assert.equal(postCalls.length, 1)
-  const patchCalls = fetchCalls.filter(c => c.opts?.method === 'PATCH')
-  assert.equal(patchCalls.length, 0)
-})
-
-test('savePalpite: updates existing palpite when found', async () => {
-  fetchCalls = []
-  getHandler = (url, opts) => {
-    if (url.includes('/api/collections/palpites') && !opts?.method) {
-      // GET - return existing palpite
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          data: [{ id: 'abc', match_id: 'R1-01', telegram_id: 111 }],
-        }),
-      })
-    }
-    if (opts?.method === 'PATCH') {
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({}),
-      })
-    }
-    return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) })
-  }
-  await savePalpite('R1-01', 111, 'Alice', 3, 0)
-  const patchCalls = fetchCalls.filter(c => c.opts?.method === 'PATCH')
-  assert.equal(patchCalls.length, 1)
-  const postCalls = fetchCalls.filter(c => c.opts?.method === 'POST')
-  assert.equal(postCalls.length, 0)
+  assert.equal(fetchCalls.length, 1)
+  const body = JSON.parse(fetchCalls[0].opts.body)
+  assert.deepEqual(body, { uid: 111, sig: 'abc123', match_id: 'R1-01', gols_casa: 2, gols_fora: 1 })
+  assert.equal(fetchCalls.some(c => c.url.startsWith('/api/collections/')), false)
 })
 
 test('findUser: returns matching participant', async () => {

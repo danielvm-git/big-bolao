@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { loadAll, initUser, loaded, finalizados, total, user } from './store.js'
+import { session } from './transport.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +13,8 @@ onMounted(async () => {
   // Pick up ?uid= from bot link
   const params = new URLSearchParams(window.location.search || window.location.hash.split('?')[1] || '')
   const uid = params.get('uid')
+  session.uid = uid
+  session.sig = params.get('sig')
   if (uid) {
     await initUser(uid)
     router.replace({ path: route.path, hash: '' })
